@@ -1,6 +1,9 @@
 import express from 'express';
 import DB from './modules/storage.js';
 
+// FIXME: this should come from the authenticated user.
+const HELPER = 'Santa Claus';
+
 const app = express();
 
 app.use(express.json());
@@ -19,52 +22,16 @@ const jsonSender = (res) => (err, data) => {
 ////////////////////////////////////////////////////////////////////////////////
 // Requests for help
 
-app.get('/request/:id', (req, res) => {
-  db.getRequest(req.params.id, jsonSender(res));
-});
-
-app.post('/request', (req, res) => {
+/*
+ * Make a new request.
+ */
+app.post('/help', (req, res) => {
   const { who, problem, tried } = req.body;
-  db.requestHelp(who, problem, tried, (err, id) => {
-    if (err) {
-      res.send(`Whoops ${err}`);
-    } else {
-      db.getRequest(id, jsonSender(res));
-    }
-  });
-});
-
-////////////////////////////////////////////////////////////////////////////////
-// Request lifecycle
-
-/*
- * Take the next item on the queue and start helping.
- */
-app.get('/next', (req, res) => {
-  db.next((err, helpID) => {
-    if (err) {
-      res.send(`Whoops ${err}`);
-    } else {
-      db.getHelp(helpID, jsonSender(res));
-    }
-  });
+  db.requestHelp(who, problem, tried, jsonSender(res));
 });
 
 /*
- * Take a specific item from the queue and start helping.
- */
-app.get('/take/:requestID', (req, res) => {
-  db.take(req.params.requestID, (err, helpID) => {
-    if (err) {
-      res.send(`Whoops ${err}`);
-    } else {
-      db.getHelp(helpID, jsonSender(res));
-    }
-  });
-});
-
-/*
- * Get the help record with a specific ID.
+ * Fetch ann existing request.
  */
 app.get('/help/:id', (req, res) => {
   db.getHelp(req.params.id, jsonSender(res));
@@ -74,9 +41,24 @@ app.get('/help/:id', (req, res) => {
  * Close the given help record.
  */
 app.patch('/help/:id/finish', (req, res) => {
-  db.finishHelp(req.params.id, req.body.comment, (err) => {
-    db.getHelp(req.params.id, jsonSender(res));
-  });
+  db.finishHelp(req.params.id, req.body.comment, jsonSender(res));
+});
+
+////////////////////////////////////////////////////////////////////////////////
+// Start working on a request for help.
+
+/*
+ * Take the next item on the queue and start helping.
+ */
+app.get('/next', (req, res) => {
+  db.next(HELPER, jsonSender(res));
+});
+
+/*
+ * Take a specific item from the queue and start helping.
+ */
+app.get('/take/:requestID', (req, res) => {
+  db.take(req.params.requestID, HELPER, jsonSender(res));
 });
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -92,8 +74,8 @@ app.get('/queue', (req, res) => {
 /*
  * Get the requests that are currently being helped.
  */
-app.get('/being-helped', (req, res) => {
-  db.beingHelped(jsonSender(res));
+app.get('/in-progress', (req, res) => {
+  db.inProgress(jsonSender(res));
 });
 
 /*
