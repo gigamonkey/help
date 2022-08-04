@@ -7,7 +7,7 @@
     "ecmaVersion": "2022"
   },
   "rules": {
-    "import/extensions": [0, "always" ],
+    "import/extensions": [0, "always"],
     "max-classes-per-file": "off",
     "no-console": "off",
     "no-else-return": "off",

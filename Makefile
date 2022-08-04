@@ -9,13 +9,13 @@ setup:
 	npm install
 
 pretty:
-	prettier --write '*.js' '*.json'
+	prettier --write '*.js' '*.json' public/**/*.js public/**/*.css
 
 tidy:
-	tidy -config .tidyconfig src/**/*.html
+	tidy -config .tidyconfig public/**/*.html
 
 lint:
-	npx eslint $(eslint_opts) *.js
+	npx eslint $(eslint_opts) *.js public/**/*.js
 
 fixmes:
 	ag --no-group FIXME
