@@ -39,9 +39,9 @@ const timeElement = (time) => {
   return e;
 };
 
-const helpCard = (h, role, render) => {
+const helpCard = (h, role, showStatus, render) => {
   const item = basicHelpCard(h);
-  item.append(statusAndButtons(h, role, render));
+  item.append(statusAndButtons(h, role, showStatus, render));
   return item;
 };
 
@@ -93,10 +93,10 @@ const updateTimes = () => {
   });
 };
 
-const statusAndButtons = (h, role, render) => {
+const statusAndButtons = (h, role, showStatus, render) => {
   const s = status(h);
 
-  const statusMarker = withClass('status', $('<span>', `Status: ${s}`));
+  const statusMarker = withClass('status', $('<span>', showStatus ? `Status: ${s}` : ''));
   const buttons = buttonsForStatus(s, h.id, role, render);
 
   return withClass('buttons', $('<div>', statusMarker, buttons));
