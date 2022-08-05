@@ -15,7 +15,7 @@ tidy:
 	tidy -config .tidyconfig public/**/*.html
 
 lint:
-	npx eslint $(eslint_opts) *.js public/**/*.js
+	npx eslint $(eslint_opts) *.js modules/**/*.js public/**/*.js
 
 fixmes:
 	ag --no-group FIXME

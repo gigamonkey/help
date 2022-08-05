@@ -109,14 +109,14 @@ class DB {
       if (err) {
         callback(err, null);
       } else {
-        const row = rows[0];
+        const [row] = rows;
         this.take(row.id, helper, callback);
       }
     });
   }
 
   finishHelp(id, comment, callback) {
-    this.db.run(FINISH_HELP, comment, id, (err, rows) => {
+    this.db.run(FINISH_HELP, comment, id, (err) => {
       if (err) {
         callback(err, null);
       } else {
