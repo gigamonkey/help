@@ -11,6 +11,13 @@ body {
   margin: 50px auto;
 }
 
+.toolbar {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  text-align: right;
+}
+
 #queue {
   display: flex;
   flex-direction: column;
@@ -27,6 +34,12 @@ body {
 }
 
 .item > .who {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.item > .buttons {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
