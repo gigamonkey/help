@@ -48,13 +48,13 @@ const timeElement = (time) => {
 };
 
 const helpCard = (h) => {
-  const { who, problem, tried, time } = h;
+  const { who_name, who_email, problem, tried, time } = h;
 
   return withClass(
     'item',
     $(
       '<div>',
-      withClass('who', $('<div>', $('<span>', who), timeElement(time))),
+      withClass('who', $('<div>', $('<span>', who_name || who_email), timeElement(time))),
       withClass('problem', $('<fieldset>', $('<legend>', 'Problem'), $('<div>', problem))),
       withClass('tried', $('<fieldset>', $('<legend>', 'Tried'), $('<div>', tried))),
     ),

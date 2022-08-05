@@ -14,6 +14,7 @@ const db = new DB('help.db');
 const app = express();
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // Middleware that redirects all un-logged-in requests to Google sign in (except
@@ -27,9 +28,9 @@ app.use((req, res, next) => {
     console.log('No session. Logging in');
     const id = oauth.newSessionID();
     const state = `${oauth.newState()}:${req.originalUrl}`;
-    const session = { id, loggedIn: false };
+    req.session = { id, loggedIn: false };
 
-    res.cookie('session', encrypt(session, SECRET));
+    res.cookie('session', encrypt(req.session, SECRET));
     db.newSession(id, state, (err) => {
       if (err) throw err;
       res.redirect(oauth.url(state));
@@ -37,11 +38,12 @@ app.use((req, res, next) => {
   } else {
     console.log('Have session.');
 
-    const session = decrypt(req.cookies.session, SECRET);
-    if (session.loggedIn) {
+    req.session = decrypt(req.cookies.session, SECRET);
+
+    if (req.session.loggedIn) {
       next();
     } else {
-      db.getSession(session.id, (err, data) => {
+      db.getSession(req.session.id, (err, data) => {
         if (err) throw err;
         res.redirect(oauth.url(data.state));
       });
@@ -62,7 +64,7 @@ const jsonSender = (res) => (err, data) => {
 
 app.get('/logout', (req, res) => {
   res.clearCookie('session');
-  res.send('Logged out.');
+  res.send('<html><body><p>Logged out. <a href="/">Start over</a></p></html>');
 });
 
 app.get('/auth', async (req, res) => {
@@ -84,10 +86,10 @@ app.get('/auth', async (req, res) => {
       throw new Error(`Mismatched state: db: ${dbSession.state}; query: ${state}`);
     }
 
-    const { email } = JSON.parse(atob(authData.id_token.split('.')[1]));
+    const { name, email } = JSON.parse(atob(authData.id_token.split('.')[1]));
     db.setSessionUser(session.id, email, (err) => {
       if (err) throw err;
-      res.cookie('session', encrypt({ ...session, loggedIn: true, user: email }, SECRET));
+      res.cookie('session', encrypt({ ...session, loggedIn: true, user: { name, email } }, SECRET));
       res.redirect(state.split(':')[1]);
     });
   });
@@ -100,8 +102,9 @@ app.get('/auth', async (req, res) => {
  * Make a new request.
  */
 app.post('/api/help', (req, res) => {
-  const { who, problem, tried } = req.body;
-  db.requestHelp(who, problem, tried, jsonSender(res));
+  const { problem, tried } = req.body;
+  const { email, name } = req.session.user;
+  db.requestHelp(email, name || null, problem, tried, jsonSender(res));
 });
 
 /*
@@ -157,6 +160,15 @@ app.get('/api/in-progress', (req, res) => {
  */
 app.get('/api/helped', (req, res) => {
   db.helped(jsonSender(res));
+});
+
+////////////////////////////////////////////////////////////////////////////////
+// Forms
+
+app.post('/help', (req, res) => {
+  const { problem, tried } = req.body;
+  const { email, name } = req.session.user;
+  db.requestHelp(email, name || null, problem, tried, () => res.redirect('/'));
 });
 
 ////////////////////////////////////////////////////////////////////////////////

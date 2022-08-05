@@ -21,7 +21,7 @@ const authParams = (state) =>
     state,
     client_id: CLIENT_ID,
     response_type: 'code',
-    scope: 'openid email',
+    scope: 'openid email profile',
     redirect_uri: REDIRECT_URL,
   });
 

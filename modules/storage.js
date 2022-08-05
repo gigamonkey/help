@@ -2,7 +2,8 @@ import sqlite3 from 'sqlite3';
 
 const CREATE_HELP_TABLE = `
   CREATE TABLE IF NOT EXISTS help (
-    who TEXT NOT NULL,
+    who_email TEXT NOT NULL,
+    who_name TEXT,
     problem TEXT NOT NULL,
     tried TEXT NOT NULL,
     time INTEGER NOT NULL,
@@ -27,7 +28,8 @@ const CREATE_SESSIONS_TABLE = `
     user TEXT
 )`;
 
-const REQUEST_HELP = "INSERT INTO help VALUES (?, ?, ?, unixepoch('now'), null, null, null, null)";
+const REQUEST_HELP =
+  "INSERT INTO help VALUES (?, ?, ?, ?, unixepoch('now'), null, null, null, null)";
 
 const GET_HELP = 'SELECT rowid as id, * FROM help WHERE rowid = ?';
 
@@ -77,10 +79,10 @@ class DB {
   /*
    * Create a new request for help.
    */
-  requestHelp(who, problem, tried, callback) {
+  requestHelp(email, name, problem, tried, callback) {
     const stmt = this.db.prepare(REQUEST_HELP);
     const that = this;
-    stmt.run(who, problem, tried, function (err) {
+    stmt.run(email, name, problem, tried, function (err) {
       if (err) {
         callback(err, null);
       } else {
