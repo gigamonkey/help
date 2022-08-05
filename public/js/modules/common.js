@@ -39,10 +39,10 @@ const timeElement = (time) => {
   return e;
 };
 
-const helpCard = (h, role) => {
+const basicHelpCard = (h) => {
   const { id, who_name: name, who_email: email, problem, tried, time } = h;
 
-  const item = withClass(
+  return withClass(
     'item',
     $(
       '<div>',
@@ -50,8 +50,8 @@ const helpCard = (h, role) => {
         'who',
         $(
           '<div>',
-          $('<span>', document.createTextNode(`#${id}`)),
-          $('<span>', name || email),
+          $('<span>', document.createTextNode(`#${id}`), ' - ',
+            $('<span>', name || email)),
           timeElement(time),
         ),
       ),
@@ -59,11 +59,6 @@ const helpCard = (h, role) => {
       withClass('tried', $('<fieldset>', $('<legend>', 'Tried'), $('<div>', tried))),
     ),
   );
-
-  if (role === 'helper') {
-    item.ondblclick = () => takeItem(id);
-  }
-  return item;
 };
 
 const takeItem = async (id) => {
@@ -77,4 +72,4 @@ const updateTimes = () => {
   });
 };
 
-export { $, helpCard, updateTimes };
+export { $, basicHelpCard, updateTimes, withClass, timeElement };

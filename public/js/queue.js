@@ -1,4 +1,4 @@
-import { $, helpCard, updateTimes } from './modules/common.js';
+import { $, basicHelpCard, updateTimes } from './modules/common.js';
 
 const renderQueue = async () => {
   const q = $('#queue');
@@ -8,6 +8,14 @@ const renderQueue = async () => {
     q.append(helpCard(h, role));
   });
 };
+
+const helpCard = (h, role) => {
+  const item = basicHelpCard(h);
+  if (role === 'helper') {
+    item.ondblclick = () => takeItem(id);
+  }
+  return item;
+}
 
 renderQueue();
 
