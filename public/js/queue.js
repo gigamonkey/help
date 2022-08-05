@@ -12,10 +12,15 @@ const renderQueue = async () => {
 const helpCard = (h, role) => {
   const item = basicHelpCard(h);
   if (role === 'helper') {
-    item.ondblclick = () => takeItem(id);
+    item.ondblclick = () => takeItem(h.id);
   }
   return item;
-}
+};
+
+const takeItem = async (id) => {
+  await fetch(`/api/take/${id}`).then((r) => r.json());
+  window.location = `/help/${id}`;
+};
 
 renderQueue();
 

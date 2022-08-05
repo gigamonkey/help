@@ -50,8 +50,7 @@ const basicHelpCard = (h) => {
         'who',
         $(
           '<div>',
-          $('<span>', document.createTextNode(`#${id}`), ' - ',
-            $('<span>', name || email)),
+          $('<span>', document.createTextNode(`#${id}`), ' - ', $('<span>', name || email)),
           timeElement(time),
         ),
       ),
@@ -59,11 +58,6 @@ const basicHelpCard = (h) => {
       withClass('tried', $('<fieldset>', $('<legend>', 'Tried'), $('<div>', tried))),
     ),
   );
-};
-
-const takeItem = async (id) => {
-  await fetch(`/api/take/${id}`).then((r) => r.json());
-  window.location = `/help/${id}`;
 };
 
 const updateTimes = () => {
