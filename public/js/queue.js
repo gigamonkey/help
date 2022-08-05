@@ -25,7 +25,7 @@ const withClass = (clazz, e) => {
 
 const renderQueue = async () => {
   const q = $('#queue');
-  const data = await fetch('/queue').then((r) => r.json());
+  const data = await fetch('/api/queue').then((r) => r.json());
   data.forEach((h) => {
     q.append(helpCard(h));
   });

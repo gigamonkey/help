@@ -13,8 +13,39 @@ const db = new DB('help.db');
 const app = express();
 
 app.use(express.json());
-app.use(express.static('public'));
 app.use(cookieParser());
+
+
+app.use((req, res, next) => {
+  console.log(`Original url: ${req.originalUrl}; Path: ${req.path}`);
+
+  // FIXME: this isn't quite right as the api endpoints should still require authentication.
+  if (req.path === '/logout' || req.path === '/auth' || req.path.startsWith('/api/')) {
+    next();
+
+  } else {
+    if (!req.cookies.session) {
+      console.log('No session. Logging in');
+      const sessionID = oauth.newSessionID();
+      const state = `${oauth.newState()}:${req.originalUrl}`;
+      res.cookie('session', sessionID);
+      db.newSession(sessionID, state, (err) => {
+        if (err) throw err;
+        res.redirect(oauth.url(state));
+      });
+    } else {
+      console.log('Have session.');
+      db.getSession(req.cookies.session, (err, data) => {
+        if (err) throw err;
+        console.log(`Logged in as ${data.user}`);
+        req.user = data.user;
+        next();
+      });
+    }
+  }
+});
+
+app.use(express.static('public'));
 
 const jsonSender = (res) => (err, data) => {
   if (err) {
@@ -25,23 +56,6 @@ const jsonSender = (res) => (err, data) => {
   }
 };
 
-app.get('/login', (req, res) => {
-  if (!req.cookies.session) {
-    const sessionID = oauth.newSessionID();
-    const state = oauth.newState();
-    res.cookie('session', sessionID);
-    db.newSession(sessionID, state, (err) => {
-      if (err) throw err;
-      res.redirect(oauth.url(state));
-    });
-  } else {
-    db.getSession(req.cookies.session, (err, data) => {
-      if (err) throw err;
-      res.send(`Already logged in as ${data.user}`);
-    });
-  }
-});
-
 app.get('/logout', (req, res) => {
   res.clearCookie('session');
   res.send('Logged out.');
@@ -49,10 +63,13 @@ app.get('/logout', (req, res) => {
 
 app.get('/auth', async (req, res) => {
   const data = await oauth.getToken(req.query.code);
+  const query = req.query;
+  console.log({ data, query });
   const { email } = JSON.parse(atob(data.id_token.split('.')[1]));
+  const { state } = query;
   db.setSessionUser(req.cookies.session, email, (err) => {
     if (err) throw err;
-    res.redirect('/login');
+    res.redirect(state.split(':')[1]);
   });
 });
 
@@ -62,7 +79,7 @@ app.get('/auth', async (req, res) => {
 /*
  * Make a new request.
  */
-app.post('/help', (req, res) => {
+app.post('/api/help', (req, res) => {
   const { who, problem, tried } = req.body;
   db.requestHelp(who, problem, tried, jsonSender(res));
 });
@@ -70,14 +87,14 @@ app.post('/help', (req, res) => {
 /*
  * Fetch an existing request.
  */
-app.get('/help/:id', (req, res) => {
+app.get('/api/help/:id', (req, res) => {
   db.getHelp(req.params.id, jsonSender(res));
 });
 
 /*
  * Close the given help record.
  */
-app.patch('/help/:id/finish', (req, res) => {
+app.patch('/api/help/:id/finish', (req, res) => {
   db.finishHelp(req.params.id, req.body.comment, jsonSender(res));
 });
 
@@ -87,14 +104,14 @@ app.patch('/help/:id/finish', (req, res) => {
 /*
  * Take the next item on the queue and start helping.
  */
-app.get('/next', (req, res) => {
+app.get('/api/next', (req, res) => {
   db.next(HELPER, jsonSender(res));
 });
 
 /*
  * Take a specific item from the queue and start helping.
  */
-app.get('/take/:requestID', (req, res) => {
+app.get('/api/take/:requestID', (req, res) => {
   db.take(req.params.requestID, HELPER, jsonSender(res));
 });
 
@@ -104,21 +121,21 @@ app.get('/take/:requestID', (req, res) => {
 /*
  * Get the queue of requests for help that have not been picked up yet.
  */
-app.get('/queue', (req, res) => {
+app.get('/api/queue', (req, res) => {
   db.queue(jsonSender(res));
 });
 
 /*
  * Get the requests that are currently being helped.
  */
-app.get('/in-progress', (req, res) => {
+app.get('/api/in-progress', (req, res) => {
   db.inProgress(jsonSender(res));
 });
 
 /*
  * Get the requests that have been helped and finished.
  */
-app.get('/helped', (req, res) => {
+app.get('/api/helped', (req, res) => {
   db.helped(jsonSender(res));
 });
 
