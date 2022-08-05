@@ -1,19 +1,11 @@
-import { $, basicHelpCard, updateTimes, withClass } from './modules/common.js';
+import { $, helpCard, updateTimes } from './modules/common.js';
 
-const renderItem = async () => {
-  const item = $('#item');
+const render = async () => {
+  const { role } = await fetch('/api/role').then((r) => r.json());
   const data = await fetch(`/api${window.location.pathname}`).then((r) => r.json());
-
-  item.append(helpCard(data));
-  // item.append($('<pre>', JSON.stringify(data, null, 2)));
+  $('#item').replaceChildren(helpCard(data, role, render));
 };
 
-const helpCard = (h) => {
-  const item = basicHelpCard(h);
-  item.append(withClass('buttons', $('<div>', $('<button>', 'Re-queue'), $('<button>', 'Done'))));
-  return item;
-};
-
-renderItem();
+render();
 
 setInterval(updateTimes, 1000);

@@ -39,6 +39,12 @@ const timeElement = (time) => {
   return e;
 };
 
+const helpCard = (h, role, render) => {
+  const item = basicHelpCard(h);
+  item.append(statusAndButtons(h, role, render));
+  return item;
+};
+
 const basicHelpCard = (h) => {
   const { id, who_name: name, who_email: email, problem, tried, time } = h;
 
@@ -50,7 +56,12 @@ const basicHelpCard = (h) => {
         'who',
         $(
           '<div>',
-          $('<span>', helpLink(id, document.createTextNode(`#${id}`)), ' - ', $('<span>', name || email)),
+          $(
+            '<span>',
+            helpLink(id, document.createTextNode(`#${id}`)),
+            ' - ',
+            $('<span>', name || email),
+          ),
           timeElement(time),
         ),
       ),
@@ -64,9 +75,17 @@ const helpLink = (id, text) => {
   const a = $('<a>', text);
   a.setAttribute('href', `/help/${id}`);
   return a;
-}
+};
 
-
+const status = (h) => {
+  if (h.end_time !== null) {
+    return 'Done';
+  } else if (h.start_time !== null) {
+    return 'In progress';
+  } else {
+    return 'On queue';
+  }
+};
 
 const updateTimes = () => {
   $$('.time').forEach((e) => {
@@ -74,4 +93,85 @@ const updateTimes = () => {
   });
 };
 
-export { $, basicHelpCard, updateTimes, withClass, timeElement };
+const statusAndButtons = (h, role, render) => {
+  const s = status(h);
+
+  const statusMarker = withClass('status', $('<span>', `Status: ${s}`));
+  const buttons = buttonsForStatus(s, h.id, role, render);
+
+  return withClass('buttons', $('<div>', statusMarker, buttons));
+};
+
+const buttonsForStatus = (s, id, role, render) => {
+  const span = $('<span>');
+  if (role === 'helper') {
+    if (s === 'On queue') {
+      span.append(takeButton(id, render));
+    }
+    if (s === 'In progress' || s === 'Done') {
+      span.append(requeueButton(id, render));
+    }
+    if (s === 'In progress') {
+      span.append(doneButton(id, render));
+    }
+    if (s === 'Done') {
+      span.append(reopenButton(id, render));
+    }
+  }
+  return span;
+};
+
+const takeButton = (id, after) => {
+  const b = $('<button>', 'Take');
+  b.onclick = () => takeItem(id, after);
+  return b;
+};
+
+const requeueButton = (id, after) => {
+  const b = $('<button>', 'Requeue');
+  b.onclick = () => requeue(id, after);
+  return b;
+};
+
+const doneButton = (id, after) => {
+  const b = $('<button>', 'Done');
+  b.onclick = () => markDone(id, after);
+  return b;
+};
+
+const reopenButton = (id, after) => {
+  const b = $('<button>', 'Reopen');
+  b.onclick = () => reopen(id, after);
+  return b;
+};
+
+const takeItem = async (id) => {
+  await fetch(`/api/take/${id}`).then(() => {
+    window.location = `/help/${id}`;
+  });
+};
+
+const requeue = (id, after) => {
+  console.log('requeue not implemented yet');
+  after();
+};
+
+const reopen = (id, after) => {
+  console.log('reopen not implemented yet');
+  after();
+};
+
+const markDone = async (id, after) => {
+  await patch(`/api/help/${id}/finish`, { comment: null }).then(() => after());
+};
+
+const patch = (url, data) =>
+  fetch(url, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+    headers: {
+      'Content-type': 'application/json; charset=UTF-8',
+    },
+  });
+
+export { $, helpCard, updateTimes, withClass, status, timeElement, statusAndButtons };

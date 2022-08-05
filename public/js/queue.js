@@ -1,27 +1,12 @@
-import { $, basicHelpCard, updateTimes } from './modules/common.js';
+import { $, helpCard, updateTimes } from './modules/common.js';
 
-const renderQueue = async () => {
-  const q = $('#queue');
+// FIXME: get role out side of this function
+const render = async () => {
   const { role } = await fetch('/api/role').then((r) => r.json());
   const data = await fetch('/api/queue').then((r) => r.json());
-  data.forEach((h) => {
-    q.append(helpCard(h, role));
-  });
+  $('#queue').replaceChildren(...data.map((h) => helpCard(h, role, render)));
 };
 
-const helpCard = (h, role) => {
-  const item = basicHelpCard(h);
-  if (role === 'helper') {
-    item.ondblclick = () => takeItem(h.id);
-  }
-  return item;
-};
-
-const takeItem = async (id) => {
-  await fetch(`/api/take/${id}`).then((r) => r.json());
-  window.location = `/help/${id}`;
-};
-
-renderQueue();
+render();
 
 setInterval(updateTimes, 1000);
