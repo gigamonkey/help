@@ -1,3 +1,4 @@
 *.db
 *secret*
+.env
 node_modules
