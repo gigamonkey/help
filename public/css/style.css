@@ -17,7 +17,7 @@ body {
   gap: 10px;
 }
 
-#queue > .item {
+.item {
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -26,7 +26,7 @@ body {
   background: rgba(192, 128, 192, 0.2);
 }
 
-#queue > .item > .who {
+.item > .who {
   display: flex;
   flex-direction: row;
   justify-content: space-between;

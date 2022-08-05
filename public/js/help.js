@@ -23,13 +23,19 @@ const withClass = (clazz, e) => {
   return e;
 };
 
-const renderQueue = async () => {
-  const q = $('#queue');
+const renderItem = async () => {
+  const item = $('#item');
+  const data = await fetch(`/api${window.location.pathname}`).then((r) => r.json());
+
+  // item.append($('<pre>', JSON.stringify(data, null, 2)));
+  item.append(helpCard(data));
+
+  /*
   const { role } = await fetch('/api/role').then((r) => r.json());
-  const data = await fetch('/api/queue').then((r) => r.json());
   data.forEach((h) => {
     q.append(helpCard(h, role));
-  });
+    });
+  */
 };
 
 const elapsed = (utcSeconds) => {
@@ -49,7 +55,6 @@ const timeElement = (time) => {
 };
 
 const helpCard = (h, role) => {
-  console.log(h);
   const { id, who_name: name, who_email: email, problem, tried, time } = h;
 
   const item = withClass(
@@ -87,6 +92,6 @@ const updateTimes = () => {
   });
 };
 
-renderQueue();
+renderItem();
 
 setInterval(updateTimes, 1000);

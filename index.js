@@ -1,9 +1,15 @@
-import express from 'express';
+import 'dotenv/config';
 import cookieParser from 'cookie-parser';
+import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
 import DB from './modules/storage.js';
 import oauth from './modules/oauth.js';
-import 'dotenv/config';
 import { encrypt, decrypt } from './modules/crypto.js';
+
+const FILENAME = fileURLToPath(import.meta.url);
+const DIRNAME = path.dirname(FILENAME);
 
 const { PORT, SECRET } = process.env;
 
@@ -138,6 +144,12 @@ app.get('/api/take/:requestID', (req, res) => {
   db.take(req.params.requestID, HELPER, jsonSender(res));
 });
 
+app.get('/api/role', (req, res) => {
+  // FIXME: should be stored in db.
+  const role = req.session.user.email === 'peterseibel@berkeley.net' ? 'helper' : 'student';
+  jsonSender(res)(null, { role });
+});
+
 ////////////////////////////////////////////////////////////////////////////////
 // Bulk queries
 
@@ -163,12 +175,16 @@ app.get('/api/helped', (req, res) => {
 });
 
 ////////////////////////////////////////////////////////////////////////////////
-// Forms
+// Pages
 
 app.post('/help', (req, res) => {
   const { problem, tried } = req.body;
   const { email, name } = req.session.user;
   db.requestHelp(email, name || null, problem, tried, () => res.redirect('/'));
+});
+
+app.get('/help/:id', (req, res) => {
+  res.sendFile(path.join(DIRNAME, 'public/help/show.html'));
 });
 
 ////////////////////////////////////////////////////////////////////////////////
