@@ -37,6 +37,11 @@ const START_HELP = "UPDATE help SET start_time = unixepoch('now'), helper = ? WH
 
 const FINISH_HELP = "UPDATE help SET end_time = unixepoch('now'), comment = ? WHERE rowid = ?";
 
+const REQUEUE_HELP =
+  'UPDATE help SET start_time = null, end_time = null, helper = null, comment = null WHERE rowid = ?';
+
+const REOPEN_HELP = 'UPDATE help SET end_time = null, comment = null WHERE rowid = ?';
+
 const QUEUE = 'SELECT rowid as id, * FROM help WHERE start_time IS NULL ORDER BY time ASC';
 
 const QUEUE_TOP = `${QUEUE} LIMIT 1`;
@@ -119,6 +124,26 @@ class DB {
 
   finishHelp(id, comment, callback) {
     this.db.run(FINISH_HELP, comment, id, (err) => {
+      if (err) {
+        callback(err, null);
+      } else {
+        this.getHelp(id, callback);
+      }
+    });
+  }
+
+  requeueHelp(id, callback) {
+    this.db.run(REQUEUE_HELP, id, (err) => {
+      if (err) {
+        callback(err, null);
+      } else {
+        this.getHelp(id, callback);
+      }
+    });
+  }
+
+  reopenHelp(id, callback) {
+    this.db.run(REOPEN_HELP, id, (err) => {
       if (err) {
         callback(err, null);
       } else {

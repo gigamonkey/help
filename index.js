@@ -127,6 +127,14 @@ app.patch('/api/help/:id/finish', (req, res) => {
   db.finishHelp(req.params.id, req.body.comment, jsonSender(res));
 });
 
+app.patch('/api/help/:id/requeue', (req, res) => {
+  db.requeueHelp(req.params.id, jsonSender(res));
+});
+
+app.patch('/api/help/:id/reopen', (req, res) => {
+  db.reopenHelp(req.params.id, req.body.comment, jsonSender(res));
+});
+
 ////////////////////////////////////////////////////////////////////////////////
 // Start working on a request for help.
 

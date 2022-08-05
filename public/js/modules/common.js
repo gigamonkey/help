@@ -106,7 +106,7 @@ const buttonsForStatus = (s, id, role, render) => {
   const span = $('<span>');
   if (role === 'helper') {
     if (s === 'On queue') {
-      span.append(takeButton(id, render));
+      span.append(takeButton(id)); // doesn't need render.
     }
     if (s === 'In progress' || s === 'Done') {
       span.append(requeueButton(id, render));
@@ -121,9 +121,9 @@ const buttonsForStatus = (s, id, role, render) => {
   return span;
 };
 
-const takeButton = (id, after) => {
+const takeButton = (id) => {
   const b = $('<button>', 'Take');
-  b.onclick = () => takeItem(id, after);
+  b.onclick = () => takeItem(id);
   return b;
 };
 
@@ -151,14 +151,12 @@ const takeItem = async (id) => {
   });
 };
 
-const requeue = (id, after) => {
-  console.log('requeue not implemented yet');
-  after();
+const requeue = async (id, after) => {
+  await patch(`/api/help/${id}/requeue`, {}).then(() => after());
 };
 
-const reopen = (id, after) => {
-  console.log('reopen not implemented yet');
-  after();
+const reopen = async (id, after) => {
+  await patch(`/api/help/${id}/reopen`, {}).then(() => after());
 };
 
 const markDone = async (id, after) => {
