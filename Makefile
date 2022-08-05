@@ -9,7 +9,7 @@ setup:
 	npm install
 
 pretty:
-	prettier --write '*.js' '*.json' public/**/*.js public/**/*.css
+	prettier --write '*.js' '*.json' modules/**/*.js public/**/*.js public/**/*.css
 
 tidy:
 	tidy -config .tidyconfig public/**/*.html
