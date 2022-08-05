@@ -23,7 +23,7 @@ const CREATE_SESSIONS_TABLE = `
     session_id TEXT NOT NULL,
     created_at INTEGER NOT NULL,
     updated_at INTEGER NOT NULL,
-    oauth_state TEXT NOT NULL,
+    state TEXT NOT NULL,
     user TEXT
 )`;
 

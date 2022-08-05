@@ -15,31 +15,34 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 
-
+// Middleware that redirects all un-logged-in requests to Google sign in (except
+// the endpoint used in the OAuth dance (/auth) and the endpoint for logging out.
 app.use((req, res, next) => {
   console.log(`Original url: ${req.originalUrl}; Path: ${req.path}`);
 
-  // FIXME: this isn't quite right as the api endpoints should still require authentication.
-  if (req.path === '/logout' || req.path === '/auth' || req.path.startsWith('/api/')) {
+  if (req.path === '/logout' || req.path === '/auth') {
     next();
+  } else if (!req.cookies.session) {
+    console.log('No session. Logging in');
+    const id = oauth.newSessionID();
+    const state = `${oauth.newState()}:${req.originalUrl}`;
+    const session = { id, loggedIn: false };
 
+    res.cookie('session', JSON.stringify(session));
+    db.newSession(id, state, (err) => {
+      if (err) throw err;
+      res.redirect(oauth.url(state));
+    });
   } else {
-    if (!req.cookies.session) {
-      console.log('No session. Logging in');
-      const sessionID = oauth.newSessionID();
-      const state = `${oauth.newState()}:${req.originalUrl}`;
-      res.cookie('session', sessionID);
-      db.newSession(sessionID, state, (err) => {
-        if (err) throw err;
-        res.redirect(oauth.url(state));
-      });
+    console.log('Have session.');
+
+    const session = JSON.parse(req.cookies.session);
+    if (session.loggedIn) {
+      next();
     } else {
-      console.log('Have session.');
-      db.getSession(req.cookies.session, (err, data) => {
+      db.getSession(req.cookies.session.id, (err, data) => {
         if (err) throw err;
-        console.log(`Logged in as ${data.user}`);
-        req.user = data.user;
-        next();
+        res.redirect(oauth.url(data.state));
       });
     }
   }
@@ -62,14 +65,30 @@ app.get('/logout', (req, res) => {
 });
 
 app.get('/auth', async (req, res) => {
-  const data = await oauth.getToken(req.query.code);
-  const query = req.query;
-  console.log({ data, query });
-  const { email } = JSON.parse(atob(data.id_token.split('.')[1]));
-  const { state } = query;
-  db.setSessionUser(req.cookies.session, email, (err) => {
+  // In theory we were redirected here by Google but also in theory an attacker
+  // could just hit this endpoint. So we need to check that the state associated
+  // with the session (which an attacker wouldn't know) is the same as what came
+  // in the query params. (They'd still need to know the right code so it's not
+  // clear what kind of attack this is. But the code at least went over the wire
+  // whereas the state did not.)
+
+  const authData = await oauth.getToken(req.query.code);
+  const session = JSON.parse(req.cookies.session);
+
+  db.getSession(session.id, (err, dbSession) => {
     if (err) throw err;
-    res.redirect(state.split(':')[1]);
+
+    const { state } = req.query;
+    if (dbSession.state !== state) {
+      throw new Error(`Mismatched state: db: ${dbSession.state}; query: ${state}`);
+    }
+
+    const { email } = JSON.parse(atob(authData.id_token.split('.')[1]));
+    db.setSessionUser(session.id, email, (err) => {
+      if (err) throw err;
+      res.cookie('session', JSON.stringify({ ...session, loggedIn: true, user: email }));
+      res.redirect(state.split(':')[1]);
+    });
   });
 });
 
