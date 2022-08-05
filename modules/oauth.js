@@ -15,18 +15,15 @@ const randomString = () => {
     .toLowerCase();
 };
 
-const AUTH_PARAMS = {
-  // FIXME: could possibly use nonce and hd as well
-  client_id: CLIENT_ID,
-  response_type: 'code',
-  scope: 'openid email',
-  redirect_uri: REDIRECT_URL,
-};
-
-const formurlencoded = (data) =>
-  Object.entries(data)
-    .map((kv) => kv.map(encodeURIComponent).join('='))
-    .join('&');
+const authParams = (state) =>
+  new URLSearchParams({
+    // FIXME: could possibly use nonce and hd as well
+    state,
+    client_id: CLIENT_ID,
+    response_type: 'code',
+    scope: 'openid email',
+    redirect_uri: REDIRECT_URL,
+  });
 
 const tokenParams = (code) =>
   new URLSearchParams({
@@ -42,7 +39,7 @@ const oauth = {
 
   newState: randomString,
 
-  url: (state) => `${BASE_AUTH_URL}?${formurlencoded({ ...AUTH_PARAMS, state })}`,
+  url: (state) => `${BASE_AUTH_URL}?${authParams(state)}`,
 
   getToken: (code) =>
     fetch(TOKEN_URL, { method: 'POST', body: tokenParams(code) }).then((r) => r.json()),
