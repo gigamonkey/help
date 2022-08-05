@@ -187,6 +187,10 @@ app.get('/help/:id', (req, res) => {
   res.sendFile(path.join(DIRNAME, 'public/help/show.html'));
 });
 
+app.get('/in-progress', (req, res) => {
+  res.sendFile(path.join(DIRNAME, 'public/in-progress.html'));
+});
+
 ////////////////////////////////////////////////////////////////////////////////
 // Start server
 

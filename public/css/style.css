@@ -16,9 +16,10 @@ body {
   flex-direction: row;
   justify-content: flex-end;
   text-align: right;
+  gap: .5em;
 }
 
-#queue {
+.cards {
   display: flex;
   flex-direction: column;
   gap: 10px;
