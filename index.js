@@ -3,8 +3,9 @@ import cookieParser from 'cookie-parser';
 import DB from './modules/storage.js';
 import oauth from './modules/oauth.js';
 import 'dotenv/config';
+import { encrypt, decrypt } from './modules/crypto.js';
 
-const { PORT } = process.env;
+const { PORT, SECRET } = process.env;
 
 // FIXME: this should come from the authenticated user.
 const HELPER = 'Santa Claus';
@@ -28,7 +29,7 @@ app.use((req, res, next) => {
     const state = `${oauth.newState()}:${req.originalUrl}`;
     const session = { id, loggedIn: false };
 
-    res.cookie('session', JSON.stringify(session));
+    res.cookie('session', encrypt(session, SECRET));
     db.newSession(id, state, (err) => {
       if (err) throw err;
       res.redirect(oauth.url(state));
@@ -36,11 +37,11 @@ app.use((req, res, next) => {
   } else {
     console.log('Have session.');
 
-    const session = JSON.parse(req.cookies.session);
+    const session = decrypt(req.cookies.session, SECRET);
     if (session.loggedIn) {
       next();
     } else {
-      db.getSession(req.cookies.session.id, (err, data) => {
+      db.getSession(session.id, (err, data) => {
         if (err) throw err;
         res.redirect(oauth.url(data.state));
       });
@@ -73,7 +74,7 @@ app.get('/auth', async (req, res) => {
   // whereas the state did not.)
 
   const authData = await oauth.getToken(req.query.code);
-  const session = JSON.parse(req.cookies.session);
+  const session = decrypt(req.cookies.session, SECRET);
 
   db.getSession(session.id, (err, dbSession) => {
     if (err) throw err;
@@ -86,7 +87,7 @@ app.get('/auth', async (req, res) => {
     const { email } = JSON.parse(atob(authData.id_token.split('.')[1]));
     db.setSessionUser(session.id, email, (err) => {
       if (err) throw err;
-      res.cookie('session', JSON.stringify({ ...session, loggedIn: true, user: email }));
+      res.cookie('session', encrypt({ ...session, loggedIn: true, user: email }, SECRET));
       res.redirect(state.split(':')[1]);
     });
   });
