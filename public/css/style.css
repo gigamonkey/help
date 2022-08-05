@@ -14,9 +14,35 @@ body {
 .toolbar {
   display: flex;
   flex-direction: row;
-  justify-content: flex-end;
+  justify-content: space-between;
   text-align: right;
   gap: 0.5em;
+  margin-bottom: 20px;
+}
+
+.toolbar * {
+  padding: 0;
+  margin: 0;
+}
+
+.toolbar a {
+  border: 1px solid grey;
+  padding: 3px;
+  border-radius: 2px;
+  font-size: 80%;
+  text-decoration: none;
+  background: rgba(192, 128, 192, 0.2);
+}
+
+.get-help {
+  display: inline-block;
+  text-align: center;
+  border: 1px solid grey;
+  padding: 10px;
+  border-radius: 4px;
+  width: calc(100% - 22px);
+  text-decoration: none;
+  background: rgba(192, 128, 192, 0.2);
 }
 
 .cards {

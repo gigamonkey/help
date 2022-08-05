@@ -8,12 +8,15 @@
   <script src="/js/in-progress.js" type="module"></script>
 </head>
 <body>
-  <p class="toolbar">
-    <a href="/">Queue</a>
-    <a href="/help">Get help</a>
-    <a href="/logout">Log out</a>
-  </p>
-  <h1>In progress</h1>
+  <div class="toolbar">
+    <h1>In progress</h1>
+    <div>
+      <a href="/">Current queue</a>
+      <a href="/done">Done</a>
+    </div>
+  </div>
+  <p><a class="get-help" href="/help">Request help ✋</a></p>
+
   <div id="items" class="cards"></div>
 </body>
 </html>

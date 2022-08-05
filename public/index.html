@@ -8,12 +8,17 @@
   <script src="/js/queue.js" type="module"></script>
 </head>
 <body>
-  <p class="toolbar">
-    <a href="/in-progress">In progress</a>
-    <a href="/help">Get help</a>
-    <a href="/logout">Log out</a>
-  </p>
-  <h1>Help queue</h1>
+  <div class="toolbar">
+    <h1>Current queue</h1>
+    <div>
+      <a href="/in-progress">In progress</a>
+      <a href="/done">Done</a>
+    </div>
+  </div>
+
+  <p><a class="get-help" href="/help">Request help ✋</a></p>
+
+  <h2>Up next</h2>
   <div id="queue" class="cards"></div>
 </body>
 </html>
