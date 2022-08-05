@@ -9,28 +9,48 @@ const CREATE_HELP_TABLE = `
     helper TEXT,
     start_time INTEGER,
     end_time INTEGER,
-    comment TEXT)
+    comment TEXT
+  )
 `;
+
+/*
+ * Link the session_id we set on the browser to their OAuth state so we can
+ * check it when they get redirected back. When they finish the OAuth dance and
+ * we get the user info from Google we set the user field (to their email).
+ */
+const CREATE_SESSIONS_TABLE = `
+  CREATE TABLE IF NOT EXISTS sessions (
+    session_id TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    oauth_state TEXT NOT NULL,
+    user TEXT
+)`;
 
 const REQUEST_HELP = "INSERT INTO help VALUES (?, ?, ?, unixepoch('now'), null, null, null, null)";
 
-const GET_HELP = "SELECT rowid as id, * FROM help WHERE rowid = ?";
+const GET_HELP = 'SELECT rowid as id, * FROM help WHERE rowid = ?';
 
 const START_HELP = "UPDATE help SET start_time = unixepoch('now'), helper = ? WHERE rowid = ?";
 
 const FINISH_HELP = "UPDATE help SET end_time = unixepoch('now'), comment = ? WHERE rowid = ?";
 
-const QUEUE = "SELECT rowid as id, * FROM help WHERE start_time IS NULL ORDER BY time ASC";
+const QUEUE = 'SELECT rowid as id, * FROM help WHERE start_time IS NULL ORDER BY time ASC';
 
 const QUEUE_TOP = `${QUEUE} LIMIT 1`;
 
-const IN_PROGRESS = "SELECT rowid as id, * FROM help WHERE start_time IS NOT NULL AND end_time IS NULL ORDER BY time ASC";
+const IN_PROGRESS =
+  'SELECT rowid as id, * FROM help WHERE start_time IS NOT NULL AND end_time IS NULL ORDER BY time ASC';
 
-const HELPED = "SELECT rowid as id, * FROM help WHERE end_time IS NOT NULL ORDER BY time asc";
+const HELPED = 'SELECT rowid as id, * FROM help WHERE end_time IS NOT NULL ORDER BY time asc';
 
+const GET_SESSION = 'SELECT rowid as id, * FROM sessions WHERE session_id = ?';
+
+const MAKE_SESSION = "INSERT INTO sessions VALUES (?, unixepoch('now'), unixepoch('now'), ?, null)";
+
+const SET_SESSION_USER = 'UPDATE sessions SET user = ? where session_id = ?';
 
 class DB {
-
   constructor(file) {
     this.db = new sqlite3.Database(file);
   }
@@ -38,6 +58,7 @@ class DB {
   setup() {
     this.db.serialize(() => {
       this.db.run(CREATE_HELP_TABLE);
+      this.db.run(CREATE_SESSIONS_TABLE);
     });
   }
 
@@ -73,7 +94,7 @@ class DB {
   }
 
   take(id, helper, callback) {
-    const stmt = this.db.prepare(START_HELP)
+    const stmt = this.db.prepare(START_HELP);
     stmt.run(helper, id, (err) => {
       if (err) {
         callback(err, null);
@@ -123,6 +144,18 @@ class DB {
    */
   helped(callback) {
     this.db.all(HELPED, callback);
+  }
+
+  newSession(sessionID, state, callback) {
+    this.db.run(MAKE_SESSION, sessionID, state, callback);
+  }
+
+  getSession(sessionID, callback) {
+    this.db.get(GET_SESSION, sessionID, callback);
+  }
+
+  setSessionUser(sessionID, user, callback) {
+    this.db.run(SET_SESSION_USER, user, sessionID, callback);
   }
 }
 
