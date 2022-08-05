@@ -50,7 +50,7 @@ const basicHelpCard = (h) => {
         'who',
         $(
           '<div>',
-          $('<span>', document.createTextNode(`#${id}`), ' - ', $('<span>', name || email)),
+          $('<span>', helpLink(id, document.createTextNode(`#${id}`)), ' - ', $('<span>', name || email)),
           timeElement(time),
         ),
       ),
@@ -59,6 +59,14 @@ const basicHelpCard = (h) => {
     ),
   );
 };
+
+const helpLink = (id, text) => {
+  const a = $('<a>', text);
+  a.setAttribute('href', `/help/${id}`);
+  return a;
+}
+
+
 
 const updateTimes = () => {
   $$('.time').forEach((e) => {
