@@ -8,6 +8,9 @@ eslint_strict_opts := --rule 'no-console: 1'
 setup:
 	npm install
 
+serve:
+	npx forever index.js
+
 pretty:
 	prettier --write '*.js' '*.json' modules/**/*.js public/**/*.js public/**/*.css
 
