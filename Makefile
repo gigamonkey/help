@@ -8,6 +8,9 @@ eslint_strict_opts := --rule 'no-console: 1'
 setup:
 	npm install
 
+dev:
+	npx nodemon index.js
+
 start:
 	npx pm2 start index.js --log help.log
 
