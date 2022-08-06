@@ -92,27 +92,28 @@ app.get('/auth', async (req, res) => {
 
       const { state } = req.query;
       if (dbSession.state !== state) {
-        throw new Error(`Mismatched state: db: ${dbSession.state}; query: ${state}`);
+        res.sendStatus(401);
+      } else {
+
+        const { name, email } = JSON.parse(atob(authData.id_token.split('.')[1]));
+
+        // We've used the database session entry to confirm the session state. Now we can
+        // get rid of it since we store all the relevant data in a cookie.
+        db.deleteSession(session.id, (err) => {
+          if (err) {
+            res.sendStatus(500);
+          } else {
+            db.ensureUser(email, name, (err, user) => {
+              if (err || !user) {
+                res.sendStatus(500);
+              } else {
+                res.cookie('session', encrypt({ ...session, user, loggedIn: true }, SECRET));
+                res.redirect(state.split(':')[1]);
+              }
+            });
+          }
+        });
       }
-
-      const { name, email } = JSON.parse(atob(authData.id_token.split('.')[1]));
-
-      // We've used the database session entry to confirm the session state. Now we can
-      // get rid of it since we store all the relevant data in a cookie.
-      db.deleteSession(session.id, (err) => {
-        if (err) {
-          res.sendStatus(500);
-        } else {
-          db.ensureUser(email, name, (err, user) => {
-            if (err || !user) {
-              res.sendStatus(500);
-            } else {
-              res.cookie('session', encrypt({ ...session, user, loggedIn: true }, SECRET));
-              res.redirect(state.split(':')[1]);
-            }
-          });
-        }
-      });
     }
   });
 });
