@@ -1,5 +1,8 @@
 import sqlite3 from 'sqlite3';
 
+/*
+ * Help items.
+ */
 const CREATE_HELP_TABLE = `
   CREATE TABLE IF NOT EXISTS help (
     who_email TEXT NOT NULL,
@@ -11,6 +14,16 @@ const CREATE_HELP_TABLE = `
     start_time INTEGER,
     end_time INTEGER,
     comment TEXT
+  )
+`;
+
+const CREATE_JOURNAL_TABLE = `
+  CREATE TABLE IF NOT EXISTS journal (
+    author_email TEXT NOT NULL,
+    author_name TEXT,
+    entry TEXT NOT NULL,
+    date TEXT NOT NULL,
+    time INTEGER
   )
 `;
 
@@ -57,6 +70,11 @@ const MAKE_SESSION = "INSERT INTO sessions VALUES (?, unixepoch('now'), unixepoc
 
 const SET_SESSION_USER = 'UPDATE sessions SET user = ? where session_id = ?';
 
+const MAKE_JOURNAL =
+  "INSERT INTO journal (author_email, author_name, entry, date, time) VALUES (?, ?, ?, date('now', 'localtime'), unixepoch('now'))";
+
+const JOURNAL_FOR = 'SELECT rowid as id, * FROM journal WHERE author_email = ? ORDER BY time DESC';
+
 class DB {
   constructor(file) {
     this.db = new sqlite3.Database(file);
@@ -66,6 +84,7 @@ class DB {
     this.db.serialize(() => {
       this.db.run(CREATE_HELP_TABLE);
       this.db.run(CREATE_SESSIONS_TABLE);
+      this.db.run(CREATE_JOURNAL_TABLE);
     });
   }
 
@@ -183,6 +202,15 @@ class DB {
 
   setSessionUser(sessionID, user, callback) {
     this.db.run(SET_SESSION_USER, user, sessionID, callback);
+  }
+
+  addJournalEntry(email, name, entry, callback) {
+    this.db.run(MAKE_JOURNAL, email, name, entry, callback);
+  }
+
+  journalFor(email, callback) {
+    console.log('querying journal');
+    this.db.all(JOURNAL_FOR, email, callback);
   }
 }
 

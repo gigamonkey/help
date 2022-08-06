@@ -132,6 +132,24 @@ app.patch('/api/help/:id/reopen', (req, res) => {
 });
 
 ////////////////////////////////////////////////////////////////////////////////
+// Journal
+
+app.post('/journal', (req, res) => {
+  const { entry } = req.body;
+  const { email, name } = req.session.user;
+  db.addJournalEntry(email, name || null, entry, (err) => {
+    if (err) throw err;
+    res.redirect('/journal');
+  });
+});
+
+app.get('/api/journal', (req, res) => {
+  const { email } = req.session.user;
+  console.log(`Getting journal for ${email}`);
+  db.journalFor(email, jsonSender(res));
+});
+
+////////////////////////////////////////////////////////////////////////////////
 // Start working on a request for help.
 
 /*
