@@ -26,12 +26,11 @@ app.use(cookieParser());
 // Middleware that redirects all un-logged-in requests to Google sign in (except
 // the endpoint used in the OAuth dance (/auth) and the endpoint for logging out.
 app.use((req, res, next) => {
-  console.log(`Original url: ${req.originalUrl}; Path: ${req.path}`);
+  console.log(req.originalUrl);
 
   if (req.path === '/logout' || req.path === '/auth' || req.path === '/health.html') {
     next();
   } else if (!req.cookies.session) {
-    console.log('No session. Logging in');
     const id = oauth.newSessionID();
     const state = `${oauth.newState()}:${req.originalUrl}`;
     req.session = { id, loggedIn: false };
@@ -42,10 +41,7 @@ app.use((req, res, next) => {
       res.redirect(oauth.url(state));
     });
   } else {
-    console.log('Have session.');
-
     req.session = decrypt(req.cookies.session, SECRET);
-
     if (req.session.loggedIn) {
       next();
     } else {
@@ -206,4 +202,4 @@ app.get('/done', (req, res) => {
 ////////////////////////////////////////////////////////////////////////////////
 // Start server
 
-app.listen(PORT, () => console.log(`App is listening on port ${PORT}!`));
+app.listen(PORT, () => console.log(`Listening on port ${PORT}!`));
