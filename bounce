@@ -1,0 +1,7 @@
+#!/bin/bash
+
+set -eou pipefail
+
+source ec2.env
+
+ssh -i "$pem" "$user@$host"  "cd help; git pull; make restart"

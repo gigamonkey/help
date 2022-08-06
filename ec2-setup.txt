@@ -1,0 +1,48 @@
+1. Create Ubuntu EC2 instance.
+
+Set volume to not delete on termination. (If creating a new instance to use the
+old volume it seems you have to create the instance with its own root volume and
+then detach it and attache the pre-existing volume at the root mount point.
+Don't know why you can't specify an existing volume when you create the
+instance.)
+
+# Get everything up to date
+sudo apt update
+sudo apt upgrade
+
+# I think this sets things up to get node from the right place
+sudo apt install curl gnupg2 gnupg -y
+curl -fsSL https://deb.nodesource.com/setup_current.x | sudo -E bash -
+
+# Some random thing I grabbed off of the internet to solve some problem.
+# From: https://github.com/nodesource/distributions/issues/1157#issuecomment-1131212089
+sudo dpkg --remove --force-remove-reinstreq libnode-dev
+sudo dpkg --remove --force-remove-reinstreq libnode72:amd64
+
+# Finally install node and sqlite3
+sudo apt install nodejs
+sudo apt install sqlite3
+
+# Set up an SSH key and then add it to github
+ssh-keygen
+cat ~/.ssh/id_rsa.pub  # add to github
+
+# Clone the repo
+git clone git@github.com:gigamonkey/help.git
+
+# In the help directory install
+cd help/
+npm install
+
+# Set up the .env file, changing REDIRECT_URL and PORT.
+vi .env
+
+CLIENT_ID='<redacted>'
+CLIENT_SECRET='<redacted>'
+REDIRECT_URL='https://help.gigamonkeys.com/auth'
+PORT=8080
+SECRET='<redacted>'
+
+
+2. Add instance to the help-server-http target group which the load balancer is
+pointing to. Remember to set the port to 8080 not 80.
