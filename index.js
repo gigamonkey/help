@@ -145,7 +145,6 @@ app.get('/api/help/:id/take', (req, res) => {
   db.take(req.params.id, req.session.user.email, jsonSender(res));
 });
 
-
 ////////////////////////////////////////////////////////////////////////////////
 // Journal
 
@@ -180,10 +179,8 @@ app.get('/api/next', (req, res) => {
   db.next(req.session.user.email, jsonSender(res));
 });
 
-app.get('/api/role', (req, res) => {
-  // FIXME: should be stored in db.
-  const role = req.session.user.email === 'peterseibel@berkeley.net' ? 'helper' : 'student';
-  jsonSender(res)(null, { role });
+app.get('/api/user', (req, res) => {
+  db.user(req.session.user.email, jsonSender(res));
 });
 
 ////////////////////////////////////////////////////////////////////////////////

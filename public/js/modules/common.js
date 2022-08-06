@@ -39,9 +39,9 @@ const timeElement = (time) => {
   return e;
 };
 
-const helpCard = (h, role, showStatus, render) => {
+const helpCard = (h, user, showStatus, render) => {
   const item = basicHelpCard(h);
-  item.append(statusAndButtons(h, role, showStatus, render));
+  item.append(statusAndButtons(h, user, showStatus, render));
   return item;
 };
 
@@ -93,18 +93,18 @@ const updateTimes = () => {
   });
 };
 
-const statusAndButtons = (h, role, showStatus, render) => {
+const statusAndButtons = (h, user, showStatus, render) => {
   const s = status(h);
 
   const statusMarker = withClass('status', $('<span>', showStatus ? `Status: ${s}` : ''));
-  const buttons = buttonsForStatus(s, h.id, role, render);
+  const buttons = buttonsForStatus(s, h.id, user, render);
 
   return withClass('buttons', $('<div>', statusMarker, buttons));
 };
 
-const buttonsForStatus = (s, id, role, render) => {
+const buttonsForStatus = (s, id, user, render) => {
   const span = $('<span>');
-  if (role === 'helper') {
+  if (user.role === 'teacher' || user.role === 'helper') {
     if (s === 'On queue') {
       span.append(takeButton(id)); // doesn't need render.
     }
@@ -173,8 +173,9 @@ const patch = (url, data) =>
   });
 
 const withUser = (callback) => {
-  fetch('/api/role').then((r) => r.json()).then(callback);
+  fetch('/api/user')
+    .then((r) => r.json())
+    .then(callback);
 };
-
 
 export { $, $$, helpCard, updateTimes, withClass, status, timeElement, statusAndButtons, withUser };

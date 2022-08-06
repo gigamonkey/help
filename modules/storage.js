@@ -41,6 +41,13 @@ const CREATE_SESSIONS_TABLE = `
     user TEXT
 )`;
 
+const CREATE_USERS_TABLE = `
+  CREATE TABLE IF NOT EXISTS users (
+    email TEXT NOT NULL,
+    name INTEGER NOT NULL,
+    role TEXT
+)`;
+
 const REQUEST_HELP =
   "INSERT INTO help VALUES (?, ?, ?, ?, unixepoch('now'), null, null, null, null)";
 
@@ -85,6 +92,7 @@ class DB {
       this.db.run(CREATE_HELP_TABLE);
       this.db.run(CREATE_SESSIONS_TABLE);
       this.db.run(CREATE_JOURNAL_TABLE);
+      this.db.run(CREATE_USERS_TABLE);
     });
   }
 
@@ -211,6 +219,10 @@ class DB {
   journalFor(email, callback) {
     console.log('querying journal');
     this.db.all(JOURNAL_FOR, email, callback);
+  }
+
+  user(email, callback) {
+    this.db.get('SELECT rowid as id, * from users where email = ?', email, callback);
   }
 }
 

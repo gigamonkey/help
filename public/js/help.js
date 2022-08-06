@@ -1,11 +1,9 @@
 import { $, helpCard, updateTimes, withUser } from './modules/common.js';
 
-withUser((u) => {
-  const { role } = u;
-
+withUser((user) => {
   const render = async () => {
     const data = await fetch(`/api${window.location.pathname}`).then((r) => r.json());
-    $('#item').replaceChildren(helpCard(data, role, true, render));
+    $('#item').replaceChildren(helpCard(data, user, true, render));
   };
   render();
   setInterval(updateTimes, 1000);

@@ -1,11 +1,9 @@
 import { $, helpCard, updateTimes, withUser } from './modules/common.js';
 
-withUser((u) => {
-  const { role } = u;
-
+withUser((user) => {
   const render = async () => {
     const data = await fetch('/api/in-progress').then((r) => r.json());
-    $('#items').replaceChildren(...data.map((h) => helpCard(h, role, false, render)));
+    $('#items').replaceChildren(...data.map((h) => helpCard(h, user, false, render)));
   };
 
   render();
