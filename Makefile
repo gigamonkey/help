@@ -8,8 +8,11 @@ eslint_strict_opts := --rule 'no-console: 1'
 setup:
 	npm install
 
-serve:
-	npx forever index.js
+start:
+	npx pm2 start index.js --log help.log
+
+stop:
+	npx pm2 delete index.js
 
 pretty:
 	prettier --write '*.js' '*.json' modules/**/*.js public/**/*.js public/**/*.css
