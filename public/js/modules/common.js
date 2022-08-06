@@ -172,4 +172,4 @@ const patch = (url, data) =>
     },
   });
 
-export { $, helpCard, updateTimes, withClass, status, timeElement, statusAndButtons };
+export { $, $$, helpCard, updateTimes, withClass, status, timeElement, statusAndButtons };

@@ -5,6 +5,17 @@
   <meta content="width=device-width,initial-scale=1" name="viewport">
   <title>Help!</title>
   <link href="/css/style.css" media="all" rel="stylesheet" type="text/css">
+  <script type="module">
+    import { $, $$ } from '/js/modules/common.js';
+
+    const checkReady = () => {
+      $('#submit').disabled = ![...$$('.required')].every((e) => e.value);
+    };
+
+    $$('.required').forEach((e) => e.oninput = checkReady);
+
+    checkReady();
+  </script>
 </head>
 <body>
   <h1>Request help ✋</h1>
@@ -14,16 +25,16 @@
       What do you need help with?
     </label>
 
-    <textarea name="problem"></textarea>
+    <textarea name="problem" class="required"></textarea>
 
     <label for="tried">
       What are some things you've tried? Or is there something that you think
       you need to know to solve this problem that you don't know?
     </label>
 
-    <textarea name="tried"></textarea>
+    <textarea name="tried" class="required"></textarea>
 
-    <input type="submit"></input>
+    <button id="submit">Submit</button>
   </form>
 
 </body>
