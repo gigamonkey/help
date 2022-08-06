@@ -20,6 +20,10 @@ h2 {
   padding: 0.5em 0;
 }
 
+ul, ol {
+  margin-left: 2em;
+}
+
 .toolbar {
   display: flex;
   flex-direction: row;
@@ -126,7 +130,7 @@ textarea {
 
 .journal .text p {
   margin: 1em 0;
-  width: 80%;
+  width: 90%;
 }
 
 .journal .day {
