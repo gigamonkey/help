@@ -62,7 +62,7 @@ const QUEUE_TOP = `${QUEUE} LIMIT 1`;
 const IN_PROGRESS =
   'SELECT rowid as id, * FROM help WHERE start_time IS NOT NULL AND end_time IS NULL ORDER BY time ASC';
 
-const HELPED = 'SELECT rowid as id, * FROM help WHERE end_time IS NOT NULL ORDER BY time asc';
+const DONE = 'SELECT rowid as id, * FROM help WHERE end_time IS NOT NULL ORDER BY time asc';
 
 const GET_SESSION = 'SELECT rowid as id, * FROM sessions WHERE session_id = ?';
 
@@ -188,8 +188,8 @@ class DB {
   /*
    * Get all help requests that have been finish.
    */
-  helped(callback) {
-    this.db.all(HELPED, callback);
+  done(callback) {
+    this.db.all(DONE, callback);
   }
 
   newSession(sessionID, state, callback) {

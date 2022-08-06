@@ -146,7 +146,7 @@ const reopenButton = (id, after) => {
 };
 
 const takeItem = async (id) => {
-  await fetch(`/api/take/${id}`).then(() => {
+  await fetch(`/api/help/${id}/take`).then(() => {
     window.location = `/help/${id}`;
   });
 };

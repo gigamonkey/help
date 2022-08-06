@@ -13,9 +13,6 @@ const DIRNAME = path.dirname(FILENAME);
 
 const { PORT, SECRET } = process.env;
 
-// FIXME: this should come from the authenticated user.
-const HELPER = 'Santa Claus';
-
 const db = new DB('help.db');
 const app = express();
 
@@ -120,20 +117,41 @@ app.get('/api/help/:id', (req, res) => {
  * Close the given help record.
  */
 app.patch('/api/help/:id/finish', (req, res) => {
+  // FIXME: should be limited to helpers.
   db.finishHelp(req.params.id, req.body.comment, jsonSender(res));
 });
 
+/*
+ * Put the given help item back on the queue.
+ */
 app.patch('/api/help/:id/requeue', (req, res) => {
+  // FIXME: should be limited to helpers.
   db.requeueHelp(req.params.id, jsonSender(res));
 });
 
+/*
+ * Put the given help item back into in-progress
+ */
 app.patch('/api/help/:id/reopen', (req, res) => {
+  // FIXME: should be limited to helpers.
   db.reopenHelp(req.params.id, req.body.comment, jsonSender(res));
 });
+
+/*
+ * Take a specific item from the queue and start helping.
+ */
+app.get('/api/help/:id/take', (req, res) => {
+  // FIXME: should be limited to helpers.
+  db.take(req.params.id, req.session.user.email, jsonSender(res));
+});
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // Journal
 
+/*
+ * Accept a POST of a new journal entry.
+ */
 app.post('/journal', (req, res) => {
   const { text } = req.body;
   const { email, name } = req.session.user;
@@ -143,9 +161,11 @@ app.post('/journal', (req, res) => {
   });
 });
 
+/*
+ * Get the whole journal of the logged in user.
+ */
 app.get('/api/journal', (req, res) => {
   const { email } = req.session.user;
-  console.log(`Getting journal for ${email}`);
   db.journalFor(email, jsonSender(res));
 });
 
@@ -156,14 +176,8 @@ app.get('/api/journal', (req, res) => {
  * Take the next item on the queue and start helping.
  */
 app.get('/api/next', (req, res) => {
-  db.next(HELPER, jsonSender(res));
-});
-
-/*
- * Take a specific item from the queue and start helping.
- */
-app.get('/api/take/:requestID', (req, res) => {
-  db.take(req.params.requestID, HELPER, jsonSender(res));
+  // FIXME: should be limited to helpers.
+  db.next(req.session.user.email, jsonSender(res));
 });
 
 app.get('/api/role', (req, res) => {
@@ -192,8 +206,8 @@ app.get('/api/in-progress', (req, res) => {
 /*
  * Get the requests that have been helped and finished.
  */
-app.get('/api/helped', (req, res) => {
-  db.helped(jsonSender(res));
+app.get('/api/done', (req, res) => {
+  db.done(jsonSender(res));
 });
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -206,15 +220,8 @@ app.post('/help', (req, res) => {
 });
 
 app.get('/help/:id', (req, res) => {
+  // Can't use help/index.html because that's the form.
   res.sendFile(path.join(DIRNAME, 'public/help/show.html'));
-});
-
-app.get('/in-progress', (req, res) => {
-  res.sendFile(path.join(DIRNAME, 'public/in-progress.html'));
-});
-
-app.get('/done', (req, res) => {
-  res.sendFile(path.join(DIRNAME, 'public/done.html'));
 });
 
 ////////////////////////////////////////////////////////////////////////////////
