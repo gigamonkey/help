@@ -28,7 +28,7 @@ app.use(cookieParser());
 app.use((req, res, next) => {
   console.log(`Original url: ${req.originalUrl}; Path: ${req.path}`);
 
-  if (req.path === '/logout' || req.path === '/auth') {
+  if (req.path === '/logout' || req.path === '/auth' || req.path === '/health.html') {
     next();
   } else if (!req.cookies.session) {
     console.log('No session. Logging in');
