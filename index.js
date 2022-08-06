@@ -86,7 +86,10 @@ app.get('/auth', async (req, res) => {
     }
 
     const { name, email } = JSON.parse(atob(authData.id_token.split('.')[1]));
-    db.setSessionUser(session.id, email, (err) => {
+
+    // We've used the database entry to confirm the session state. Now we can
+    // get rid of it since we store all the relevant data in a cookie.
+    db.deleteSession(session.id, (err) => {
       if (err) throw err;
       res.cookie('session', encrypt({ ...session, loggedIn: true, user: { name, email } }, SECRET));
       res.redirect(state.split(':')[1]);

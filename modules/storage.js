@@ -17,6 +17,9 @@ const CREATE_HELP_TABLE = `
   )
 `;
 
+/*
+ * Student journals.
+ */
 const CREATE_JOURNAL_TABLE = `
   CREATE TABLE IF NOT EXISTS journal (
     author_email TEXT NOT NULL,
@@ -28,17 +31,16 @@ const CREATE_JOURNAL_TABLE = `
 `;
 
 /*
- * Link the session_id we set on the browser to their OAuth state so we can
- * check it when they get redirected back. When they finish the OAuth dance and
- * we get the user info from Google we set the user field (to their email).
+ * In flight OAuth sessions. We store the state so we can compare it to what
+ * gets passed back to the /auth endpoint. created_at is here so we can clean up
+ * any old sessions that don't get cleaned up after the auth finishes. Nothing
+ * does that automatically yet though.
  */
 const CREATE_SESSIONS_TABLE = `
   CREATE TABLE IF NOT EXISTS sessions (
     session_id TEXT NOT NULL,
     created_at INTEGER NOT NULL,
-    updated_at INTEGER NOT NULL,
-    state TEXT NOT NULL,
-    user TEXT
+    state TEXT NOT NULL
 )`;
 
 const CREATE_USERS_TABLE = `
@@ -70,12 +72,6 @@ const IN_PROGRESS =
   'SELECT rowid as id, * FROM help WHERE start_time IS NOT NULL AND end_time IS NULL ORDER BY time ASC';
 
 const DONE = 'SELECT rowid as id, * FROM help WHERE end_time IS NOT NULL ORDER BY time asc';
-
-const GET_SESSION = 'SELECT rowid as id, * FROM sessions WHERE session_id = ?';
-
-const MAKE_SESSION = "INSERT INTO sessions VALUES (?, unixepoch('now'), unixepoch('now'), ?, null)";
-
-const SET_SESSION_USER = 'UPDATE sessions SET user = ? where session_id = ?';
 
 const MAKE_JOURNAL =
   "INSERT INTO journal (author_email, author_name, text, date, time) VALUES (?, ?, ?, date('now', 'localtime'), unixepoch('now'))";
@@ -194,22 +190,24 @@ class DB {
   }
 
   /*
-   * Get all help requests that have been finish.
+   * Get all help requests that have been finished.
    */
   done(callback) {
     this.db.all(DONE, callback);
   }
 
-  newSession(sessionID, state, callback) {
-    this.db.run(MAKE_SESSION, sessionID, state, callback);
+  newSession(id, state, callback) {
+    const q =
+      "INSERT INTO sessions (session_id, created_at, state) VALUES (?, unixepoch('now'), ?)";
+    this.db.run(q, id, state, callback);
   }
 
-  getSession(sessionID, callback) {
-    this.db.get(GET_SESSION, sessionID, callback);
+  getSession(id, callback) {
+    this.db.get('SELECT rowid as id, * FROM sessions WHERE session_id = ?', id, callback);
   }
 
-  setSessionUser(sessionID, user, callback) {
-    this.db.run(SET_SESSION_USER, user, sessionID, callback);
+  deleteSession(id, callback) {
+    this.db.run('DELETE from sessions where session_id = ?', id, callback);
   }
 
   addJournalEntry(email, name, text, callback) {
@@ -217,7 +215,6 @@ class DB {
   }
 
   journalFor(email, callback) {
-    console.log('querying journal');
     this.db.all(JOURNAL_FOR, email, callback);
   }
 
