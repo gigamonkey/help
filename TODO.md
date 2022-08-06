@@ -1,9 +1,5 @@
-- UI: enter help request
+- Store who's a helper in the database.
 
-- UI: take next help request
+- Fix terrible styling.
 
-- UI: take arbitrary help request
-
-- Set up EC2 or Linode to host the thing.
-
-- Figure out SSL certificate
+- Allow editing own help requests.
