@@ -1,7 +1,7 @@
 /* global DOMPurify, marked */
 
 import { $, withClass } from './modules/common.js';
-import { yyyymmdd, hhmm } from './modules/dateformat.js';
+import { yyyymmdd, hhmm, humandate } from './modules/dateformat.js';
 
 const render = async () => {
   const data = await fetch('/api/journal').then((r) => r.json());
@@ -15,7 +15,8 @@ const groupEntries = (data) => {
     const { text, time } = e;
     const date = yyyymmdd(time);
     if (current.date !== date) {
-      current = { date, entries: [] };
+      const nice = humandate(time);
+      current = { date, nice, entries: [] };
       grouped.push(current);
     }
     current.entries.unshift({ time, text });
@@ -23,15 +24,10 @@ const groupEntries = (data) => {
   return grouped;
 };
 
-const entries = (days) => {
-  console.log(days);
-  const r = days.map((d) => oneDay(d));
-  console.log(r);
-  return r;
-};
+const entries = (days) => days.map((d) => oneDay(d));
 
 const oneDay = (day) => {
-  const div = withClass('day', $('<div>', $('<h2>', day.date)));
+  const div = withClass('day', $('<div>', $('<h2>', day.nice)));
 
   const markdown = (text) => {
     const d = $('<div>');

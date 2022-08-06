@@ -114,7 +114,8 @@ textarea {
 }
 
 .journal h2 {
-  font-weight: 300;
+  font-weight: 600;
+  font-size: 1.2em;
 }
 
 .journal .time {
@@ -130,19 +131,15 @@ textarea {
 
 .journal .day {
   margin: 10px 0;
-  padding: 10px;
+  padding: 1em;
   border: 1px solid rgba(196, 196, 196, 0.5);
   background: rgba(196, 196, 196, 0.1);
 }
 
 .journal p.time {
   margin: 0;
-  float: right;
   padding: 0;
-}
-
-.journal .text p:first-child {
-  //margin: 0;
+  float: right;
 }
 
 .journal pre {
