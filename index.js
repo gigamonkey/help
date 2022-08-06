@@ -135,9 +135,9 @@ app.patch('/api/help/:id/reopen', (req, res) => {
 // Journal
 
 app.post('/journal', (req, res) => {
-  const { entry } = req.body;
+  const { text } = req.body;
   const { email, name } = req.session.user;
-  db.addJournalEntry(email, name || null, entry, (err) => {
+  db.addJournalEntry(email, name || null, text, (err) => {
     if (err) throw err;
     res.redirect('/journal');
   });

@@ -21,7 +21,7 @@ const CREATE_JOURNAL_TABLE = `
   CREATE TABLE IF NOT EXISTS journal (
     author_email TEXT NOT NULL,
     author_name TEXT,
-    entry TEXT NOT NULL,
+    text TEXT NOT NULL,
     date TEXT NOT NULL,
     time INTEGER
   )
@@ -71,7 +71,7 @@ const MAKE_SESSION = "INSERT INTO sessions VALUES (?, unixepoch('now'), unixepoc
 const SET_SESSION_USER = 'UPDATE sessions SET user = ? where session_id = ?';
 
 const MAKE_JOURNAL =
-  "INSERT INTO journal (author_email, author_name, entry, date, time) VALUES (?, ?, ?, date('now', 'localtime'), unixepoch('now'))";
+  "INSERT INTO journal (author_email, author_name, text, date, time) VALUES (?, ?, ?, date('now', 'localtime'), unixepoch('now'))";
 
 const JOURNAL_FOR = 'SELECT rowid as id, * FROM journal WHERE author_email = ? ORDER BY time DESC';
 
@@ -204,8 +204,8 @@ class DB {
     this.db.run(SET_SESSION_USER, user, sessionID, callback);
   }
 
-  addJournalEntry(email, name, entry, callback) {
-    this.db.run(MAKE_JOURNAL, email, name, entry, callback);
+  addJournalEntry(email, name, text, callback) {
+    this.db.run(MAKE_JOURNAL, email, name, text, callback);
   }
 
   journalFor(email, callback) {

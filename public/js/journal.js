@@ -12,13 +12,13 @@ const groupEntries = (data) => {
   const grouped = [];
   let current = {}; // dummy
   data.forEach((e) => {
-    const { entry, time } = e;
+    const { text, time } = e;
     const date = yyyymmdd(time);
     if (current.date !== date) {
       current = { date, entries: [] };
       grouped.push(current);
     }
-    current.entries.unshift({ time, text: entry });
+    current.entries.unshift({ time, text });
   });
   return grouped;
 };
