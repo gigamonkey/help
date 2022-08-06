@@ -1,5 +1,5 @@
 *.db
+*.env
 *.pem
 *secret*
-.env
 node_modules
