@@ -43,8 +43,13 @@ app.use((req, res, next) => {
       next();
     } else {
       db.getSession(req.session.id, (err, data) => {
-        if (err) throw err;
-        res.redirect(oauth.url(data.state));
+        if (err) {
+          res.sendStatus(500);
+        } else if (!data) {
+          res.sendStatus(404);
+        } else {
+          res.redirect(oauth.url(data.state));
+        }
       });
     }
   }
@@ -54,7 +59,7 @@ app.use(express.static('public'));
 
 const jsonSender = (res) => (err, data) => {
   if (err) {
-    res.send(`Whoops ${err}`);
+    res.sendStatus(500);
   } else {
     res.type('json');
     res.send(JSON.stringify(data, null, 2));
@@ -87,12 +92,21 @@ app.get('/auth', async (req, res) => {
 
     const { name, email } = JSON.parse(atob(authData.id_token.split('.')[1]));
 
-    // We've used the database entry to confirm the session state. Now we can
+    // We've used the database session entry to confirm the session state. Now we can
     // get rid of it since we store all the relevant data in a cookie.
     db.deleteSession(session.id, (err) => {
-      if (err) throw err;
-      res.cookie('session', encrypt({ ...session, loggedIn: true, user: { name, email } }, SECRET));
-      res.redirect(state.split(':')[1]);
+      if (err) {
+        res.sendStatus(500);
+      } else {
+        db.ensureUser(email, name, (err, user) => {
+          if (err || !user) {
+            res.sendStatus(500);
+          } else {
+            res.cookie('session', encrypt({ ...session, user, loggedIn: true }, SECRET));
+            res.redirect(state.split(':')[1]);
+          }
+        });
+      }
     });
   });
 });
@@ -171,6 +185,40 @@ app.get('/api/journal', (req, res) => {
   db.journalFor(email, jsonSender(res));
 });
 
+/*
+ * Get an arbitrary journal. User must be owner or teacher.
+ */
+app.get('/api/journal/:id', (req, res) => {
+  const { user } = req.session;
+  if (user.id === Number(req.params.id)) {
+    console.log('Can see because it is my journal');
+    // The authenticated user is requesting their own journal.
+    db.journalFor(user.email, jsonSender(res));
+  } else {
+    // Otherwise need to see if authenticated user is the teacher. We need to go
+    // to the db for info about the authenticated user that's not in the session
+    // so it can be updated after the fact.
+    db.user(user.email, (err, user) => {
+      if (err) {
+        res.sendStatus(500);
+      } else if (user.role === 'teacher') {
+        db.userById(req.params.id, (err, journalUser) => {
+          if (err) {
+            res.sendStatus(500);
+          } else if (!journalUser) {
+            res.sendStatus(404);
+          } else {
+            console.log('Can see because I am the teacher.');
+            db.journalFor(journalUser.email, jsonSender(res));
+          }
+        });
+      } else {
+        res.sendStatus(401);
+      }
+    });
+  }
+});
+
 ////////////////////////////////////////////////////////////////////////////////
 // Start working on a request for help.
 
@@ -183,7 +231,17 @@ app.get('/api/next', (req, res) => {
 });
 
 app.get('/api/user', (req, res) => {
-  db.user(req.session.user.email, jsonSender(res));
+  console.log(req.session.user);
+  db.user(req.session.user.email, (err, data) => {
+    // FIXME: should abstract this pattern and use it everywhere.
+    if (err) {
+      res.sendStatus(500);
+    } else if (!data) {
+      res.sendStatus(404);
+    } else {
+      jsonSender(res)(null, data);
+    }
+  });
 });
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -222,6 +280,10 @@ app.post('/help', (req, res) => {
 app.get('/help/:id', (req, res) => {
   // Can't use help/index.html because that's the form.
   res.sendFile(path.join(DIRNAME, 'public/help/show.html'));
+});
+
+app.get('/journal/:id', (req, res) => {
+  res.sendFile(path.join(DIRNAME, 'public/journal/show.html'));
 });
 
 ////////////////////////////////////////////////////////////////////////////////

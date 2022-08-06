@@ -4,8 +4,13 @@ import { $, withClass } from './modules/common.js';
 import { yyyymmdd, hhmm, humandate } from './modules/dateformat.js';
 
 const render = async () => {
-  const data = await fetch('/api/journal').then((r) => r.json());
-  $('#journal').replaceChildren(...entries(groupEntries(data)));
+  fetch(`/api${window.location.pathname}`).then((r) => {
+    if (r.status === 200) {
+      r.json().then((data) => $('#journal').replaceChildren(...entries(groupEntries(data))));
+    } else {
+      $('#journal').replaceChildren($('<h1>', 'No such journal.'));
+    }
+  });
 };
 
 const groupEntries = (data) => {

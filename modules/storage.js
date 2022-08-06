@@ -221,6 +221,22 @@ class DB {
   user(email, callback) {
     this.db.get('SELECT rowid as id, * from users where email = ?', email, callback);
   }
+
+  userById(id, callback) {
+    this.db.get('SELECT rowid as id, * from users where id = ?', id, callback);
+  }
+
+  ensureUser(email, name, callback) {
+    this.user(email, (err, data) => {
+      if (err) {
+        callback(err, null);
+      } else if (data) {
+        callback(null, data);
+      } else {
+        this.db.run('INSERT INTO users (email, name) VALUES (?, ?)', email, name, callback);
+      }
+    });
+  }
 }
 
 export default DB;
