@@ -34,8 +34,11 @@ app.use((req, res, next) => {
 
     res.cookie('session', encrypt(req.session, SECRET));
     db.newSession(id, state, (err) => {
-      if (err) throw err;
-      res.redirect(oauth.url(state));
+      if (err) {
+        res.sendStatus(500);
+      } else {
+        res.redirect(oauth.url(state));
+      }
     });
   } else {
     req.session = decrypt(req.cookies.session, SECRET);
@@ -83,31 +86,34 @@ app.get('/auth', async (req, res) => {
   const session = decrypt(req.cookies.session, SECRET);
 
   db.getSession(session.id, (err, dbSession) => {
-    if (err) throw err;
+    if (err) {
+      res.sendStatus(500);
+    } else {
 
-    const { state } = req.query;
-    if (dbSession.state !== state) {
-      throw new Error(`Mismatched state: db: ${dbSession.state}; query: ${state}`);
-    }
-
-    const { name, email } = JSON.parse(atob(authData.id_token.split('.')[1]));
-
-    // We've used the database session entry to confirm the session state. Now we can
-    // get rid of it since we store all the relevant data in a cookie.
-    db.deleteSession(session.id, (err) => {
-      if (err) {
-        res.sendStatus(500);
-      } else {
-        db.ensureUser(email, name, (err, user) => {
-          if (err || !user) {
-            res.sendStatus(500);
-          } else {
-            res.cookie('session', encrypt({ ...session, user, loggedIn: true }, SECRET));
-            res.redirect(state.split(':')[1]);
-          }
-        });
+      const { state } = req.query;
+      if (dbSession.state !== state) {
+        throw new Error(`Mismatched state: db: ${dbSession.state}; query: ${state}`);
       }
-    });
+
+      const { name, email } = JSON.parse(atob(authData.id_token.split('.')[1]));
+
+      // We've used the database session entry to confirm the session state. Now we can
+      // get rid of it since we store all the relevant data in a cookie.
+      db.deleteSession(session.id, (err) => {
+        if (err) {
+          res.sendStatus(500);
+        } else {
+          db.ensureUser(email, name, (err, user) => {
+            if (err || !user) {
+              res.sendStatus(500);
+            } else {
+              res.cookie('session', encrypt({ ...session, user, loggedIn: true }, SECRET));
+              res.redirect(state.split(':')[1]);
+            }
+          });
+        }
+      });
+    }
   });
 });
 
@@ -172,8 +178,11 @@ app.post('/journal', (req, res) => {
   const { text } = req.body;
   const { email, name } = req.session.user;
   db.addJournalEntry(email, name || null, text, (err) => {
-    if (err) throw err;
-    res.redirect('/journal');
+    if (err) {
+      res.sendStatus(500);
+    } else {
+      res.redirect('/journal');
+    }
   });
 });
 
