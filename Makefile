@@ -11,6 +11,9 @@ setup:
 start:
 	npx pm2 start index.js --log help.log
 
+restart:
+	npx pm2 reload index.js
+
 stop:
 	npx pm2 delete index.js
 
