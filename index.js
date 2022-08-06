@@ -199,6 +199,10 @@ app.get('/in-progress', (req, res) => {
   res.sendFile(path.join(DIRNAME, 'public/in-progress.html'));
 });
 
+app.get('/done', (req, res) => {
+  res.sendFile(path.join(DIRNAME, 'public/done.html'));
+});
+
 ////////////////////////////////////////////////////////////////////////////////
 // Start server
 
