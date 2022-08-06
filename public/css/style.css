@@ -1,5 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Montserrat:wght@100;300;400;500&display=swap');
 
+* {
+  padding: 0;
+  margin: 0;
+}
+
 html {
   font-family: 'Montserrat', sans-serif;
   font-weight: 300;
@@ -11,18 +16,16 @@ body {
   margin: 50px auto;
 }
 
+h2 {
+  padding: 0.5em 0;
+}
+
 .toolbar {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
-  text-align: right;
   gap: 0.5em;
   margin-bottom: 20px;
-}
-
-.toolbar * {
-  padding: 0;
-  margin: 0;
 }
 
 .toolbar a {
