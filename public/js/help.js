@@ -1,11 +1,12 @@
-import { $, helpCard, updateTimes } from './modules/common.js';
+import { $, helpCard, updateTimes, withUser } from './modules/common.js';
 
-const render = async () => {
-  const { role } = await fetch('/api/role').then((r) => r.json());
-  const data = await fetch(`/api${window.location.pathname}`).then((r) => r.json());
-  $('#item').replaceChildren(helpCard(data, role, true, render));
-};
+withUser((u) => {
+  const { role } = u;
 
-render();
-
-setInterval(updateTimes, 1000);
+  const render = async () => {
+    const data = await fetch(`/api${window.location.pathname}`).then((r) => r.json());
+    $('#item').replaceChildren(helpCard(data, role, true, render));
+  };
+  render();
+  setInterval(updateTimes, 1000);
+});

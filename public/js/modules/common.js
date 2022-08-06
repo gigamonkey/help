@@ -172,4 +172,9 @@ const patch = (url, data) =>
     },
   });
 
-export { $, $$, helpCard, updateTimes, withClass, status, timeElement, statusAndButtons };
+const withUser = (callback) => {
+  fetch('/api/role').then((r) => r.json()).then(callback);
+};
+
+
+export { $, $$, helpCard, updateTimes, withClass, status, timeElement, statusAndButtons, withUser };
