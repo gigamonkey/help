@@ -4,7 +4,7 @@ class Permissions {
   }
 
   oneOf(...roles) {
-    return (user) => roles.indexOf(user.role) >= 0;
+    return (user) => user && roles.indexOf(user.role) >= 0;
   }
 
   route(predicate) {
