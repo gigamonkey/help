@@ -1,3 +1,5 @@
+/* global DOMPurify, marked */
+
 function $(s, ...rest) {
   if (typeof s === 'string') {
     if (s[0] === '#') {
@@ -21,6 +23,12 @@ const $$ = (q) => document.querySelectorAll(q);
 const withClass = (clazz, e) => {
   e.classList.add(clazz);
   return e;
+};
+
+const markdown = (text) => {
+  const d = $('<div>');
+  d.innerHTML = DOMPurify.sanitize(marked.parse(text));
+  return d;
 };
 
 const elapsed = (utcSeconds) => {
@@ -65,8 +73,16 @@ const basicHelpCard = (h) => {
           timeElement(time),
         ),
       ),
-      withClass('problem', $('<fieldset>', $('<legend>', 'Problem'), $('<div>', problem))),
-      withClass('tried', $('<fieldset>', $('<legend>', 'Tried'), $('<div>', tried))),
+      withClass(
+        'section',
+        $(
+          '<div>',
+          $('<h1>', 'Problem'),
+          $('<div>', markdown(problem)),
+          $('<h1>', 'Tried'),
+          $('<div>', markdown(tried)),
+        ),
+      ),
     ),
   );
 };
@@ -178,4 +194,15 @@ const withUser = (callback) => {
     .then(callback);
 };
 
-export { $, $$, helpCard, updateTimes, withClass, status, timeElement, statusAndButtons, withUser };
+export {
+  $,
+  $$,
+  helpCard,
+  markdown,
+  status,
+  statusAndButtons,
+  timeElement,
+  updateTimes,
+  withClass,
+  withUser,
+};

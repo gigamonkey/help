@@ -5,21 +5,20 @@
   <meta content="width=device-width,initial-scale=1" name="viewport">
   <title>Help!</title>
   <link href="/css/style.css" media="all" rel="stylesheet" type="text/css">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@2.3.10/dist/purify.min.js"></script>
   <script src="/js/queue.js" type="module"></script>
 </head>
 <body>
   <div class="toolbar">
-    <h1>Current queue</h1>
-    <span>
-      <a href="/journal">Journal</a>
-      <a href="/in-progress">In progress</a>
-      <a href="/done">Done</a>
-    </span>
+    <a href="/journal">Journal</a>
+    <a href="/in-progress">In progress</a>
+    <a href="/done">Done</a>
   </div>
 
-  <p><a class="get-help" href="/help">Request help ✋</a></p>
+  <p class="get-help"><a href="/help">Request help ✋</a></p>
 
-  <h2>Up next</h2>
+  <h1>Up next</h1>
   <div id="queue" class="cards"></div>
 </body>
 </html>

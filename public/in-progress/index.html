@@ -5,17 +5,17 @@
   <meta content="width=device-width,initial-scale=1" name="viewport">
   <title>Help!</title>
   <link href="/css/style.css" media="all" rel="stylesheet" type="text/css">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@2.3.10/dist/purify.min.js"></script>
   <script src="/js/in-progress.js" type="module"></script>
 </head>
 <body>
   <div class="toolbar">
-    <h1>In progress</h1>
-    <span>
-      <a href="/journal">Journal</a>
-      <a href="/">Current queue</a>
-      <a href="/done">Done</a>
-    </span>
+    <a href="/journal">Journal</a>
+    <a href="/">Current queue</a>
+    <a href="/done">Done</a>
   </div>
+  <h1>In progress</h1>
   <div id="items" class="cards"></div>
 </body>
 </html>

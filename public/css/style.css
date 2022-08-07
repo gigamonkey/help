@@ -16,8 +16,8 @@ body {
   margin: 50px auto;
 }
 
-h2 {
-  padding: 0.5em 0;
+h1 {
+  margin: 0.5em 0;
 }
 
 ul,
@@ -34,26 +34,26 @@ ol {
 }
 
 .toolbar a {
-  border: 1px solid grey;
-  padding: 3px;
-  border-radius: 2px;
+  //border: 1px solid grey;
+  //padding: 3px;
+  //border-radius: 2px;
   font-size: 80%;
   text-decoration: none;
-  background: rgba(192, 128, 192, 0.2);
 }
 
-.get-help {
-  display: inline-block;
+p.get-help {
   text-align: center;
-  border: 1px solid grey;
-  padding: 10px;
-  margin: 10px 0;
-  border-radius: 4px;
-  width: calc(100% - 22px);
-  text-decoration: none;
-  background: rgba(192, 128, 192, 0.2);
 }
 
+p.get-help a {
+  display: inline-block;
+  border: 1px solid grey;
+  border-radius: 4px;
+  text-decoration: none;
+  width: calc(50% - 22px);
+  padding: 10px;
+  margin: 10px auto;
+}
 .cards {
   display: flex;
   flex-direction: column;
@@ -65,8 +65,8 @@ ol {
   flex-direction: column;
   gap: 10px;
   padding: 10px;
-  border: 1px solid grey;
-  background: rgba(192, 128, 192, 0.2);
+  border: 1px solid rgba(196, 196, 196, 0.5);
+  background: rgba(196, 196, 196, 0.1);
 }
 
 .item > .who {
@@ -78,13 +78,37 @@ ol {
 .item > .buttons {
   display: flex;
   flex-direction: row;
+  font-size: 0.7em;
   justify-content: space-between;
 }
 
-.problem,
-.tried {
-  padding: 3px;
-  border: 1px solid black;
+.buttons button {
+  margin: 0 3px;
+  border: 1px solid rgba(196, 196, 196, 0.5);
+  border-radius: 2px;
+  padding: 4px;
+}
+
+.section h1 {
+  font-size: 1.1em;
+  color: grey;
+  font-weight: 500;
+  margin: 0.5em 0;
+}
+
+.section p,
+.section blockquote,
+.section pre {
+  margin: 1em 0;
+}
+
+.section blockquote {
+  margin-left: 1em;
+  font-size: 90%;
+}
+
+.section p:first-child {
+  margin: 0;
 }
 
 legend {
@@ -99,7 +123,7 @@ legend {
 }
 
 fieldset {
-  background: rgba(192, 128, 192, 0.2);
+  //background: rgba(192, 128, 192, 0.2);
 }
 
 label,

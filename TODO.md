@@ -1,12 +1,6 @@
-- Protected end points for seeing all journals.
-
-- Store who's a helper in the database.
-
-- Fix terrible styling.
+- Allow discarding help requests (helpers and owner)
 
 - Allow editing own help requests.
-
-- Allow discarding help requests (helpers and owner)
 
 - Allow deleting jourrnal entries.
 

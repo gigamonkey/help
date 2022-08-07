@@ -1,6 +1,4 @@
-/* global DOMPurify, marked */
-
-import { $, withClass } from './modules/common.js';
+import { $, markdown, withClass } from './modules/common.js';
 import { yyyymmdd, hhmm, humandate } from './modules/dateformat.js';
 
 const render = async () => {
@@ -33,12 +31,6 @@ const entries = (days) => days.map((d) => oneDay(d));
 
 const oneDay = (day) => {
   const div = withClass('day', $('<div>', $('<h2>', day.nice)));
-
-  const markdown = (text) => {
-    const d = $('<div>');
-    d.innerHTML = DOMPurify.sanitize(marked.parse(text));
-    return d;
-  };
 
   day.entries.forEach((e) => {
     div.append(
