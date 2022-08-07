@@ -56,7 +56,7 @@ const jsonSender = (res) => (err, data) => {
 
 app.get('/logout', (req, res) => {
   login.logout(res);
-  res.send('<html><body><p>Logged out. <a href="/up-next">Start over</a></p></html>');
+  res.send('<html><body><p>Logged out. <a href="/">Start over</a></p></html>');
 });
 
 app.get('/auth', (req, res) => {

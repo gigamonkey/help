@@ -255,7 +255,13 @@ class DB {
       } else if (data) {
         callback(null, data);
       } else {
-        this.db.run('INSERT INTO users (email, name) VALUES (?, ?)', email, name, callback);
+        this.db.run('INSERT INTO users (email, name) VALUES (?, ?)', email, name, (err) => {
+          if (err) {
+            callback(err, null);
+          } else {
+            this.user(email, callback);
+          }
+        });
       }
     });
   }

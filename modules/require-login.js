@@ -68,9 +68,10 @@ class RequireLogin {
     const session = decrypt(req.cookies.session, this.secret);
 
     this.db.getSession(session.id, (err, dbSession) => {
-      if (err) {
+      if (err || !dbSession) {
         console.log('Error getting session in /auth');
         console.log(err);
+        console.log(dbSession);
         res.sendStatus(500);
       } else {
         const { state } = req.query;
@@ -94,6 +95,7 @@ class RequireLogin {
                 if (err || !user) {
                   console.log('Error ensuring user');
                   console.log(err);
+                  res.clearCookie('session');
                   res.sendStatus(500);
                 } else {
                   res.cookie('session', encrypt({ ...session, user, loggedIn: true }, this.secret));
