@@ -261,7 +261,6 @@ app.get(
   '/users',
   helperOnly((req, res) => {
     db.userStats((err, users) => {
-      console.log(users);
       res.render('users.njk', { users });
     });
   }),
