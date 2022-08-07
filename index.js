@@ -89,12 +89,10 @@ app.get('/auth', async (req, res) => {
     if (err) {
       res.sendStatus(500);
     } else {
-
       const { state } = req.query;
       if (dbSession.state !== state) {
         res.sendStatus(401);
       } else {
-
         const { name, email } = JSON.parse(atob(authData.id_token.split('.')[1]));
 
         // We've used the database session entry to confirm the session state. Now we can
@@ -158,7 +156,7 @@ app.patch('/api/help/:id/requeue', (req, res) => {
  */
 app.patch('/api/help/:id/reopen', (req, res) => {
   // FIXME: should be limited to helpers.
-  db.reopenHelp(req.params.id, req.body.comment, jsonSender(res));
+  db.reopenHelp(req.params.id, jsonSender(res));
 });
 
 /*
