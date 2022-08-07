@@ -1,7 +1,5 @@
 - Allow discarding help requests (helpers and owner)
 
-- Teacher-only see all journals page.
-
 - Teacher-only user management page: change name, set role, block account.
 
 - Allow deleting jourrnal entries.

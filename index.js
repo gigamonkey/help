@@ -36,6 +36,7 @@ const isTeacher = permissions.oneOf('teacher');
 const isHelper = permissions.oneOf('teacher', 'helper');
 
 // Route permission handlers
+const teacherOnly = permissions.route(isTeacher);
 const helperOnly = permissions.route(isHelper);
 
 // Thunk permission handlers.
@@ -259,7 +260,7 @@ app.get('/journal/:id', (req, res) => {
 
 app.get(
   '/users',
-  helperOnly((req, res) => {
+  teacherOnly((req, res) => {
     db.userStats((err, users) => {
       res.render('users.njk', { users });
     });
