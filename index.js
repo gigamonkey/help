@@ -75,12 +75,9 @@ app.post('/api/help', (req, res) => {
 /*
  * Fetch an existing request.
  */
-app.get(
-  '/api/help/:id',
-  helperOnly((req, res) => {
-    db.getHelp(req.params.id, jsonSender(res));
-  }),
-);
+app.get('/api/help/:id', (req, res) => {
+  db.getHelp(req.params.id, jsonSender(res));
+});
 
 /*
  * Close the given help record.
@@ -180,10 +177,12 @@ app.get('/api/journal/:id', (req, res) => {
 /*
  * Take the next item on the queue and start helping.
  */
-app.get('/api/next', (req, res) => {
-  // FIXME: should be limited to helpers.
-  db.next(req.session.user.email, jsonSender(res));
-});
+app.get(
+  '/api/next',
+  helperOnly((req, res) => {
+    db.next(req.session.user.email, jsonSender(res));
+  }),
+);
 
 app.get('/api/user', (req, res) => {
   console.log(req.session.user);
