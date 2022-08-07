@@ -268,6 +268,10 @@ class DB {
       }
     });
   }
+
+  allUsers(callback) {
+    this.db.all('select rowid as id, * from users', callback);
+  }
 }
 
 export default DB;

@@ -8,17 +8,13 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dompurify@2.3.10/dist/purify.min.js"></script>
 </head>
-<body class="welcome">
-  <div class="toolbar">
-    <a href="/help">Get help</a>
-    <a href="/up-next">Up next</a>
-    <a href="/in-progress">In progress</a>
-    <a href="/done">Done</a>
-    <a href="/journal">Journal</a>
-  </div>
+<body>
 
-  {% block  content %}
-  {% endblock %}
+  {% include "toolbar.html" %}
+
+  <h1>{{ title }}</h1>
+
+  {% block  content %}{% endblock %}
 
 </body>
 </html>

@@ -196,3 +196,12 @@ textarea {
 .journal pre {
   margin: 1em 0;
 }
+
+table {
+  width: 100%;
+}
+
+th,
+td {
+  text-align: left;
+}

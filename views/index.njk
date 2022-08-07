@@ -1,5 +1,24 @@
-{% extends layout %}
+{% extends 'layout.njk' %}
 
 {% block content %}
-  <h1>{{message}}</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>User</th>
+      <th>Journal</th>
+      <th>Role</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for u in users %}
+    <tr>
+      <td><a href="/student/{{u.id}}">{{u.name}}</td>
+      <td><a href="/journal/{{u.id}}">Journal</a></td>
+      <td>{{u.role}}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
 {% endblock %}

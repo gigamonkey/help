@@ -5,7 +5,6 @@ import nunjucks from 'nunjucks';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-
 import DB from './modules/storage.js';
 import requireLogin from './modules/require-login.js';
 import Permissions from './modules/permissions.js';
@@ -28,9 +27,9 @@ const login = requireLogin(noAuthRequired, db, SECRET);
 const permissions = new Permissions(db);
 
 nunjucks.configure('views', {
-  autoescape:  true,
-  express:  app
-})
+  autoescape: true,
+  express: app,
+});
 
 // Permission schemes.
 const isTeacher = permissions.oneOf('teacher');
@@ -258,22 +257,16 @@ app.get('/journal/:id', (req, res) => {
   res.sendFile(path.join(DIRNAME, 'public/journal/show.html'));
 });
 
-
-app.get('/students', async (req, res, next) => {
-  const  data = {
-    message: 'Hello world!',
-    layout:  'layout.njk',
-    title: 'Nunjucks example',
-  };
-  res.render('index.njk', data)
+app.get('/users', async (req, res) => {
+  db.allUsers((err, users) => {
+    res.render('index.njk', { title: 'Users', users });
+  });
 });
-
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // Start server
 
 db.setup(() => {
-  console.log("DB is set up.");
+  console.log('DB is set up.');
   app.listen(PORT, () => console.log(`Listening on port ${PORT}!`));
 });
