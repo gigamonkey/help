@@ -40,7 +40,7 @@ const jsonSender = (res) => (err, data) => {
 };
 
 app.get('/logout', (req, res) => {
-  res.clearCookie('session');
+  login.logout();
   res.send('<html><body><p>Logged out. <a href="/up-next">Start over</a></p></html>');
 });
 

@@ -106,6 +106,10 @@ class RequireLogin {
       }
     });
   }
+
+  logout() {
+    res.clearCookie('session');
+  }
 }
 
 const requireLogin = (noAuthRequired, db, secret) => new RequireLogin(noAuthRequired, db, secret);
