@@ -9,7 +9,7 @@
   <script src="https://cdn.jsdelivr.net/npm/dompurify@2.3.10/dist/purify.min.js"></script>
   <script type="module">
     import { showItems } from '/js/modules/common.js';
-    showItems('/api/in-progress', 'Nothing in progress.');
+    showItems('/api/discarded', 'No items discarded.');
   </script>
 </head>
 <body>
@@ -21,7 +21,7 @@
     <a href="/journal">Journal</a>
   </div>
 
-  <h1>In progress</h1>
+  <h1>Discarded</h1>
   <div id="items" class="cards"></div>
 </body>
 </html>
