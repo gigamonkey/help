@@ -60,12 +60,15 @@ class DB {
     this.db = new sqlite3.Database(file);
   }
 
-  setup() {
+  /*
+   * This needs to be kept idempotent since it is run at every server startup.
+   */
+  setup(after) {
     this.db.serialize(() => {
       this.db.run(CREATE_HELP_TABLE);
       this.db.run(CREATE_SESSIONS_TABLE);
       this.db.run(CREATE_JOURNAL_TABLE);
-      this.db.run(CREATE_USERS_TABLE);
+      this.db.run(CREATE_USERS_TABLE, () => after());
     });
   }
 

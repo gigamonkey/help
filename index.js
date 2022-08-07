@@ -254,4 +254,7 @@ app.get('/journal/:id', (req, res) => {
 ////////////////////////////////////////////////////////////////////////////////
 // Start server
 
-app.listen(PORT, () => console.log(`Listening on port ${PORT}!`));
+db.setup(() => {
+  console.log("DB is set up.");
+  app.listen(PORT, () => console.log(`Listening on port ${PORT}!`));
+});
