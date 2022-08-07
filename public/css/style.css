@@ -13,7 +13,7 @@ html {
 
 body {
   width: calc(min(40em, 80%));
-  margin: 50px auto;
+  margin: 20px auto;
 }
 
 h1 {
@@ -30,15 +30,17 @@ ol {
   flex-direction: row;
   justify-content: space-between;
   gap: 0.5em;
-  margin-bottom: 20px;
+  margin-bottom: 40px;
+  background: rgba(196, 196, 196, 0.2);
+  padding: 6px 4px;
 }
 
 .toolbar a {
-  //border: 1px solid grey;
-  //padding: 3px;
-  //border-radius: 2px;
+  flex: auto;
+  text-align: center;
   font-size: 80%;
   text-decoration: none;
+  color: #666;
 }
 
 p.get-help {
