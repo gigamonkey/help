@@ -5,15 +5,15 @@ import sqlite3 from 'sqlite3';
  */
 const CREATE_HELP_TABLE = `
   CREATE TABLE IF NOT EXISTS help (
-    who_email TEXT NOT NULL,
-    who_name TEXT,
-    problem TEXT NOT NULL,
-    tried TEXT NOT NULL,
-    time INTEGER NOT NULL,
-    helper TEXT,
-    start_time INTEGER,
-    end_time INTEGER,
-    discarded_time INTEGER
+      email TEXT NOT NULL,
+      name TEXT,
+      problem TEXT NOT NULL,
+      tried TEXT NOT NULL,
+      time INTEGER NOT NULL,
+      helper TEXT,
+      start_time INTEGER,
+      end_time INTEGER,
+      discard_time integer
   )
 `;
 
@@ -22,12 +22,11 @@ const CREATE_HELP_TABLE = `
  */
 const CREATE_JOURNAL_TABLE = `
   CREATE TABLE IF NOT EXISTS journal (
-    author_email TEXT NOT NULL,
-    author_name TEXT,
-    text TEXT NOT NULL,
-    date TEXT NOT NULL,
-    time INTEGER
-  )
+      email TEXT NOT NULL,
+      name TEXT,
+      text TEXT NOT NULL,
+      time INTEGER
+    )
 `;
 
 /*
@@ -38,20 +37,22 @@ const CREATE_JOURNAL_TABLE = `
  */
 const CREATE_SESSIONS_TABLE = `
   CREATE TABLE IF NOT EXISTS sessions (
-    session_id TEXT NOT NULL,
-    created_at INTEGER NOT NULL,
-    state TEXT NOT NULL
-)`;
+      session_id TEXT NOT NULL,
+      created_at INTEGER NOT NULL,
+      state TEXT NOT NULL
+  )
+`;
 
 const CREATE_USERS_TABLE = `
   CREATE TABLE IF NOT EXISTS users (
-    email TEXT NOT NULL,
-    name INTEGER NOT NULL,
-    role TEXT
-)`;
+      email TEXT NOT NULL,
+      name INTEGER NOT NULL,
+      role TEXT
+  )
+`;
 
 const QUEUE =
-  'SELECT rowid as id, * FROM help WHERE start_time IS NULL AND discarded_time IS NULL ORDER BY time ASC';
+  'SELECT rowid as id, * FROM help WHERE start_time IS NULL AND discard_time IS NULL ORDER BY time ASC';
 
 const QUEUE_TOP = `${QUEUE} LIMIT 1`;
 
@@ -89,7 +90,7 @@ class DB {
    */
   requestHelp(email, name, problem, tried, callback) {
     const q = `
-      INSERT INTO help (who_email, who_name, problem, tried, time)
+      INSERT INTO help (email, name, problem, tried, time)
       VALUES (?, ?, ?, ?, unixepoch('now'))
     `;
 
@@ -134,7 +135,7 @@ class DB {
       UPDATE help SET
         start_time = unixepoch('now'),
         end_time = null,
-        discarded_time = null,
+        discard_time = null,
         helper = ?
       WHERE rowid = ?
     `;
@@ -145,7 +146,7 @@ class DB {
     const q = `
       UPDATE help SET
         end_time = unixepoch('now'),
-        discarded_time = null
+        discard_time = null
       WHERE rowid = ?
     `;
     this.updateHelp(id, q, [], callback);
@@ -156,7 +157,7 @@ class DB {
       UPDATE help SET
         start_time = null,
         end_time = null,
-        discarded_time = null,
+        discard_time = null,
         helper = null
       WHERE rowid = ?
      `;
@@ -167,7 +168,7 @@ class DB {
     const q = `
       UPDATE help SET
         end_time = null,
-        discarded_time = null
+        discard_time = null
       WHERE rowid = ?
     `;
     this.updateHelp(id, q, [], callback);
@@ -176,7 +177,7 @@ class DB {
   discardHelp(id, callback) {
     const q = `
       UPDATE help SET
-        discarded_time = unixepoch('now')
+        discard_time = unixepoch('now')
       WHERE rowid = ?
     `;
     this.updateHelp(id, q, [], callback);
@@ -195,7 +196,7 @@ class DB {
   inProgress(callback) {
     const q = `
       SELECT rowid as id, * FROM help
-      WHERE start_time IS NOT NULL AND end_time IS NULL and discarded_time IS NULL ORDER BY time ASC
+      WHERE start_time IS NOT NULL AND end_time IS NULL and discard_time IS NULL ORDER BY time ASC
     `;
     this.db.all(q, callback);
   }
@@ -205,12 +206,12 @@ class DB {
    */
   done(callback) {
     const q =
-      'SELECT rowid as id, * FROM help WHERE end_time IS NOT NULL and discarded_time IS NULL ORDER BY time ASC';
+      'SELECT rowid as id, * FROM help WHERE end_time IS NOT NULL and discard_time IS NULL ORDER BY time ASC';
     this.db.all(q, callback);
   }
 
   discarded(callback) {
-    const q = 'SELECT rowid as id, * FROM help WHERE discarded_time IS NOT NULL ORDER BY time ASC';
+    const q = 'SELECT rowid as id, * FROM help WHERE discard_time IS NOT NULL ORDER BY time ASC';
     this.db.all(q, callback);
   }
 
@@ -231,15 +232,15 @@ class DB {
   addJournalEntry(email, name, text, callback) {
     const q = `
       INSERT INTO journal
-        (author_email, author_name, text, date, time)
+        (email, name, text, time)
       VALUES
-        (?, ?, ?, date('now', 'localtime'), unixepoch('now'))
+        (?, ?, ?, unixepoch('now'))
     `;
     this.db.run(q, email, name, text, callback);
   }
 
   journalFor(email, callback) {
-    const q = 'SELECT rowid as id, * FROM journal WHERE author_email = ? ORDER BY time DESC';
+    const q = 'SELECT rowid as id, * FROM journal WHERE email = ? ORDER BY time DESC';
     this.db.all(q, email, callback);
   }
 
@@ -269,11 +270,9 @@ class DB {
     });
   }
 
-  allUsers(callback) {
-    this.db.all('select rowid as id, * from users', callback);
-  }
-
   userStats(callback) {
+    // N.B. the journal_days is unfortunately tied to UTC days. But fixing it
+    // properly probably requires doing the counting outside the database.
     const q = `
       select
         users.rowid as id,
@@ -282,8 +281,8 @@ class DB {
         count(distinct date(journal.time, 'unixepoch')) as journal_days,
         count(distinct help.rowid) as help_requests
       from users
-      left join journal on users.email = journal.author_email
-      left join help on users.email = help.who_email
+      left join journal on users.email = journal.email
+      left join help on users.email = help.email
       group by users.email
       order by users.name asc;
     `;

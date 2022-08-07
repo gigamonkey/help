@@ -54,7 +54,7 @@ const helpCard = (h, user, showStatus, render) => {
 };
 
 const basicHelpCard = (h) => {
-  const { id, who_name: name, who_email: email, problem, tried, time } = h;
+  const { id, name, email, problem, tried, time } = h;
 
   return withClass(
     'item',
@@ -94,7 +94,7 @@ const helpLink = (id, text) => {
 };
 
 const status = (h) => {
-  if (h.discarded_time !== null) {
+  if (h.discard_time !== null) {
     return 'Discarded';
   } else if (h.end_time !== null) {
     return 'Done';
