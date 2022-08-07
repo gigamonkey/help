@@ -5,4 +5,4 @@ set -eou pipefail
 source ec2.env
 
 git push
-ssh -i "$pem" "$user@$host"  "cd help; git pull; make restart"
+ssh -i "$pem" "$user@$host"  "cd help; git pull; npm install; make restart"
