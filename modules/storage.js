@@ -13,7 +13,7 @@ const CREATE_HELP_TABLE = `
     helper TEXT,
     start_time INTEGER,
     end_time INTEGER,
-    comment TEXT
+    discarded_time INTEGER
   )
 `;
 
@@ -50,7 +50,8 @@ const CREATE_USERS_TABLE = `
     role TEXT
 )`;
 
-const QUEUE = 'SELECT rowid as id, * FROM help WHERE start_time IS NULL ORDER BY time ASC';
+const QUEUE =
+  'SELECT rowid as id, * FROM help WHERE start_time IS NULL AND discarded_time IS NULL ORDER BY time ASC';
 
 const QUEUE_TOP = `${QUEUE} LIMIT 1`;
 
@@ -104,17 +105,6 @@ class DB {
     this.db.get('SELECT rowid as id, * FROM help WHERE rowid = ?', id, callback);
   }
 
-  take(id, helper, callback) {
-    const q = "UPDATE help SET start_time = unixepoch('now'), helper = ? WHERE rowid = ?";
-    this.db.run(q, helper, id, (err) => {
-      if (err) {
-        callback(err, null);
-      } else {
-        this.getHelp(id, callback);
-      }
-    });
-  }
-
   next(helper, callback) {
     this.db.all(QUEUE_TOP, (err, rows) => {
       if (err) {
@@ -126,15 +116,36 @@ class DB {
     });
   }
 
-  finishHelp(id, comment, callback) {
-    const q = "UPDATE help SET end_time = unixepoch('now'), comment = ? WHERE rowid = ?";
-    this.db.run(q, comment, id, (err) => {
+  updateHelp(id, q, params, callback) {
+    this.db.run(q, ...params, id, (err) => {
       if (err) {
         callback(err, null);
       } else {
         this.getHelp(id, callback);
       }
     });
+  }
+
+  take(id, helper, callback) {
+    const q = `
+      UPDATE help SET
+        start_time = unixepoch('now'),
+        end_time = null,
+        discarded_time = null,
+        helper = ?
+      WHERE rowid = ?
+    `;
+    this.updateHelp(id, q, [helper], callback);
+  }
+
+  finishHelp(id, callback) {
+    const q = `
+      UPDATE help SET
+        end_time = unixepoch('now'),
+        discarded_time = null
+      WHERE rowid = ?
+    `;
+    this.updateHelp(id, q, [], callback);
   }
 
   requeueHelp(id, callback) {
@@ -142,29 +153,30 @@ class DB {
       UPDATE help SET
         start_time = null,
         end_time = null,
-        helper = null,
-        comment = null
+        discarded_time = null,
+        helper = null
       WHERE rowid = ?
      `;
-
-    this.db.run(q, id, (err) => {
-      if (err) {
-        callback(err, null);
-      } else {
-        this.getHelp(id, callback);
-      }
-    });
+    this.updateHelp(id, q, [], callback);
   }
 
   reopenHelp(id, callback) {
-    const q = 'UPDATE help SET end_time = null, comment = null WHERE rowid = ?';
-    this.db.run(q, id, (err) => {
-      if (err) {
-        callback(err, null);
-      } else {
-        this.getHelp(id, callback);
-      }
-    });
+    const q = `
+      UPDATE help SET
+        end_time = null,
+        discarded_time = null
+      WHERE rowid = ?
+    `;
+    this.updateHelp(id, q, [], callback);
+  }
+
+  discardHelp(id, callback) {
+    const q = `
+      UPDATE help SET
+        discarded_time = unixepoch('now')
+      WHERE rowid = ?
+    `;
+    this.updateHelp(id, q, [], callback);
   }
 
   /*
@@ -180,7 +192,7 @@ class DB {
   inProgress(callback) {
     const q = `
       SELECT rowid as id, * FROM help
-      WHERE start_time IS NOT NULL AND end_time IS NULL ORDER BY time ASC
+      WHERE start_time IS NOT NULL AND end_time IS NULL and discarded_time IS NULL ORDER BY time ASC
     `;
     this.db.all(q, callback);
   }
@@ -189,7 +201,13 @@ class DB {
    * Get all help requests that have been finished.
    */
   done(callback) {
-    const q = 'SELECT rowid as id, * FROM help WHERE end_time IS NOT NULL ORDER BY time ASC';
+    const q =
+      'SELECT rowid as id, * FROM help WHERE end_time IS NOT NULL and discarded_time IS NULL ORDER BY time ASC';
+    this.db.all(q, callback);
+  }
+
+  discarded(callback) {
+    const q = 'SELECT rowid as id, * FROM help WHERE discarded_time IS NOT NULL ORDER BY time ASC';
     this.db.all(q, callback);
   }
 

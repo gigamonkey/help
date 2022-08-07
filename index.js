@@ -83,12 +83,22 @@ app.get('/api/help/:id', (req, res) => {
 });
 
 /*
+ * Take a specific item from the queue and start helping.
+ */
+app.get(
+  '/api/help/:id/take',
+  helperOnly((req, res) => {
+    db.take(req.params.id, req.session.user.email, jsonSender(res));
+  }),
+);
+
+/*
  * Close the given help record.
  */
 app.patch(
   '/api/help/:id/finish',
   helperOnly((req, res) => {
-    db.finishHelp(req.params.id, req.body.comment, jsonSender(res));
+    db.finishHelp(req.params.id, jsonSender(res));
   }),
 );
 
@@ -103,7 +113,7 @@ app.patch(
 );
 
 /*
- * Put the given help item back into in-progress
+ * Put the given help item back into in-progress from done.
  */
 app.patch(
   '/api/help/:id/reopen',
@@ -113,12 +123,12 @@ app.patch(
 );
 
 /*
- * Take a specific item from the queue and start helping.
+ * Discard the help item.
  */
-app.get(
-  '/api/help/:id/take',
+app.patch(
+  '/api/help/:id/discard',
   helperOnly((req, res) => {
-    db.take(req.params.id, req.session.user.email, jsonSender(res));
+    db.discardHelp(req.params.id, jsonSender(res));
   }),
 );
 
@@ -214,6 +224,10 @@ app.get('/api/in-progress', (req, res) => {
  */
 app.get('/api/done', (req, res) => {
   db.done(jsonSender(res));
+});
+
+app.get('/api/discarded', (req, res) => {
+  db.discarded(jsonSender(res));
 });
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -94,7 +94,9 @@ const helpLink = (id, text) => {
 };
 
 const status = (h) => {
-  if (h.end_time !== null) {
+  if (h.discarded_time !== null) {
+    return 'Discarded';
+  } else if (h.end_time !== null) {
     return 'Done';
   } else if (h.start_time !== null) {
     return 'In progress';
@@ -111,27 +113,38 @@ const updateTimes = () => {
 
 const statusAndButtons = (h, user, showStatus, render) => {
   const s = status(h);
+  const div = withClass('buttons', $('<div>'));
+  if (showStatus) {
+    div.append(withClass('status', $('<span>', `Status: ${s}`)));
+  }
+  if (h.helper) {
+    div.append($('<span>', `Helping: ${h.helper}`));
+  }
+  if (!(showStatus || h.helper)) {
+    div.append($('<span>'));
+  }
 
-  const statusMarker = withClass('status', $('<span>', showStatus ? `Status: ${s}` : ''));
-  const buttons = buttonsForStatus(s, h.id, user, render);
-
-  return withClass('buttons', $('<div>', statusMarker, buttons));
+  div.append(buttonsForStatus(s, h.id, user, render));
+  return div;
 };
 
 const buttonsForStatus = (s, id, user, render) => {
   const span = $('<span>');
   if (user.role === 'teacher' || user.role === 'helper') {
-    if (s === 'On queue') {
+    if (s !== 'In progress') {
       span.append(takeButton(id)); // doesn't need render.
     }
-    if (s === 'In progress' || s === 'Done') {
-      span.append(requeueButton(id, render));
-    }
-    if (s === 'In progress') {
+    if (s !== 'Done') {
       span.append(doneButton(id, render));
     }
-    if (s === 'Done') {
+    if (s !== 'On queue') {
+      span.append(requeueButton(id, render));
+    }
+    if (['Done', 'Discarded'].indexOf(s) !== -1) {
       span.append(reopenButton(id, render));
+    }
+    if (s !== 'Discarded') {
+      span.append(discardButton(id, render));
     }
   }
   return span;
@@ -161,6 +174,12 @@ const reopenButton = (id, after) => {
   return b;
 };
 
+const discardButton = (id, after) => {
+  const b = $('<button>', 'Discard');
+  b.onclick = () => discard(id, after);
+  return b;
+};
+
 const takeItem = async (id) => {
   await fetch(`/api/help/${id}/take`).then(() => {
     window.location = `/help/${id}`;
@@ -175,8 +194,12 @@ const reopen = async (id, after) => {
   await patch(`/api/help/${id}/reopen`, {}).then(() => after());
 };
 
+const discard = async (id, after) => {
+  await patch(`/api/help/${id}/discard`, {}).then(() => after());
+};
+
 const markDone = async (id, after) => {
-  await patch(`/api/help/${id}/finish`, { comment: null }).then(() => after());
+  await patch(`/api/help/${id}/finish`, {}).then(() => after());
 };
 
 const patch = (url, data) =>
