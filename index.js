@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url';
 
 import DB from './modules/storage.js';
 import requireLogin from './modules/require-login.js';
+import Permissions from './modules/permissions.js';
 
 const FILENAME = fileURLToPath(import.meta.url);
 const DIRNAME = path.dirname(FILENAME);
@@ -21,6 +22,17 @@ const noAuthRequired = {
 const db = new DB('help.db');
 const app = express();
 const login = requireLogin(noAuthRequired, db, SECRET);
+const permissions = new Permissions(db);
+
+// Permission schemes.
+const isTeacher = permissions.oneOf('teacher');
+const isHelper = permissions.oneOf('teacher', 'helper');
+
+// Route permission handlers
+const helperOnly = permissions.route(isHelper);
+
+// Thunk permission handlers.
+const ifTeacher = permissions.thunk(isTeacher);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -40,7 +52,7 @@ const jsonSender = (res) => (err, data) => {
 };
 
 app.get('/logout', (req, res) => {
-  login.logout();
+  login.logout(res);
   res.send('<html><body><p>Logged out. <a href="/up-next">Start over</a></p></html>');
 });
 
@@ -63,41 +75,52 @@ app.post('/api/help', (req, res) => {
 /*
  * Fetch an existing request.
  */
-app.get('/api/help/:id', (req, res) => {
-  db.getHelp(req.params.id, jsonSender(res));
-});
+app.get(
+  '/api/help/:id',
+  helperOnly((req, res) => {
+    db.getHelp(req.params.id, jsonSender(res));
+  }),
+);
 
 /*
  * Close the given help record.
  */
-app.patch('/api/help/:id/finish', (req, res) => {
-  // FIXME: should be limited to helpers.
-  db.finishHelp(req.params.id, req.body.comment, jsonSender(res));
-});
+app.patch(
+  '/api/help/:id/finish',
+  helperOnly((req, res) => {
+    db.finishHelp(req.params.id, req.body.comment, jsonSender(res));
+  }),
+);
 
 /*
  * Put the given help item back on the queue.
  */
-app.patch('/api/help/:id/requeue', (req, res) => {
-  // FIXME: should be limited to helpers.
-  db.requeueHelp(req.params.id, jsonSender(res));
-});
+app.patch(
+  '/api/help/:id/requeue',
+  helperOnly((req, res) => {
+    db.requeueHelp(req.params.id, jsonSender(res));
+  }),
+);
 
 /*
  * Put the given help item back into in-progress
  */
-app.patch('/api/help/:id/reopen', (req, res) => {
-  // FIXME: should be limited to helpers.
-  db.reopenHelp(req.params.id, jsonSender(res));
-});
+app.patch(
+  '/api/help/:id/reopen',
+  helperOnly((req, res) => {
+    db.reopenHelp(req.params.id, jsonSender(res));
+  }),
+);
 
 /*
  * Take a specific item from the queue and start helping.
  */
-app.get('/api/help/:id/take', (req, res) => {
-  // FIXME: should be limited to helpers.
-  db.take(req.params.id, req.session.user.email, jsonSender(res));
-});
+app.get(
+  '/api/help/:id/take',
+  helperOnly((req, res) => {
+    db.take(req.params.id, req.session.user.email, jsonSender(res));
+  }),
+);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Journal
@@ -132,34 +155,21 @@ app.get('/api/journal', (req, res) => {
 app.get('/api/journal/:id', (req, res) => {
   const { user } = req.session;
   if (user.id === Number(req.params.id)) {
-    console.log('Can see because it is my journal');
     // The authenticated user is requesting their own journal.
     db.journalFor(user.email, jsonSender(res));
   } else {
-    // Otherwise need to see if authenticated user is the teacher. We need to go
-    // to the db for info about the authenticated user that's not in the session
-    // so it can be updated after the fact.
-    db.user(user.email, (err, user) => {
-      if (err) {
-        console.log(err);
-        res.sendStatus(500);
-      } else if (user.role === 'teacher') {
-        db.userById(req.params.id, (err, journalUser) => {
-          if (err) {
-            console.log(err);
-            res.sendStatus(500);
-          } else if (!journalUser) {
-            console.log('No journal user');
-            res.sendStatus(404);
-          } else {
-            console.log('Can see because I am the teacher.');
-            db.journalFor(journalUser.email, jsonSender(res));
-          }
-        });
-      } else {
-        console.log('Not allowed to see this journal.');
-        res.sendStatus(401);
-      }
+    // Otherwise need to see if authenticated user is the teacher.
+    ifTeacher(req, res, () => {
+      db.userById(req.params.id, (err, journalUser) => {
+        if (err) {
+          console.log(err);
+          res.sendStatus(500);
+        } else if (!journalUser) {
+          res.sendStatus(404);
+        } else {
+          db.journalFor(journalUser.email, jsonSender(res));
+        }
+      });
     });
   }
 });

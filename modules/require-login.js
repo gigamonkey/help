@@ -107,7 +107,7 @@ class RequireLogin {
     });
   }
 
-  logout() {
+  logout(res) {
     res.clearCookie('session');
   }
 }
