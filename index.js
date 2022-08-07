@@ -1,8 +1,10 @@
 import 'dotenv/config';
 import cookieParser from 'cookie-parser';
 import express from 'express';
+import nunjucks from 'nunjucks';
 import path from 'path';
 import { fileURLToPath } from 'url';
+
 
 import DB from './modules/storage.js';
 import requireLogin from './modules/require-login.js';
@@ -24,6 +26,11 @@ const db = new DB('help.db');
 const app = express();
 const login = requireLogin(noAuthRequired, db, SECRET);
 const permissions = new Permissions(db);
+
+nunjucks.configure('views', {
+  autoescape:  true,
+  express:  app
+})
 
 // Permission schemes.
 const isTeacher = permissions.oneOf('teacher');
@@ -250,6 +257,18 @@ app.get('/help/:id', (req, res) => {
 app.get('/journal/:id', (req, res) => {
   res.sendFile(path.join(DIRNAME, 'public/journal/show.html'));
 });
+
+
+app.get('/students', async (req, res, next) => {
+  const  data = {
+    message: 'Hello world!',
+    layout:  'layout.njk',
+    title: 'Nunjucks example',
+  };
+  res.render('index.njk', data)
+});
+
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // Start server
