@@ -43,6 +43,18 @@ REDIRECT_URL='https://help.gigamonkeys.com/auth'
 PORT=8080
 SECRET='<redacted>'
 
+# Upgrading SQLite since the version apt will install is old. This doesn't
+# really matter for the app since the sqlite3 library in node embeds its own
+# copy of SQLite 3.39 but doing this means ad hoc messing about with the
+# database is using the same version.
+
+sudo apt install build-essential -y
+wget https://www.sqlite.org/2022/sqlite-autoconf-3390200.tar.gz
+tar xzf sqlite-autoconf-3390200.tar.gz
+cd <sqlitedir>
+./configure --prefix=/usr
+make
+sudo make install
 
 2. Add instance to the help-server-http target group which the load balancer is
 pointing to. Remember to set the port to 8080 not 80.
