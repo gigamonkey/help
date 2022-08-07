@@ -257,11 +257,15 @@ app.get('/journal/:id', (req, res) => {
   res.sendFile(path.join(DIRNAME, 'public/journal/show.html'));
 });
 
-app.get('/users', async (req, res) => {
-  db.allUsers((err, users) => {
-    res.render('index.njk', { title: 'Users', users });
-  });
-});
+app.get(
+  '/users',
+  helperOnly((req, res) => {
+    db.userStats((err, users) => {
+      console.log(users);
+      res.render('users.njk', { users });
+    });
+  }),
+);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Start server

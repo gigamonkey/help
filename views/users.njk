@@ -1,0 +1,37 @@
+{% extends 'layout.njk' %}
+
+{% set title = "Users" %}
+
+{% block content %}
+
+<table>
+  <thead>
+    <tr>
+      <th>User</th>
+      <th>📅</th>
+      <th>✍️</th>
+      <th>✋</th>
+      <th>Role</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for u in users %}
+    <tr>
+      <td><a href="mailto:{{u.email}}" target="_blank">{{u.name}}</td>
+      <td><a href="/journal/{{u.id}}">{{u.journal_days}}</a></td>
+      <td><a href="/journal/{{u.id}}">{{u.journal_entries}}</a></td>
+      <td>{{u.help_requests}}</td>
+      <td>
+        {% if u.role == 'teacher' %}
+        🍎
+        {% elif u.role == 'helper' %}
+        🍏
+        {% elif u.role == 'student' %}
+        🧑‍🎓
+        {% endif %}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% endblock %}

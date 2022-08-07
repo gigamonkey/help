@@ -16,6 +16,10 @@ body {
   margin: 20px auto;
 }
 
+a {
+  text-decoration: none;
+}
+
 body.welcome {
   text-align: center;
 }
@@ -27,10 +31,6 @@ body.welcome h1 {
 body.welcome p {
   font-size: 1.2em;
   margin: 1em 0;
-}
-
-body.welcome p a {
-  text-decoration: none;
 }
 
 h1 {
@@ -56,7 +56,6 @@ ol {
   flex: auto;
   text-align: center;
   font-size: 80%;
-  text-decoration: none;
   color: #666;
 }
 
@@ -68,7 +67,6 @@ p.get-help a {
   display: inline-block;
   border: 1px solid grey;
   border-radius: 4px;
-  text-decoration: none;
   width: calc(50% - 22px);
   padding: 10px;
   margin: 10px auto;
@@ -201,7 +199,13 @@ table {
   width: 100%;
 }
 
+th:first-child,
+td:first-child {
+  text-align: left;
+}
+
 th,
 td {
-  text-align: left;
+  text-align: center;
+  width: 2em;
 }

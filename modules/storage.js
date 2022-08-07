@@ -272,6 +272,23 @@ class DB {
   allUsers(callback) {
     this.db.all('select rowid as id, * from users', callback);
   }
+
+  userStats(callback) {
+    const q = `
+      select
+        users.rowid as id,
+        users.*,
+        count(distinct journal.rowid) as journal_entries,
+        count(distinct date(journal.time, 'unixepoch')) as journal_days,
+        count(distinct help.rowid) as help_requests
+      from users
+      left join journal on users.email = journal.author_email
+      left join help on users.email = help.who_email
+      group by users.email
+      order by users.name asc;
+    `;
+    this.db.all(q, callback);
+  }
 }
 
 export default DB;
