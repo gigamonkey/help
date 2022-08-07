@@ -9,7 +9,7 @@ setup:
 	npm install
 
 dev:
-	npx nodemon index.js
+	npx nodemon --watch . -e js,mjs,json,njk,html index.js
 
 start:
 	npx pm2 start index.js --log help.log
