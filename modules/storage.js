@@ -50,33 +50,9 @@ const CREATE_USERS_TABLE = `
     role TEXT
 )`;
 
-const REQUEST_HELP =
-  "INSERT INTO help VALUES (?, ?, ?, ?, unixepoch('now'), null, null, null, null)";
-
-const GET_HELP = 'SELECT rowid as id, * FROM help WHERE rowid = ?';
-
-const START_HELP = "UPDATE help SET start_time = unixepoch('now'), helper = ? WHERE rowid = ?";
-
-const FINISH_HELP = "UPDATE help SET end_time = unixepoch('now'), comment = ? WHERE rowid = ?";
-
-const REQUEUE_HELP =
-  'UPDATE help SET start_time = null, end_time = null, helper = null, comment = null WHERE rowid = ?';
-
-const REOPEN_HELP = 'UPDATE help SET end_time = null, comment = null WHERE rowid = ?';
-
 const QUEUE = 'SELECT rowid as id, * FROM help WHERE start_time IS NULL ORDER BY time ASC';
 
 const QUEUE_TOP = `${QUEUE} LIMIT 1`;
-
-const IN_PROGRESS =
-  'SELECT rowid as id, * FROM help WHERE start_time IS NOT NULL AND end_time IS NULL ORDER BY time ASC';
-
-const DONE = 'SELECT rowid as id, * FROM help WHERE end_time IS NOT NULL ORDER BY time asc';
-
-const MAKE_JOURNAL =
-  "INSERT INTO journal (author_email, author_name, text, date, time) VALUES (?, ?, ?, date('now', 'localtime'), unixepoch('now'))";
-
-const JOURNAL_FOR = 'SELECT rowid as id, * FROM journal WHERE author_email = ? ORDER BY time DESC';
 
 class DB {
   constructor(file) {
@@ -108,9 +84,14 @@ class DB {
    * Create a new request for help.
    */
   requestHelp(email, name, problem, tried, callback) {
-    const stmt = this.db.prepare(REQUEST_HELP);
+    const q = `
+      INSERT INTO help (who_email, who_name, problem, tried, time)
+      VALUES (?, ?, ?, ?, unixepoch('now'))
+    `;
+
     const that = this;
-    stmt.run(email, name, problem, tried, function (err) {
+
+    this.db.run(q, email, name, problem, tried, function (err) {
       if (err) {
         callback(err, null);
       } else {
@@ -120,12 +101,12 @@ class DB {
   }
 
   getHelp(id, callback) {
-    this.db.get(GET_HELP, id, callback);
+    this.db.get('SELECT rowid as id, * FROM help WHERE rowid = ?', id, callback);
   }
 
   take(id, helper, callback) {
-    const stmt = this.db.prepare(START_HELP);
-    stmt.run(helper, id, (err) => {
+    const q = "UPDATE help SET start_time = unixepoch('now'), helper = ? WHERE rowid = ?";
+    this.db.run(q, helper, id, (err) => {
       if (err) {
         callback(err, null);
       } else {
@@ -146,7 +127,8 @@ class DB {
   }
 
   finishHelp(id, comment, callback) {
-    this.db.run(FINISH_HELP, comment, id, (err) => {
+    const q = "UPDATE help SET end_time = unixepoch('now'), comment = ? WHERE rowid = ?";
+    this.db.run(q, comment, id, (err) => {
       if (err) {
         callback(err, null);
       } else {
@@ -156,7 +138,16 @@ class DB {
   }
 
   requeueHelp(id, callback) {
-    this.db.run(REQUEUE_HELP, id, (err) => {
+    const q = `
+      UPDATE help SET
+        start_time = null,
+        end_time = null,
+        helper = null,
+        comment = null
+      WHERE rowid = ?
+     `;
+
+    this.db.run(q, id, (err) => {
       if (err) {
         callback(err, null);
       } else {
@@ -166,7 +157,8 @@ class DB {
   }
 
   reopenHelp(id, callback) {
-    this.db.run(REOPEN_HELP, id, (err) => {
+    const q = 'UPDATE help SET end_time = null, comment = null WHERE rowid = ?';
+    this.db.run(q, id, (err) => {
       if (err) {
         callback(err, null);
       } else {
@@ -186,14 +178,19 @@ class DB {
    * Get all help requests that someone has started helping but not finished.
    */
   inProgress(callback) {
-    this.db.all(IN_PROGRESS, callback);
+    const q = `
+      SELECT rowid as id, * FROM help
+      WHERE start_time IS NOT NULL AND end_time IS NULL ORDER BY time ASC
+    `;
+    this.db.all(q, callback);
   }
 
   /*
    * Get all help requests that have been finished.
    */
   done(callback) {
-    this.db.all(DONE, callback);
+    const q = 'SELECT rowid as id, * FROM help WHERE end_time IS NOT NULL ORDER BY time ASC';
+    this.db.all(q, callback);
   }
 
   newSession(id, state, callback) {
@@ -211,11 +208,18 @@ class DB {
   }
 
   addJournalEntry(email, name, text, callback) {
-    this.db.run(MAKE_JOURNAL, email, name, text, callback);
+    const q = `
+      INSERT INTO journal
+        (author_email, author_name, text, date, time)
+      VALUES
+        (?, ?, ?, date('now', 'localtime'), unixepoch('now'))
+    `;
+    this.db.run(q, email, name, text, callback);
   }
 
   journalFor(email, callback) {
-    this.db.all(JOURNAL_FOR, email, callback);
+    const q = 'SELECT rowid as id, * FROM journal WHERE author_email = ? ORDER BY time DESC';
+    this.db.all(q, email, callback);
   }
 
   user(email, callback) {
