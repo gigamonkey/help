@@ -53,6 +53,8 @@ p.get-help a {
   width: calc(50% - 22px);
   padding: 10px;
   margin: 10px auto;
+  color: black;
+  background: rgba(255, 64, 100, 0.3);
 }
 .cards {
   display: flex;
@@ -148,7 +150,7 @@ textarea {
   font-size: 1.2em;
 }
 
-.journal .time {
+.time {
   color: grey;
   text-align: right;
   font-size: 80%;
