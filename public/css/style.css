@@ -73,7 +73,7 @@ p.get-help a {
   padding: 10px;
   margin: 10px auto;
   color: black;
-  background: rgba(255, 64, 100, 0.3);
+  background: rgba(100, 128, 255, 0.3);
 }
 .cards {
   display: flex;
