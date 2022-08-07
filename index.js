@@ -45,6 +45,9 @@ const jsonSender = (res) => (err, data) => {
     console.log('Error in jsonSender');
     console.log(err);
     res.sendStatus(500);
+  } else if (!data) {
+    console.log('No data');
+    res.sendStatus(404);
   } else {
     res.type('json');
     res.send(JSON.stringify(data, null, 2));
@@ -186,19 +189,7 @@ app.get(
 
 app.get('/api/user', (req, res) => {
   console.log(req.session.user);
-  db.user(req.session.user.email, (err, data) => {
-    // FIXME: should abstract this pattern and use it everywhere.
-    if (err) {
-      console.log('Error getting user in /api/user');
-      console.log(err);
-      res.sendStatus(500);
-    } else if (!data) {
-      console.log('No user data');
-      res.sendStatus(404);
-    } else {
-      jsonSender(res)(null, data);
-    }
-  });
+  db.user(req.session.user.email, jsonSender(res));
 });
 
 ////////////////////////////////////////////////////////////////////////////////
