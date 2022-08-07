@@ -2,19 +2,17 @@ import { $, markdown, withClass } from './modules/common.js';
 import { yyyymmdd, hhmm, humandate } from './modules/dateformat.js';
 
 const render = async () => {
-  console.log('here');
-  fetch(`/api${window.location.pathname}`)
-    .then((r) => {
-      console.log(`status: ${r.status}`);
-      if (r.status === 200) {
-        r.json().then((data) => $('#journal').replaceChildren(...entries(groupEntries(data))));
-      } else if (r.status === 401) {
-        $('#journal').replaceChildren($('<h1>', 'Not allowed to see that journal.'));
-      } else {
-        $('#journal').replaceChildren($('<h1>', 'No such journal.'));
-      }
-    })
-    .catch(() => console.log('wat'));
+  fetch(`/api${window.location.pathname}`).then((r) => {
+    if (r.status === 200) {
+      r.json().then((data) => $('#journal').replaceChildren(...entries(groupEntries(data))));
+    } else if (r.status === 401) {
+      $('#journal').replaceChildren($('<h1>', 'Not allowed to see that journal.'));
+    } else if (r.status === 404) {
+      $('#journal').replaceChildren($('<h1>', 'No such journal.'));
+    } else {
+      $('#journal').replaceChildren($('<h1>', `Problem fetching journal: ${r.status}`));
+    }
+  });
 };
 
 const groupEntries = (data) => {
@@ -37,7 +35,6 @@ const entries = (days) => days.map((d) => oneDay(d));
 
 const oneDay = (day) => {
   const div = withClass('day', $('<div>', $('<h2>', day.nice)));
-
   day.entries.forEach((e) => {
     div.append(
       withClass(
