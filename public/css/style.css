@@ -87,6 +87,7 @@ p.get-help a {
   border: 1px solid rgba(196, 196, 196, 0.5);
   border-radius: 2px;
   padding: 4px;
+  color: #333;
 }
 
 .section h1 {
