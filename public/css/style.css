@@ -16,6 +16,19 @@ body {
   margin: 20px auto;
 }
 
+body.welcome  {
+  text-align: center;
+}
+
+body.welcome h1 {
+  font-size: 1.4em;
+}
+
+body.welcome p {
+  font-size: 1.2em;
+  margin: 1em 0;
+}
+
 h1 {
   margin: 0.5em 0;
 }

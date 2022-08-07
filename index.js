@@ -71,7 +71,7 @@ const jsonSender = (res) => (err, data) => {
 
 app.get('/logout', (req, res) => {
   res.clearCookie('session');
-  res.send('<html><body><p>Logged out. <a href="/">Start over</a></p></html>');
+  res.send('<html><body><p>Logged out. <a href="/up-next">Start over</a></p></html>');
 });
 
 app.get('/auth', async (req, res) => {
@@ -283,7 +283,7 @@ app.get('/api/done', (req, res) => {
 app.post('/help', (req, res) => {
   const { problem, tried } = req.body;
   const { email, name } = req.session.user;
-  db.requestHelp(email, name || null, problem, tried, () => res.redirect('/'));
+  db.requestHelp(email, name || null, problem, tried, () => res.redirect('/up-next'));
 });
 
 app.get('/help/:id', (req, res) => {
