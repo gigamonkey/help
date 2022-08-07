@@ -217,11 +217,28 @@ const withUser = (callback) => {
     .then(callback);
 };
 
+const showItems = (endpoint, emptyMessage) => {
+  withUser((user) => {
+    const render = async () => {
+      const data = await fetch(endpoint).then((r) => r.json());
+      if (data.length > 0) {
+        $('#items').replaceChildren(...data.map((h) => helpCard(h, user, false, render)));
+      } else {
+        $('#items').replaceChildren($('<h2>', emptyMessage));
+      }
+    };
+
+    render();
+    setInterval(updateTimes, 1000);
+  });
+};
+
 export {
-  $,
   $$,
+  $,
   helpCard,
   markdown,
+  showItems,
   status,
   statusAndButtons,
   timeElement,
