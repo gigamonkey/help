@@ -17,6 +17,7 @@ const noAuthRequired = {
   '/logout': true,
   '/auth': true,
   '/health.html': true,
+  '/health': true,
 };
 
 const db = new DB('help.db');
@@ -53,6 +54,8 @@ const jsonSender = (res) => (err, data) => {
     res.send(JSON.stringify(data, null, 2));
   }
 };
+
+app.get('/health', (req, res) => res.send('Ok.'));
 
 app.get('/logout', (req, res) => {
   login.logout(res);
