@@ -4,13 +4,19 @@ import { yyyymmdd, hhmm, humandate } from './modules/dateformat.js';
 const render = async () => {
   fetch(`/api${window.location.pathname}`).then((r) => {
     if (r.status === 200) {
-      r.json().then((data) => $('#journal').replaceChildren(...entries(groupEntries(data))));
+      r.json().then((data) => {
+        if (data.length > 0) {
+          $('#journal').replaceChildren(...entries(groupEntries(data)));
+        } else {
+          $('#journal').replaceChildren($('<h2>', 'No entries yet. 🙁'));
+        }
+      });
     } else if (r.status === 401) {
-      $('#journal').replaceChildren($('<h1>', 'Not allowed to see that journal.'));
+      $('#journal').replaceChildren($('<h2>', 'Not allowed to see that journal.'));
     } else if (r.status === 404) {
-      $('#journal').replaceChildren($('<h1>', 'No such journal.'));
+      $('#journal').replaceChildren($('<h2>', 'No such journal.'));
     } else {
-      $('#journal').replaceChildren($('<h1>', `Problem fetching journal: ${r.status}`));
+      $('#journal').replaceChildren($('<h2>', `Problem fetching journal: ${r.status}`));
     }
   });
 };
