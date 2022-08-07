@@ -20,49 +20,53 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// Middleware that redirects all un-logged-in requests to Google sign in (except
-// the endpoint used in the OAuth dance (/auth) and the endpoint for logging out.
+const noAuthRequired = {
+  '/logout': true,
+  '/auth': true,
+  '/health.html': true,
+};
+
+// Middleware that redirects all un-logged-in requests to Google sign in except
+// for a few special endpoints: the endpoint used in the OAuth dance (/auth),
+// the logout endpoint, and the healthcheck.
 app.use((req, res, next) => {
   console.log(req.originalUrl);
 
-  if (req.path === '/logout' || req.path === '/auth' || req.path === '/health.html') {
+  if (noAuthRequired[req.path] || isLoggedIn(req)) {
     next();
-  } else if (!req.cookies.session) {
-    const id = oauth.newSessionID();
-    const state = `${oauth.newState()}:${req.originalUrl}`;
-    req.session = { id, loggedIn: false };
-
-    res.cookie('session', encrypt(req.session, SECRET));
-    db.newSession(id, state, (err) => {
-      if (err) {
-        console.log('Error making new session');
-        console.log(err);
-        res.sendStatus(500);
-      } else {
-        res.redirect(oauth.url(state));
-      }
-    });
   } else {
-    req.session = decrypt(req.cookies.session, SECRET);
-    if (req.session.loggedIn) {
-      next();
-    } else {
-      db.getSession(req.session.id, (err, data) => {
-        if (err) {
-          console.log('Error getting session.');
-          console.log(err);
-          res.sendStatus(500);
-        } else if (!data) {
-          res.sendStatus(404);
-        } else {
-          res.redirect(oauth.url(data.state));
-        }
-      });
-    }
+    makeNewSession(req, res);
   }
 });
 
 app.use(express.static('public'));
+
+const isLoggedIn = (req) => {
+  if (req.cookies.session) {
+    req.session = decrypt(req.cookies.session, SECRET);
+    if (req.session.loggedIn) {
+      return true;
+    }
+  }
+  return false;
+};
+
+const makeNewSession = (req, res) => {
+  const id = oauth.newSessionID();
+  const state = `${oauth.newState()}:${req.originalUrl}`;
+
+  db.newSession(id, state, (err) => {
+    if (err) {
+      console.log('Error making new session');
+      console.log(err);
+      res.sendStatus(500);
+    } else {
+      req.session = { id, loggedIn: false };
+      res.cookie('session', encrypt(req.session, SECRET));
+      res.redirect(oauth.url(state));
+    }
+  });
+};
 
 const jsonSender = (res) => (err, data) => {
   if (err) {
