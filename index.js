@@ -35,6 +35,7 @@ app.use((req, res, next) => {
     res.cookie('session', encrypt(req.session, SECRET));
     db.newSession(id, state, (err) => {
       if (err) {
+        console.log(err);
         res.sendStatus(500);
       } else {
         res.redirect(oauth.url(state));
@@ -47,6 +48,7 @@ app.use((req, res, next) => {
     } else {
       db.getSession(req.session.id, (err, data) => {
         if (err) {
+          console.log(err);
           res.sendStatus(500);
         } else if (!data) {
           res.sendStatus(404);
@@ -62,6 +64,7 @@ app.use(express.static('public'));
 
 const jsonSender = (res) => (err, data) => {
   if (err) {
+    console.log(err);
     res.sendStatus(500);
   } else {
     res.type('json');
@@ -87,10 +90,12 @@ app.get('/auth', async (req, res) => {
 
   db.getSession(session.id, (err, dbSession) => {
     if (err) {
+      console.log(err);
       res.sendStatus(500);
     } else {
       const { state } = req.query;
       if (dbSession.state !== state) {
+        console.log(`Bad session state ${dbSession.stat} vs ${state}`);
         res.sendStatus(401);
       } else {
         const { name, email } = JSON.parse(atob(authData.id_token.split('.')[1]));
@@ -100,10 +105,12 @@ app.get('/auth', async (req, res) => {
         // cookie.
         db.deleteSession(session.id, (err) => {
           if (err) {
+            console.log(err);
             res.sendStatus(500);
           } else {
             db.ensureUser(email, name, (err, user) => {
               if (err || !user) {
+                console.log(err);
                 res.sendStatus(500);
               } else {
                 res.cookie('session', encrypt({ ...session, user, loggedIn: true }, SECRET));
@@ -179,6 +186,7 @@ app.post('/journal', (req, res) => {
   const { email, name } = req.session.user;
   db.addJournalEntry(email, name || null, text, (err) => {
     if (err) {
+      console.log(err);
       res.sendStatus(500);
     } else {
       res.redirect('/journal');
@@ -209,12 +217,15 @@ app.get('/api/journal/:id', (req, res) => {
     // so it can be updated after the fact.
     db.user(user.email, (err, user) => {
       if (err) {
+        console.log(err);
         res.sendStatus(500);
       } else if (user.role === 'teacher') {
         db.userById(req.params.id, (err, journalUser) => {
           if (err) {
+            console.log(err);
             res.sendStatus(500);
           } else if (!journalUser) {
+            console.log('No journal user');
             res.sendStatus(404);
           } else {
             console.log('Can see because I am the teacher.');
@@ -222,6 +233,7 @@ app.get('/api/journal/:id', (req, res) => {
           }
         });
       } else {
+        console.log('Not allowed to see this journal.');
         res.sendStatus(401);
       }
     });
@@ -244,8 +256,10 @@ app.get('/api/user', (req, res) => {
   db.user(req.session.user.email, (err, data) => {
     // FIXME: should abstract this pattern and use it everywhere.
     if (err) {
+      console.log(err);
       res.sendStatus(500);
     } else if (!data) {
+      console.log('No user data');
       res.sendStatus(404);
     } else {
       jsonSender(res)(null, data);
