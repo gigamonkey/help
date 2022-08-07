@@ -36,7 +36,7 @@ app.use((req, res, next) => {
     db.newSession(id, state, (err) => {
       if (err) {
         console.log('Error making new session');
-	console.log(err);
+        console.log(err);
         res.sendStatus(500);
       } else {
         res.redirect(oauth.url(state));
@@ -49,7 +49,7 @@ app.use((req, res, next) => {
     } else {
       db.getSession(req.session.id, (err, data) => {
         if (err) {
-	  console.log('Error getting session.');
+          console.log('Error getting session.');
           console.log(err);
           res.sendStatus(500);
         } else if (!data) {
@@ -109,13 +109,13 @@ app.get('/auth', async (req, res) => {
         // cookie.
         db.deleteSession(session.id, (err) => {
           if (err) {
-		  console.log('Error deleting session');
+            console.log('Error deleting session');
             console.log(err);
             res.sendStatus(500);
           } else {
             db.ensureUser(email, name, (err, user) => {
               if (err || !user) {
-		      console.log('Error ensuring user');
+                console.log('Error ensuring user');
                 console.log(err);
                 res.sendStatus(500);
               } else {
@@ -262,7 +262,7 @@ app.get('/api/user', (req, res) => {
   db.user(req.session.user.email, (err, data) => {
     // FIXME: should abstract this pattern and use it everywhere.
     if (err) {
-	    console.log('Error getting user in /api/user');
+      console.log('Error getting user in /api/user');
       console.log(err);
       res.sendStatus(500);
     } else if (!data) {
