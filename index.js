@@ -4,6 +4,7 @@ import express from 'express';
 import nunjucks from 'nunjucks';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { DateTime } from 'luxon';
 
 import DB from './modules/storage.js';
 import requireLogin from './modules/require-login.js';
@@ -192,6 +193,13 @@ app.get('/api/journal/:id', (req, res) => {
       });
     });
   }
+});
+
+app.get('/api/journals', (req, res) => {
+  const { after, before } = req.query;
+  const start = after ? Number(after) : null;
+  const end = before ? Number(before) : null;
+  db.journalsBetween(after, before, jsonSender(res));
 });
 
 ////////////////////////////////////////////////////////////////////////////////
