@@ -1,0 +1,44 @@
+{% extends 'layout.njk' %}
+
+{% set title = "Prompts 🤔" %}
+{% set class = "prompts" %}
+
+{% block content %}
+
+<form class="new-prompt" method="POST">
+  <label for="title">Title</label>
+  <input type="text" name="title" class="required">
+  <label for="text">Text</label>
+  <textarea name="text" class="required"></textarea>
+  <button id="submit">New prompt</button>
+</form>
+
+<table>
+  <thead>
+    <tr>
+      <th>Title</th>
+      <th>Times used</th>
+      <th>Last used</th>
+      <th>Open?</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for p in prompts %}
+    <tr>
+      <td>{{p.title}}</td>
+      <td>{{p.timesUsed}}</td>
+      <td>{{p.lastUsed}}</td>
+      <td>{% if p.open == 1 %}Yes{% else %}No{% endif %}</td>
+      <td>{% if p.open == 1 %}
+        <button data-id="{{ p.id }}" data-action="close">Close</button>
+        {% else %}
+        <button data-id="{{ p.id }}" data-action="open">Open</button>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% endblock %}

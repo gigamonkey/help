@@ -142,10 +142,6 @@ legend {
   padding: 6px;
 }
 
-fieldset {
-  //background: rgba(192, 128, 192, 0.2);
-}
-
 label,
 textarea {
   display: block;
@@ -160,6 +156,33 @@ textarea {
   padding: 10px;
   width: calc(100% - 22px);
   height: 10em;
+}
+
+body.prompts table {
+  margin-top: 2em;
+}
+
+body.prompts td:first-child {
+  width: 50%;
+}
+
+.new-prompt input[type='text'] {
+  border: 1px solid grey;
+  margin: 10px 0;
+  padding: 10px;
+  width: calc(100% - 22px);
+}
+
+.new-prompt textarea {
+  border: 1px solid grey;
+  margin: 10px 0;
+  padding: 10px;
+  width: calc(100% - 22px);
+  height: 5em;
+}
+
+.new-prompt label {
+  margin-top: 0.5em;
 }
 
 .journal h2 {

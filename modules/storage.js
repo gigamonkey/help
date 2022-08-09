@@ -23,9 +23,9 @@ const CREATE_HELP_TABLE = `
 const CREATE_JOURNAL_TABLE = `
   CREATE TABLE IF NOT EXISTS journal (
       email TEXT NOT NULL,
-      name TEXT,
       text TEXT NOT NULL,
-      time INTEGER
+      time INTEGER NOT NULL,
+      prompt_id INTEGER
     )
 `;
 
@@ -51,6 +51,28 @@ const CREATE_USERS_TABLE = `
   )
 `;
 
+/*
+ * The actual prompt text. Can be reused.
+ */
+const CREATE_PROMPT_TEXTS_TABLE = `
+  CREATE TABLE IF NOT EXISTS prompt_texts (
+      title TEXT NOT NULL,
+      text TEXT NOT NULL
+  )
+`;
+
+/*
+ * A particular prompt to be displayed at a particular time. Responses are
+ * attached to these.
+ */
+const CREATE_PROMPTS_TABLE = `
+  CREATE TABLE IF NOT EXISTS prompts (
+      prompt_text_id INTEGER NOT NULL,
+      opened_at INTEGER NOT NULL,
+      closed_at INTEGER
+  )
+`;
+
 const QUEUE =
   'SELECT rowid as id, * FROM help WHERE start_time IS NULL AND discard_time IS NULL ORDER BY time ASC';
 
@@ -69,7 +91,10 @@ class DB {
       this.db.run(CREATE_HELP_TABLE);
       this.db.run(CREATE_SESSIONS_TABLE);
       this.db.run(CREATE_JOURNAL_TABLE);
-      this.db.run(CREATE_USERS_TABLE, () => after());
+      this.db.run(CREATE_USERS_TABLE);
+      this.db.run(CREATE_PROMPT_TEXTS_TABLE);
+      this.db.run(CREATE_PROMPTS_TABLE);
+      after();
     });
   }
 
@@ -229,14 +254,14 @@ class DB {
     this.db.run('DELETE from sessions where session_id = ?', id, callback);
   }
 
-  addJournalEntry(email, name, text, callback) {
+  addJournalEntry(email, text, promptId, callback) {
     const q = `
       INSERT INTO journal
-        (email, name, text, time)
+        (email, text, time, prompt_id)
       VALUES
-        (?, ?, ?, unixepoch('now'))
+        (?, ?, unixepoch('now'), ?)
     `;
-    this.db.run(q, email, name, text, callback);
+    this.db.run(q, email, text, promptId, callback);
   }
 
   journalFor(email, callback) {
@@ -249,7 +274,8 @@ class DB {
   }
 
   userById(id, callback) {
-    this.db.get('SELECT rowid as id, * from users where id = ?', id, callback);
+    console.log(id);
+    this.db.get('SELECT rowid as id, * from users where rowid = ?', id, callback);
   }
 
   ensureUser(email, name, callback) {
@@ -293,17 +319,91 @@ class DB {
     const base = 'select rowid as id, * from journal';
 
     if (after && before) {
-      const q =  `${base} where ? < time and time < ?`;
+      const q = `${base} where ? < time and time < ?`;
       this.db.all(q, after, before, callback);
     } else if (after) {
-      const q =  `${base} where ? < time`;
+      const q = `${base} where ? < time`;
       this.db.all(q, after, callback);
     } else if (before) {
-      const q =  `${base} where time < ?`;
+      const q = `${base} where time < ?`;
       this.db.all(q, before, callback);
     } else {
       this.db.all(base, callback);
     }
+  }
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Journal prompts
+
+  // "select prompts.rowid as prompt_id, prompts.date, prompt_texts.prompt from prompts join prompt_texts on prompts.prompt_text_id = prompt_texts.rowid where prompts.date < unixepoch('now')"
+
+  promptText(text, callback) {
+    this.db.get('select rowid as id, * from prompt_texts where text = ?', callback);
+  }
+
+  makePromptText(title, text, callback) {
+    const q = 'insert into prompt_texts (title, text) values (?, ?)';
+    this.db.run(q, title, text, callback);
+  }
+
+  promptTexts(callback) {
+    this.db.all('select rowid as id, * from prompt_texts', callback);
+  }
+
+  ensurePromptText(title, text, callback) {
+    this.promptText(text, (err, data) => {
+      if (err) {
+        callback(err, null);
+      } else if (data) {
+        callback(null, data);
+      } else {
+        this.makePromptText(title, text, (err) => {
+          if (err) {
+            callback(err, null);
+          } else {
+            this.promptText(text, callback);
+          }
+        });
+      }
+    });
+  }
+
+  /*
+   * Create a prompt to be displayed after date.
+   */
+  createPrompt(promptTextId, date, callback) {
+    const q = 'insert into prompts (prompt_text_id, date) values (?, ?)';
+    this.db.run(q, promptTextId, date, callback);
+  }
+
+  prompt(id, callback) {
+    this.db.get('select rowid as id, * from prompts where rowid = ?', id, callback);
+  }
+
+  allPrompts(callback) {
+    const q = `
+      select
+        prompt_texts.rowid as id,
+        prompt_texts.title,
+        count(prompts.rowid) as timesUsed,
+        max(prompts.opened_at) as lastUsed,
+        max(prompts.opened_at) > max(prompts.closed_at) as open
+      from prompt_texts
+      left join prompts on prompt_texts.rowid = prompts.prompt_text_id
+      group by prompt_texts.rowid
+   `;
+    this.db.all(q, callback);
+  }
+
+  openPrompt(id, callback) {
+    const q = `update prompts set closed_at = unixepoch('now') where id = ?`;
+    this.db.run(q, (err) => {
+      if (err) {
+        callback(err, null);
+      } else {
+        this.prompt(id, callback);
+      }
+    });
   }
 }
 

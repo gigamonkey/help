@@ -17,7 +17,7 @@
   <tbody>
     {% for u in users %}
     <tr>
-      <td><a href="mailto:{{u.email}}" target="_blank">{{u.name}}</td>
+      <td><a href="/users/{{u.id}}" target="_blank">{{u.name}}</td>
       <td><a href="/journal/{{u.id}}">{{u.journal_days}}</a></td>
       <td><a href="/journal/{{u.id}}">{{u.journal_entries}}</a></td>
       <td>{{u.help_requests}}</td>

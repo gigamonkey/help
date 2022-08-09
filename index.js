@@ -4,7 +4,6 @@ import express from 'express';
 import nunjucks from 'nunjucks';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { DateTime } from 'luxon';
 
 import DB from './modules/storage.js';
 import requireLogin from './modules/require-login.js';
@@ -150,9 +149,9 @@ app.patch(
  * Accept a POST of a new journal entry.
  */
 app.post('/journal', (req, res) => {
-  const { text } = req.body;
-  const { email, name } = req.session.user;
-  db.addJournalEntry(email, name || null, text, (err) => {
+  const { text, prompt } = req.body;
+  const { email } = req.session.user;
+  db.addJournalEntry(email, text, prompt || null, (err) => {
     if (err) {
       console.log(err);
       res.sendStatus(500);
@@ -199,8 +198,35 @@ app.get('/api/journals', (req, res) => {
   const { after, before } = req.query;
   const start = after ? Number(after) : null;
   const end = before ? Number(before) : null;
-  db.journalsBetween(after, before, jsonSender(res));
+  db.journalsBetween(start, end, jsonSender(res));
 });
+
+////////////////////////////////////////////////////////////////////////////////
+// Prompts
+
+app.post(
+  '/prompts',
+  teacherOnly((req, res) => {
+    const { title, text } = req.body;
+    db.ensurePromptText(title, text, (err) => {
+      if (err) {
+        console.log(err);
+        res.sendStatus(500);
+      } else {
+        res.redirect('/prompts');
+      }
+    });
+  }),
+);
+
+app.get(
+  '/prompts',
+  teacherOnly((req, res) => {
+    db.allPrompts((err, prompts) => {
+      res.render('prompts.njk', { prompts });
+    });
+  }),
+);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Start working on a request for help.
@@ -271,6 +297,18 @@ app.get(
   teacherOnly((req, res) => {
     db.userStats((err, users) => {
       res.render('users.njk', { users });
+    });
+  }),
+);
+
+app.get(
+  '/users/:id',
+  teacherOnly((req, res) => {
+    const { id } = req.params;
+    console.log(id);
+    db.userById(id, (err, user) => {
+      console.log(user);
+      res.render('user.njk', user);
     });
   }),
 );
