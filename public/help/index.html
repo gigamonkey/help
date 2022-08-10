@@ -7,36 +7,7 @@
   <link href="/css/style.css" media="all" rel="stylesheet" type="text/css">
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dompurify@2.3.10/dist/purify.min.js"></script>
-  <script type="module">
-    import { $, $$ } from '/js/modules/common.js';
-
-    const checkReady = () => {
-      $('#submit').disabled = ![...$$('.required')].every((e) => e.value);
-    };
-
-    $$('.required').forEach((e) => e.oninput = checkReady);
-
-    checkReady();
-
-    const hand = '✋';
-    const tones = ['🏻', '🏼','🏽','🏾','🏿'];
-
-    const changeTone = () => {
-      const h1 = document.querySelector('h1')
-      const tone = tones[Math.floor(Math.random() * tones.length)];
-      const text = [...h1.innerText]; // Gotta split into actual codepoints.
-
-      const withoutTone = text[text.length - 1] === hand ? text : text.slice(0, text.length - 1);
-
-      h1.innerText = `${withoutTone.join('')}${tone}`;
-    };
-
-    if (false) { // Set to true to enable random rotation.
-      changeTone();
-      setInterval(changeTone, 5000);
-    }
-
-  </script>
+  <script src="/js/check-required.js" type="module"></script>
 </head>
 <body>
   <div class="toolbar">
