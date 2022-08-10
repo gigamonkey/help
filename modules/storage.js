@@ -45,10 +45,11 @@ const CREATE_SESSIONS_TABLE = `
 
 const CREATE_USERS_TABLE = `
   CREATE TABLE IF NOT EXISTS users (
-      email TEXT NOT NULL,
-      name INTEGER NOT NULL,
+      email TEXT NOT NULL PRIMARY KEY,
+      name TEXT NOT NULL,
+      google_name TEXT NOT NULL,
       role TEXT
-  )
+    );
 `;
 
 /*
@@ -278,22 +279,35 @@ class DB {
     this.db.get('SELECT rowid as id, * from users where rowid = ?', id, callback);
   }
 
-  ensureUser(email, name, callback) {
+  ensureUser(email, name, role, callback) {
     this.user(email, (err, data) => {
       if (err) {
         callback(err, null);
       } else if (data) {
         callback(null, data);
       } else {
-        this.db.run('INSERT INTO users (email, name) VALUES (?, ?)', email, name, (err) => {
-          if (err) {
-            callback(err, null);
-          } else {
-            this.user(email, callback);
-          }
-        });
+        // We create a user with the name we got from Google in both name fields
+        // but later we may change `name` to be the student's preferred name.
+        this.db.run(
+          'INSERT INTO users (email, name, google_name, role) VALUES (?, ?, ?, ?)',
+          email,
+          name,
+          name,
+          role,
+          (err) => {
+            if (err) {
+              callback(err, null);
+            } else {
+              this.user(email, callback);
+            }
+          },
+        );
       }
     });
+  }
+
+  setPreferredName(email, name) {
+    return this.db.run('update users set name = ? where email = ?', name, email);
   }
 
   userStats(callback) {
