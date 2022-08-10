@@ -4,3 +4,4 @@
 *.pem
 *secret*
 node_modules
+students.*
