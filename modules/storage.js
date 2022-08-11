@@ -288,6 +288,23 @@ class DB {
     `;
     this.db.all(q, callback);
   }
+
+  journalsBetween(after, before, callback) {
+    const base = 'select rowid as id, * from journal';
+
+    if (after && before) {
+      const q =  `${base} where ? < time and time < ?`;
+      this.db.all(q, after, before, callback);
+    } else if (after) {
+      const q =  `${base} where ? < time`;
+      this.db.all(q, after, callback);
+    } else if (before) {
+      const q =  `${base} where time < ?`;
+      this.db.all(q, before, callback);
+    } else {
+      this.db.all(base, callback);
+    }
+  }
 }
 
 export default DB;
