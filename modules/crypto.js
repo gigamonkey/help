@@ -47,7 +47,7 @@ const extractByte = (mac, i, mask) => {
 
 // Show the 32 bits of a number in twos-complement form since toString(2)
 // doesn't work right for negative numbers as it just shows the binary form of
-// the positive number with a negative sign infront of it.
+// the positive number with a negative sign in front of it.
 const b32 = (n) => {
   if (n & 0x80000000) {
     return '1' + (n & 0x7fffffff).toString(2).padStart(31, '0');
