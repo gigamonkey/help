@@ -17,6 +17,5 @@ const addUser = (db, email) => {
   const db = await open({ filename, driver });
   const students = await fs.promises.readFile(json, 'utf-8').then((data) => JSON.parse(data));
   await Promise.all(students.map((s) => addUser(db, s.profile.emailAddress)));
-  //console.log(students.map((s) => s.profile.emailAddress));
   console.log('Done');
 })();

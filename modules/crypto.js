@@ -73,10 +73,10 @@ const extractByte = (mac, i, mask) => {
 // the positive number with a negative sign in front of it.
 const b32 = (n) => {
   if (n & 0x80000000) {
-    return '1' + (n & 0x7fffffff).toString(2).padStart(31, '0');
+    return `1${(n & 0x7fffffff).toString(2).padStart(31, '0')}`;
   } else {
     return (n & 0xffffffff).toString(2).padStart(32, '0');
   }
 };
 
-export { randomString, shortRandomString, encrypt, decrypt, totp };
+export { randomString, shortRandomString, encrypt, decrypt, totp, b32 };

@@ -98,7 +98,6 @@ const dbRedirect = (res, err, path) => {
   }
 };
 
-
 app.get('/health', (req, res) => res.send('Ok.'));
 
 app.get('/logout', (req, res) => {
@@ -110,10 +109,8 @@ app.get('/auth', (req, res) => {
   login.finish(req, res);
 });
 
-
 ////////////////////////////////////////////////////////////////////////////////
 // Journal
-
 
 /*
  * Display the current user's journal with a form for new entries.
@@ -122,8 +119,12 @@ app.get('/c/:class_id/journal', (req, res) => {
   const { class_id } = req.params;
   const { email } = req.session.user;
   const renderJournal = (err, journal) => {
-    dbRender(res, err, 'journal.njk', { ...req.params, days: groupEntries(journal), withForm: true });
-  }
+    dbRender(res, err, 'journal.njk', {
+      ...req.params,
+      days: groupEntries(journal),
+      withForm: true,
+    });
+  };
   db.journalFor(email, class_id, renderJournal);
 });
 
@@ -134,7 +135,9 @@ app.post('/c/:class_id/journal', (req, res) => {
   const { class_id } = req.params;
   const { text, prompt } = req.body;
   const { email } = req.session.user;
-  db.addJournalEntry(email, class_id, text, prompt || null, (err) => dbRedirect(res, err, req.path));
+  db.addJournalEntry(email, class_id, text, prompt || null, (err) =>
+    dbRedirect(res, err, req.path),
+  );
 });
 
 /*
@@ -142,17 +145,20 @@ app.post('/c/:class_id/journal', (req, res) => {
  * user is the owner of the journal or the teacher.
  */
 app.get('/c/:class_id/journal/:id(\\d+)', (req, res) => {
-  const { class_id, id } = req.params;
+  const { class_id } = req.params;
   const { user } = req.session;
 
   const renderJournal = (err, journal) => {
-    dbRender(res, err, 'journal.njk', { ...req.params, days: groupEntries(journal), withForm: false });
-  }
+    dbRender(res, err, 'journal.njk', {
+      ...req.params,
+      days: groupEntries(journal),
+      withForm: false,
+    });
+  };
 
   if (user.id === Number(req.params.id)) {
     // The authenticated user is requesting their own journal.
     db.journalFor(user.email, class_id, renderJournal);
-
   } else {
     // Otherwise need to see if authenticated user is the teacher.
     ifTeacher(req, res, () => {
@@ -263,7 +269,7 @@ app.post('/c/:class_id/join', (req, res) => {
   const { class_id } = req.params;
 
   // FIXME: should actually check this. Or get rid of it if we're just going to preload the roster.
-  const { join_code } = req.body;
+  // const { join_code } = req.body;
 
   const { email } = req.session.user;
   db.joinClass(class_id, email, (err) => {
@@ -283,7 +289,7 @@ app.get('/c/:class_id/help', (req, res) => {
 app.post('/c/:class_id/help', (req, res) => {
   const { class_id } = req.params;
   const { problem, tried } = req.body;
-  const { email, name } = req.session.user;
+  const { email } = req.session.user;
   db.requestHelp(email, class_id, problem, tried, (err) => {
     if (err) {
       console.log(err);
@@ -297,7 +303,7 @@ app.post('/c/:class_id/help', (req, res) => {
 app.get('/c/:class_id/help/:id(\\d+)', (req, res) => {
   console.log('here');
   const { id, class_id } = req.params;
-  db.getHelp(id, (err, item) => dbRender(res, err, 'help.njk', { id, class_id, item}));
+  db.getHelp(id, (err, item) => dbRender(res, err, 'help.njk', { id, class_id, item }));
 });
 
 app.get('/c/:class_id/journal/:id', (req, res) => {
@@ -326,7 +332,6 @@ app.get('/c/:class_id/discarded', (req, res) => {
   db.discarded(class_id, (err, queue) => dbRender(res, err, 'discarded.njk', { class_id, queue }));
 });
 
-
 ////////////////////////////////////////////////////////////////////////////////
 // Help items state changes.
 
@@ -337,15 +342,17 @@ app.get('/c/:class_id/discarded', (req, res) => {
 app.get(
   '/c/:class_id/help/:id/take',
   helperOnly((req, res) => {
-    const { class_id, id} = req.params;
-    db.take(req.params.id, req.session.user.email, (err) => dbRedirect(res, err, `/c/${class_id}/help/${id}`));
+    const { class_id, id } = req.params;
+    db.take(req.params.id, req.session.user.email, (err) =>
+      dbRedirect(res, err, `/c/${class_id}/help/${id}`),
+    );
   }),
 );
 
 app.get(
   '/c/:class_id/help/:id/requeue',
   helperOnly((req, res) => {
-    const { class_id, id} = req.params;
+    const { class_id, id } = req.params;
     db.requeueHelp(req.params.id, (err) => dbRedirect(res, err, `/c/${class_id}/help/${id}`));
   }),
 );
@@ -353,7 +360,7 @@ app.get(
 app.get(
   '/c/:class_id/help/:id/done',
   helperOnly((req, res) => {
-    const { class_id, id} = req.params;
+    const { class_id, id } = req.params;
     db.finishHelp(req.params.id, (err) => dbRedirect(res, err, `/c/${class_id}/help/${id}`));
   }),
 );
@@ -361,7 +368,7 @@ app.get(
 app.get(
   '/c/:class_id/help/:id/reopen',
   helperOnly((req, res) => {
-    const { class_id, id} = req.params;
+    const { class_id, id } = req.params;
     db.reopenHelp(req.params.id, (err) => dbRedirect(res, err, `/c/${class_id}/help/${id}`));
   }),
 );
@@ -369,7 +376,7 @@ app.get(
 app.get(
   '/c/:class_id/help/:id/discard',
   helperOnly((req, res) => {
-    const { class_id, id} = req.params;
+    const { class_id, id } = req.params;
     db.discardHelp(req.params.id, (err) => dbRedirect(res, err, `/c/${class_id}/help/${id}`));
   }),
 );

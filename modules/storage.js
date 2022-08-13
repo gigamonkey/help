@@ -5,9 +5,9 @@ import * as url from 'url';
 
 import { shortRandomString } from './crypto.js';
 
-const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
+const DIRNAME = url.fileURLToPath(new URL('.', import.meta.url));
 
-const DDL = fs.readFileSync(path.resolve(__dirname, 'schema.sql'), 'utf-8');
+const DDL = fs.readFileSync(path.resolve(DIRNAME, 'schema.sql'), 'utf-8');
 
 const QUEUE =
   'SELECT rowid as id, * FROM help WHERE start_time IS NULL AND discard_time IS NULL ORDER BY time ASC';
@@ -51,7 +51,7 @@ class DB {
     this.db.get('select * from classes where id = ?', id, callback);
   }
 
-  joinCode(id) {
+  joinCode(id, callback) {
     this.db.get('select joinCode from classes where id = ?', id, callback);
   }
 
@@ -246,7 +246,8 @@ class DB {
 
   journalFor(email, classId, callback) {
     console.log(`Looking for jounal for ${email} and ${classId}`);
-    const q = 'select rowid as id, * from journal where email = ? and class_id = ? order by time desc';
+    const q =
+      'select rowid as id, * from journal where email = ? and class_id = ? order by time desc';
     this.db.all(q, email, classId, (err, data) => {
       console.log('journal');
       console.log(data);
