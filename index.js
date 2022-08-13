@@ -402,31 +402,33 @@ app.get('/c/:class_id/old-up-next', (req, res) => {
   res.render('old-up-next.njk', { class_id });
 });
 
+const dbRender = (res, err, template, data) => {
+  if (err) {
+    console.log(err);
+    res.sendStatus(500);
+  } else {
+    res.render(template, data);
+  }
+};
+
 app.get('/c/:class_id/up-next', (req, res) => {
   const { class_id } = req.params;
-  db.queue(class_id, (err, queue) => {
-    if (err) {
-      console.log(err);
-      res.sendStatus(500);
-    } else {
-      res.render('up-next.njk', { class_id, queue });
-    }
-  });
+  db.queue(class_id, (err, queue) => dbRender(res, err, 'up-next.njk', {class_id, queue}));
 });
 
 app.get('/c/:class_id/in-progress', (req, res) => {
   const { class_id } = req.params;
-  res.render('in-progress.njk', { class_id });
+  db.inProgress(class_id, (err, queue) => dbRender(res, err, 'in-progress.njk', {class_id, queue}));
 });
 
 app.get('/c/:class_id/done', (req, res) => {
   const { class_id } = req.params;
-  res.render('done.njk', { class_id });
+  db.done(class_id, (err, queue) => dbRender(res, err, 'done.njk', {class_id, queue}));
 });
 
 app.get('/c/:class_id/discarded', (req, res) => {
   const { class_id } = req.params;
-  res.render('discarded.njk', { class_id });
+  db.discarded(class_id, (err, queue) => dbRender(res, err, 'discarded.njk', {class_id, queue}));
 });
 
 app.get(
