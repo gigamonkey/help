@@ -1,11 +1,9 @@
-import { $, $$ } from './modules/common.js';
+const required = document.querySelectorAll('.required');
 
-const checkReady = () => {
-  $('#submit').disabled = ![...$$('.required')].every((e) => e.value);
+const check = () => {
+  document.querySelector('#submit').disabled = ![...required].every((e) => e.value);
 };
 
-$$('.required').forEach((e) => {
-  e.oninput = checkReady;
-});
+required.forEach((e) => { e.oninput = check; });
 
-checkReady();
+check();

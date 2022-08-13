@@ -1,0 +1,13 @@
+<div class="day">
+  <h2>{{ day.nice }}</h2>
+
+  {% for entry in day.entries %}
+  <div class="entry">
+    <p class="time">{{ entry.time }}</p>
+    <div class="text">
+      {{entry.text | md(false) | safe}}
+    </div>
+  </div>
+  {% endfor %}
+
+</div>

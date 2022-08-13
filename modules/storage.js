@@ -234,19 +234,24 @@ class DB {
     this.db.run('DELETE from sessions where session_id = ?', id, callback);
   }
 
-  addJournalEntry(email, text, promptId, callback) {
+  addJournalEntry(email, classId, text, promptId, callback) {
     const q = `
-      INSERT INTO journal
-        (email, text, time, prompt_id)
-      VALUES
-        (?, ?, unixepoch('now'), ?)
+      insert into journal
+        (email, class_id, text, time, prompt_id)
+      values
+        (?, ?, ?, unixepoch('now'), ?)
     `;
-    this.db.run(q, email, text, promptId, callback);
+    this.db.run(q, email, classId, text, promptId, callback);
   }
 
-  journalFor(email, callback) {
-    const q = 'SELECT rowid as id, * FROM journal WHERE email = ? ORDER BY time DESC';
-    this.db.all(q, email, callback);
+  journalFor(email, classId, callback) {
+    console.log(`Looking for jounal for ${email} and ${classId}`);
+    const q = 'select rowid as id, * from journal where email = ? and class_id = ? order by time desc';
+    this.db.all(q, email, classId, (err, data) => {
+      console.log('journal');
+      console.log(data);
+      callback(err, data);
+    });
   }
 
   user(email, callback) {

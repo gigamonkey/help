@@ -9,6 +9,7 @@ import markdownFilter from 'nunjucks-markdown-filter';
 import DB from './modules/storage.js';
 import requireLogin from './modules/require-login.js';
 import Permissions from './modules/permissions.js';
+import { groupEntries } from './modules/journal.js';
 
 const FILENAME = fileURLToPath(import.meta.url);
 const DIRNAME = path.dirname(FILENAME);
@@ -113,38 +114,45 @@ app.get('/auth', (req, res) => {
 ////////////////////////////////////////////////////////////////////////////////
 // Journal
 
+
+/*
+ * Display the current user's journal with a form for new entries.
+ */
+app.get('/c/:class_id/journal', (req, res) => {
+  const { class_id } = req.params;
+  const { email } = req.session.user;
+  const renderJournal = (err, journal) => {
+    dbRender(res, err, 'journal.njk', { ...req.params, days: groupEntries(journal), withForm: true });
+  }
+  db.journalFor(email, class_id, renderJournal);
+});
+
 /*
  * Accept a POST of a new journal entry.
  */
-app.post('/journal', (req, res) => {
+app.post('/c/:class_id/journal', (req, res) => {
+  const { class_id } = req.params;
   const { text, prompt } = req.body;
   const { email } = req.session.user;
-  db.addJournalEntry(email, text, prompt || null, (err) => {
-    if (err) {
-      console.log(err);
-      res.sendStatus(500);
-    } else {
-      res.redirect('/journal');
-    }
-  });
+  db.addJournalEntry(email, class_id, text, prompt || null, (err) => dbRedirect(res, err, req.path));
 });
 
 /*
- * Get the whole journal of the logged in user.
+ * Display a particular user's journal with no form. Only allowed if the current
+ * user is the owner of the journal or the teacher.
  */
-app.get('/api/journal', (req, res) => {
-  const { email } = req.session.user;
-  db.journalFor(email, jsonSender(res));
-});
-
-/*
- * Get an arbitrary journal. User must be owner or teacher.
- */
-app.get('/api/journal/:id', (req, res) => {
+app.get('/c/:class_id/journal/:id(\\d+)', (req, res) => {
+  const { class_id, id } = req.params;
   const { user } = req.session;
+
+  const renderJournal = (err, journal) => {
+    dbRender(res, err, 'journal.njk', { ...req.params, days: groupEntries(journal), withForm: false });
+  }
+
   if (user.id === Number(req.params.id)) {
     // The authenticated user is requesting their own journal.
-    db.journalFor(user.email, jsonSender(res));
+    db.journalFor(user.email, class_id, renderJournal);
+
   } else {
     // Otherwise need to see if authenticated user is the teacher.
     ifTeacher(req, res, () => {
@@ -155,7 +163,7 @@ app.get('/api/journal/:id', (req, res) => {
         } else if (!journalUser) {
           res.sendStatus(404);
         } else {
-          db.journalFor(journalUser.email, jsonSender(res));
+          db.journalFor(journalUser.email, class_id, renderJournal);
         }
       });
     });
@@ -202,37 +210,6 @@ app.get(
 app.get('/api/user', (req, res) => {
   console.log(req.session.user);
   db.user(req.session.user.email, jsonSender(res));
-});
-
-////////////////////////////////////////////////////////////////////////////////
-// Bulk queries
-
-/*
- * Get the queue of requests for help that have not been picked up yet.
- */
-app.get('/api/:class_id/queue', (req, res) => {
-  const { class_id } = req.params;
-  db.queue(class_id, jsonSender(res));
-});
-
-/*
- * Get the requests that are currently being helped.
- */
-app.get('/api/:class_id/in-progress', (req, res) => {
-  const { class_id } = req.params;
-  db.inProgress(class_id, jsonSender(res));
-});
-
-/*
- * Get the requests that have been helped and finished.
- */
-app.get('/api/:class_id/done', (req, res) => {
-  const { class_id } = req.params;
-  db.done(class_id, jsonSender(res));
-});
-
-app.get('/api/:class_id/discarded', (req, res) => {
-  db.discarded(jsonSender(res));
 });
 
 ////////////////////////////////////////////////////////////////////////////////

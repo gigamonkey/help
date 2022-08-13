@@ -1,0 +1,24 @@
+{% extends 'layout.njk' %}
+
+{% set title = "Journal ✍️" %}
+
+{% block scripts %}
+<script src="/js/check-required.js" type="module"></script>
+{% endblock %}
+
+{% block content %}
+
+{% if withForm %}
+<form method="POST">
+  <textarea name="text" class="required"></textarea>
+  <button id="submit">Submit</button>
+</form>
+{% endif %}
+
+<div id="journal" class="journal">
+  {% for day in days %}
+  {% include 'journal-day.njk' %}
+  {% endfor %}
+</div>
+
+{% endblock %}
