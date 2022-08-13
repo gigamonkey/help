@@ -1,6 +1,8 @@
 import crypto from 'crypto';
 import CryptoJS from 'crypto-js';
 
+/* eslint-disable no-bitwise */
+
 /*
  * Make a random string.
  */
@@ -21,7 +23,6 @@ const shortRandomString = () => {
   crypto.getRandomValues(array);
   return array[0].toString(36);
 };
-
 
 /*
  * Encrypt some data (converted to JSON) using a strong symmetric-key algorithm
@@ -66,7 +67,6 @@ const extractByte = (mac, i, mask) => {
   const bits = mac.words[w] & 0xffffffff;
   return (bits >>> (8 * (3 - b))) & mask;
 };
-
 
 // Show the 32 bits of a number in twos-complement form since toString(2)
 // doesn't work right for negative numbers as it just shows the binary form of

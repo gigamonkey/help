@@ -47,7 +47,6 @@ env.addFilter('status', (h) => {
   }
 });
 
-
 // Permission schemes.
 const isTeacher = permissions.oneOf('teacher');
 const isHelper = permissions.oneOf('teacher', 'helper');
@@ -55,7 +54,7 @@ const isHelper = permissions.oneOf('teacher', 'helper');
 // Route permission handlers
 const teacherOnly = permissions.classRoute(isTeacher);
 const helperOnly = permissions.classRoute(isHelper);
-const adminOnly = permissions.route(permissions.isAdmin)
+const adminOnly = permissions.route(permissions.isAdmin);
 
 // Thunk permission handlers.
 const ifTeacher = permissions.thunk(isTeacher);
@@ -80,6 +79,25 @@ const jsonSender = (res) => (err, data) => {
   }
 };
 
+const dbRender = (res, err, template, data) => {
+  if (err) {
+    console.log(err);
+    res.sendStatus(500);
+  } else {
+    res.render(template, data);
+  }
+};
+
+const dbRedirect = (res, err, path) => {
+  if (err) {
+    console.log(err);
+    res.sendStatus(500);
+  } else {
+    res.redirect(path);
+  }
+};
+
+
 app.get('/health', (req, res) => res.send('Ok.'));
 
 app.get('/logout', (req, res) => {
@@ -91,86 +109,6 @@ app.get('/auth', (req, res) => {
   login.finish(req, res);
 });
 
-////////////////////////////////////////////////////////////////////////////////
-// Requests for help
-
-/*
- * Make a new request.
- */
-app.post('/api/:class_id/help', (req, res) => {
-  const { class_id } = req.params;
-  const { problem, tried } = req.body;
-  const { email, name } = req.session.user;
-  db.requestHelp(email, class_id, problem, tried, jsonSender(res));
-});
-
-/*
- * Fetch an existing request.
- */
-app.get('/api/help/:id', (req, res) => {
-  db.getHelp(req.params.id, jsonSender(res));
-});
-
-/*
- * Take a specific item from the queue and start helping.
- */
-app.get(
-  '/api/:class_id/help/:id/take',
-  helperOnly((req, res) => {
-    db.take(req.params.id, req.session.user.email, jsonSender(res));
-  }),
-);
-
-/*
- * Take the item.
- */
-app.patch(
-  '/api/:class_id/help/:id/take',
-  helperOnly(
-  (req, res) => {
-    db.take(req.params.id, req.session.user.email, jsonSender(res));
-  }),
-);
-
-/*
- * Close the given help record.
- */
-app.patch(
-  '/api/help/:id/finish',
-  helperOnly((req, res) => {
-    db.finishHelp(req.params.id, jsonSender(res));
-  }),
-);
-
-/*
- * Put the given help item back on the queue.
- */
-app.patch(
-  '/api/help/:id/requeue',
-  helperOnly((req, res) => {
-    db.requeueHelp(req.params.id, jsonSender(res));
-  }),
-);
-
-/*
- * Put the given help item back into in-progress from done.
- */
-app.patch(
-  '/api/help/:id/reopen',
-  helperOnly((req, res) => {
-    db.reopenHelp(req.params.id, jsonSender(res));
-  }),
-);
-
-/*
- * Discard the help item.
- */
-app.patch(
-  '/api/help/:id/discard',
-  helperOnly((req, res) => {
-    db.discardHelp(req.params.id, jsonSender(res));
-  }),
-);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Journal
@@ -261,16 +199,6 @@ app.get(
 ////////////////////////////////////////////////////////////////////////////////
 // Start working on a request for help.
 
-/*
- * Take the next item on the queue and start helping.
- */
-app.get(
-  '/api/next',
-  helperOnly((req, res) => {
-    db.next(req.session.user.email, jsonSender(res));
-  }),
-);
-
 app.get('/api/user', (req, res) => {
   console.log(req.session.user);
   db.user(req.session.user.email, jsonSender(res));
@@ -310,9 +238,12 @@ app.get('/api/:class_id/discarded', (req, res) => {
 ////////////////////////////////////////////////////////////////////////////////
 // Pages
 
-app.get('/create-class', adminOnly((req, res) => {
-  res.render('create-class-form.njk');
-}));
+app.get(
+  '/create-class',
+  adminOnly((req, res) => {
+    res.render('create-class-form.njk');
+  }),
+);
 
 app.post('/create-class', (req, res) => {
   const { id, name, google_id } = req.body;
@@ -355,7 +286,7 @@ app.post('/c/:class_id/join', (req, res) => {
   const { class_id } = req.params;
 
   // FIXME: should actually check this. Or get rid of it if we're just going to preload the roster.
-  const { join_code } = req.body
+  const { join_code } = req.body;
 
   const { email } = req.session.user;
   db.joinClass(class_id, email, (err) => {
@@ -369,8 +300,7 @@ app.post('/c/:class_id/join', (req, res) => {
 });
 
 app.get('/c/:class_id/help', (req, res) => {
-  const { class_id } = req.params;
-  res.render('help-form.njk');
+  res.render('help-form.njk', req.params);
 });
 
 app.post('/c/:class_id/help', (req, res) => {
@@ -387,44 +317,85 @@ app.post('/c/:class_id/help', (req, res) => {
   });
 });
 
-
-app.get('/c/:class_id/help/:id', (req, res) => {
-  // Can't use help/index.html because that's the form.
-  res.sendFile(path.join(DIRNAME, 'public/help/show.html'));
+app.get('/c/:class_id/help/:id(\\d+)', (req, res) => {
+  console.log('here');
+  const { id, class_id } = req.params;
+  db.getHelp(id, (err, item) => dbRender(res, err, 'help.njk', { id, class_id, item}));
 });
 
 app.get('/c/:class_id/journal/:id', (req, res) => {
   res.sendFile(path.join(DIRNAME, 'public/journal/show.html'));
 });
 
-const dbRender = (res, err, template, data) => {
-  if (err) {
-    console.log(err);
-    res.sendStatus(500);
-  } else {
-    res.render(template, data);
-  }
-};
-
 app.get('/c/:class_id/up-next', (req, res) => {
   const { class_id } = req.params;
-  db.queue(class_id, (err, queue) => dbRender(res, err, 'up-next.njk', {class_id, queue}));
+  db.queue(class_id, (err, queue) => dbRender(res, err, 'up-next.njk', { class_id, queue }));
 });
 
 app.get('/c/:class_id/in-progress', (req, res) => {
   const { class_id } = req.params;
-  db.inProgress(class_id, (err, queue) => dbRender(res, err, 'in-progress.njk', {class_id, queue}));
+  db.inProgress(class_id, (err, queue) =>
+    dbRender(res, err, 'in-progress.njk', { class_id, queue }),
+  );
 });
 
 app.get('/c/:class_id/done', (req, res) => {
   const { class_id } = req.params;
-  db.done(class_id, (err, queue) => dbRender(res, err, 'done.njk', {class_id, queue}));
+  db.done(class_id, (err, queue) => dbRender(res, err, 'done.njk', { class_id, queue }));
 });
 
 app.get('/c/:class_id/discarded', (req, res) => {
   const { class_id } = req.params;
-  db.discarded(class_id, (err, queue) => dbRender(res, err, 'discarded.njk', {class_id, queue}));
+  db.discarded(class_id, (err, queue) => dbRender(res, err, 'discarded.njk', { class_id, queue }));
 });
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Help items state changes.
+
+// FIXME: should perhaps pass req.session.user.email to all the state changes
+// and log the changes, especially if we're going to let students move things on
+// the queue.
+
+app.get(
+  '/c/:class_id/help/:id/take',
+  helperOnly((req, res) => {
+    const { class_id, id} = req.params;
+    db.take(req.params.id, req.session.user.email, (err) => dbRedirect(res, err, `/c/${class_id}/help/${id}`));
+  }),
+);
+
+app.get(
+  '/c/:class_id/help/:id/requeue',
+  helperOnly((req, res) => {
+    const { class_id, id} = req.params;
+    db.requeueHelp(req.params.id, (err) => dbRedirect(res, err, `/c/${class_id}/help/${id}`));
+  }),
+);
+
+app.get(
+  '/c/:class_id/help/:id/done',
+  helperOnly((req, res) => {
+    const { class_id, id} = req.params;
+    db.finishHelp(req.params.id, (err) => dbRedirect(res, err, `/c/${class_id}/help/${id}`));
+  }),
+);
+
+app.get(
+  '/c/:class_id/help/:id/reopen',
+  helperOnly((req, res) => {
+    const { class_id, id} = req.params;
+    db.reopenHelp(req.params.id, (err) => dbRedirect(res, err, `/c/${class_id}/help/${id}`));
+  }),
+);
+
+app.get(
+  '/c/:class_id/help/:id/discard',
+  helperOnly((req, res) => {
+    const { class_id, id} = req.params;
+    db.discardHelp(req.params.id, (err) => dbRedirect(res, err, `/c/${class_id}/help/${id}`));
+  }),
+);
 
 app.get(
   '/c/:class_id/students',
@@ -432,7 +403,7 @@ app.get(
     const { class_id } = req.params;
     db.studentStats(class_id, (err, students) => {
       console.log(students);
-      res.render('students.njk', { students });
+      res.render('students.njk', { ...req.params, students });
     });
   }),
 );

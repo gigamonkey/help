@@ -14,7 +14,8 @@ class Permissions {
   }
 
   classRoute(predicate) {
-    return (handler) => (req, res) => this.maybeDoItWithClass(req, res, predicate, () => handler(req, res));
+    return (handler) => (req, res) =>
+      this.maybeDoItWithClass(req, res, predicate, () => handler(req, res));
   }
 
   thunk(predicate) {
@@ -35,7 +36,7 @@ class Permissions {
   }
 
   maybeDoItWithClass(req, res, predicate, thunk) {
-    const {email} = req.session.user;
+    const { email } = req.session.user;
     const { class_id } = req.params;
     this.db.classMember(email, class_id, (err, user) => {
       console.log('User from classMember');
@@ -50,8 +51,6 @@ class Permissions {
       }
     });
   }
-
-
 }
 
 export default Permissions;

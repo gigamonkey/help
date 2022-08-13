@@ -10,36 +10,7 @@
     <div id="items" class="cards">
 
     {% for item in queue %}
-      <div class="item">
-        <div class="who">
-          <span><a href="/c/{{item.class_id}}help/{{item.id}}">#{{item.id}}</a> -
-            <span>{{item.email}}</span>
-          </span>
-          <span class="time" data-time="{{item.time}}"></span>
-        </div>
-        <div class="section">
-          <h1>Problem</h1>
-          <div>
-            {{item.problem | md | safe}}
-          </div>
-          <h1>Tried</h1>
-          <div>
-            {{item.tried | md | safe}}
-          </div>
-        </div>
-        <div class="buttons">
-          <span class="status">Status: {{ item | status}}</span>
-          {% if item.helper %}<span>Helping: {{item.helper}}</span>{% endif %}
-          <span>
-            <!-- FIXME show particular buttons based on the page and the role of the user -->
-            <button class="action-button" data-class-id="{{class_id}}" data-id="{{item.id}}" data-action="take">Take</button>
-            <button class="action-button" data-classId="{{class_id}}" data-id="{{item.id}}" data-action="requeue">Requeue</button>
-            <button class="action-button" data-classId="{{class_id}}" data-id="{{item.id}}" data-action="done">Done</button>
-            <button class="action-button" data-classId="{{class_id}}" data-id="{{item.id}}" data-action="reopen">Reopen</button>
-            <button class="action-button" data-classId="{{class_id}}" data-id="{{item.id}}" data-action="discard">Discard</button>
-          </span>
-        </div>
-      </div>
+    {% include 'help-card.njk' %}
     {% endfor %}
 
     </div>

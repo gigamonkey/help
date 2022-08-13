@@ -1,4 +1,4 @@
-import fs  from 'fs';
+import fs from 'fs';
 import path from 'path';
 import sqlite3 from 'sqlite3';
 import * as url from 'url';
@@ -44,7 +44,7 @@ class DB {
   createClass(id, name, googleId, callback) {
     console.log('Creating class');
     const q = 'insert into classes (id, name, join_code, google_id) values (?, ?, ?, ?)';
-    this.db.run(q, id, name, shortRandomString(),  googleId, callback);
+    this.db.run(q, id, name, shortRandomString(), googleId, callback);
   }
 
   getClass(id, callback) {
@@ -56,7 +56,12 @@ class DB {
   }
 
   joinClass(id, email, callback) {
-    this.db.run("insert into class_members (email, class_id, role) values (?, ?, 'student')", email, id, callback);
+    this.db.run(
+      "insert into class_members (email, class_id, role) values (?, ?, 'student')",
+      email,
+      id,
+      callback,
+    );
   }
 
   /*
@@ -83,9 +88,8 @@ class DB {
   getHelp(id, callback) {
     console.log(`Getting help ${id}`);
     this.db.get('select rowid as id, * from help where rowid = ?', id, (err, data) => {
-
       console.log(`In callback for help ${id}`);
-      callback(err,data);
+      callback(err, data);
     });
   }
 
@@ -336,7 +340,6 @@ class DB {
     `;
     this.db.all(q, classId, callback);
   }
-
 
   journalsBetween(after, before, callback) {
     const base = 'select rowid as id, * from journal';

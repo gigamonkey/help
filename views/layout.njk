@@ -15,7 +15,9 @@
   {% block beforeTitle %}
   {% endblock %}
 
+  {% if title %}
   <h1>{{ title }}</h1>
+  {% endif %}
 
   {% block content %}
   {% endblock %}
