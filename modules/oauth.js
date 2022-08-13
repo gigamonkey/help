@@ -1,19 +1,10 @@
 import 'dotenv/config';
-import crypto from 'crypto';
+import { randomString } from './crypto.js';
 
 const { CLIENT_ID, CLIENT_SECRET, REDIRECT_URL } = process.env;
 
 const BASE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const TOKEN_URL = 'https://oauth2.googleapis.com/token';
-
-const randomString = () => {
-  const array = new Uint32Array(4);
-  crypto.getRandomValues(array);
-  return [...array]
-    .map((n) => n.toString(16).padStart(8, 0))
-    .join('-')
-    .toLowerCase();
-};
 
 const authParams = (state) =>
   new URLSearchParams({

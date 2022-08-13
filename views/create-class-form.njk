@@ -1,0 +1,31 @@
+{% extends 'layout.njk' %}
+
+{% set title = "Create class" %}
+{% set class = 'create-class' %}
+
+{% block scripts %}
+<script src="/js/check-required.js" type="module"></script>
+{% endblock %}
+
+{% block content %}
+
+<form method="POST">
+  <label for="name">
+    Class name
+  </label>
+  <input type="text" name="name" class="required"></input>
+
+  <label for="id">
+    Short unique slug for class.
+  </label>
+  <input type="text" name="id" class="required"></input>
+
+  <label for="google_id">
+    Google Classroom ID (optional)
+  </label>
+  <input type="text" name="google_id"></input>
+
+  <button id="submit">Submit</button>
+</form>
+
+{% endblock %}

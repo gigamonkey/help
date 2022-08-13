@@ -1,4 +1,27 @@
+import crypto from 'crypto';
 import CryptoJS from 'crypto-js';
+
+/*
+ * Make a random string.
+ */
+const randomString = () => {
+  const array = new Uint32Array(4);
+  crypto.getRandomValues(array);
+  return [...array]
+    .map((n) => n.toString(16).padStart(8, 0))
+    .join('-')
+    .toLowerCase();
+};
+
+/*
+ * Make a random string.
+ */
+const shortRandomString = () => {
+  const array = new Uint32Array(1);
+  crypto.getRandomValues(array);
+  return array[0].toString(36);
+};
+
 
 /*
  * Encrypt some data (converted to JSON) using a strong symmetric-key algorithm
@@ -56,4 +79,4 @@ const b32 = (n) => {
   }
 };
 
-export { encrypt, decrypt, totp };
+export { randomString, shortRandomString, encrypt, decrypt, totp };

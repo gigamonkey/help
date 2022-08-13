@@ -1,0 +1,30 @@
+{% extends 'layout.njk' %}
+
+{% set title = "Get help ✋" %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@2.3.10/dist/purify.min.js"></script>
+<script src="/js/check-required.js" type="module"></script>
+{% endblock %}
+
+{% block content %}
+
+<form method="POST">
+  <label for="problem">
+    What do you need help with?
+  </label>
+
+  <textarea name="problem" class="required"></textarea>
+
+  <label for="tried">
+    What are some things you've tried? Or is there something that you think
+    you need to know to solve this problem that you don't know?
+  </label>
+
+  <textarea name="tried" class="required"></textarea>
+
+  <button id="submit">Submit</button>
+</form>
+
+{% endblock %}

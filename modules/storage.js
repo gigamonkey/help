@@ -1,78 +1,13 @@
+import fs  from 'fs';
+import path from 'path';
 import sqlite3 from 'sqlite3';
+import * as url from 'url';
 
-/*
- * Help items.
- */
-const CREATE_HELP_TABLE = `
-  CREATE TABLE IF NOT EXISTS help (
-      email TEXT NOT NULL,
-      name TEXT,
-      problem TEXT NOT NULL,
-      tried TEXT NOT NULL,
-      time INTEGER NOT NULL,
-      helper TEXT,
-      start_time INTEGER,
-      end_time INTEGER,
-      discard_time integer
-  )
-`;
+import { shortRandomString } from './crypto.js';
 
-/*
- * Student journals.
- */
-const CREATE_JOURNAL_TABLE = `
-  CREATE TABLE IF NOT EXISTS journal (
-      email TEXT NOT NULL,
-      text TEXT NOT NULL,
-      time INTEGER NOT NULL,
-      prompt_id INTEGER
-    )
-`;
+const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
 
-/*
- * In flight OAuth sessions. We store the state so we can compare it to what
- * gets passed back to the /auth endpoint. created_at is here so we can clean up
- * any old sessions that don't get cleaned up after the auth finishes. Nothing
- * does that automatically yet though.
- */
-const CREATE_SESSIONS_TABLE = `
-  CREATE TABLE IF NOT EXISTS sessions (
-      session_id TEXT NOT NULL,
-      created_at INTEGER NOT NULL,
-      state TEXT NOT NULL
-  )
-`;
-
-const CREATE_USERS_TABLE = `
-  CREATE TABLE IF NOT EXISTS users (
-      email TEXT NOT NULL PRIMARY KEY,
-      name TEXT NOT NULL,
-      google_name TEXT NOT NULL,
-      role TEXT
-    );
-`;
-
-/*
- * The actual prompt text. Can be reused.
- */
-const CREATE_PROMPT_TEXTS_TABLE = `
-  CREATE TABLE IF NOT EXISTS prompt_texts (
-      title TEXT NOT NULL,
-      text TEXT NOT NULL
-  )
-`;
-
-/*
- * A particular prompt to be displayed at a particular time. Responses are
- * attached to these.
- */
-const CREATE_PROMPTS_TABLE = `
-  CREATE TABLE IF NOT EXISTS prompts (
-      prompt_text_id INTEGER NOT NULL,
-      opened_at INTEGER NOT NULL,
-      closed_at INTEGER
-  )
-`;
+const DDL = fs.readFileSync(path.resolve(__dirname, 'schema.sql'), 'utf-8');
 
 const QUEUE =
   'SELECT rowid as id, * FROM help WHERE start_time IS NULL AND discard_time IS NULL ORDER BY time ASC';
@@ -85,16 +20,11 @@ class DB {
   }
 
   /*
-   * This needs to be kept idempotent since it is run at every server startup.
+   * DDL needs to be kept idempotent since it is run at every server startup.
    */
   setup(after) {
     this.db.serialize(() => {
-      this.db.run(CREATE_HELP_TABLE);
-      this.db.run(CREATE_SESSIONS_TABLE);
-      this.db.run(CREATE_JOURNAL_TABLE);
-      this.db.run(CREATE_USERS_TABLE);
-      this.db.run(CREATE_PROMPT_TEXTS_TABLE);
-      this.db.run(CREATE_PROMPTS_TABLE);
+      this.db.exec(DDL);
       after();
     });
   }
@@ -111,28 +41,52 @@ class DB {
     });
   }
 
+  createClass(id, name, googleId, callback) {
+    console.log('Creating class');
+    const q = 'insert into classes (id, name, join_code, google_id) values (?, ?, ?, ?)';
+    this.db.run(q, id, name, shortRandomString(),  googleId, callback);
+  }
+
+  getClass(id, callback) {
+    this.db.get('select * from classes where id = ?', id, callback);
+  }
+
+  joinCode(id) {
+    this.db.get('select joinCode from classes where id = ?', id, callback);
+  }
+
+  joinClass(id, email, callback) {
+    this.db.run("insert into class_members (email, class_id, role) values (?, ?, 'student')", email, id, callback);
+  }
+
   /*
    * Create a new request for help.
    */
-  requestHelp(email, name, problem, tried, callback) {
+  requestHelp(email, class_id, problem, tried, callback) {
     const q = `
-      INSERT INTO help (email, name, problem, tried, time)
+      INSERT INTO help (email, class_id, problem, tried, time)
       VALUES (?, ?, ?, ?, unixepoch('now'))
     `;
 
     const that = this;
 
-    this.db.run(q, email, name, problem, tried, function (err) {
+    this.db.run(q, email, class_id, problem, tried, function (err) {
       if (err) {
         callback(err, null);
       } else {
+        console.log(`Created help with id ${this.lastID}`);
         that.getHelp(this.lastID, callback);
       }
     });
   }
 
   getHelp(id, callback) {
-    this.db.get('SELECT rowid as id, * FROM help WHERE rowid = ?', id, callback);
+    console.log(`Getting help ${id}`);
+    this.db.get('select rowid as id, * from help where rowid = ?', id, (err, data) => {
+
+      console.log(`In callback for help ${id}`);
+      callback(err,data);
+    });
   }
 
   next(helper, callback) {
@@ -212,33 +166,54 @@ class DB {
   /*
    * Get all the help requests that have not been picked up to be helped yet.
    */
-  queue(callback) {
-    this.db.all(QUEUE, callback);
+  queue(classId, callback) {
+    const q = `
+      select rowid as id, * from help
+      where class_id = ? and
+      start_time is null and
+      discard_time is null
+      order by time asc
+    `;
+    this.db.all(q, classId, callback);
   }
 
   /*
    * Get all help requests that someone has started helping but not finished.
    */
-  inProgress(callback) {
+  inProgress(classId, callback) {
     const q = `
-      SELECT rowid as id, * FROM help
-      WHERE start_time IS NOT NULL AND end_time IS NULL and discard_time IS NULL ORDER BY time ASC
+      select rowid as id, * from help
+      where class_id = ? and
+      start_time is not null and
+      end_time is null and
+      discard_time is null
+      order by time asc
     `;
-    this.db.all(q, callback);
+    this.db.all(q, classId, callback);
   }
 
   /*
    * Get all help requests that have been finished.
    */
-  done(callback) {
-    const q =
-      'SELECT rowid as id, * FROM help WHERE end_time IS NOT NULL and discard_time IS NULL ORDER BY time ASC';
-    this.db.all(q, callback);
+  done(classId, callback) {
+    const q = `
+      select rowid as id, * from help
+      where class_id = ? and
+      end_time is not null and
+      discard_time is null
+      order by time asc
+    `;
+    this.db.all(q, classId, callback);
   }
 
-  discarded(callback) {
-    const q = 'SELECT rowid as id, * FROM help WHERE discard_time IS NOT NULL ORDER BY time ASC';
-    this.db.all(q, callback);
+  discarded(classId, callback) {
+    const q = `
+      select rowid as id, * from help
+      where class_id = ? and
+      discard_time is not null
+      order by time asc
+    `;
+    this.db.all(q, classId, callback);
   }
 
   newSession(id, state, callback) {
@@ -274,12 +249,22 @@ class DB {
     this.db.get('SELECT rowid as id, * from users where email = ?', email, callback);
   }
 
+  classMember(email, classId, callback) {
+    const q = `
+      select u.rowid as id, u.*, m.role
+      from users as u join class_members as m using (email)
+      where u.email = ? and class_id = ?
+    `;
+    console.log(`Looking for classMember with ${email} and ${classId}`);
+    this.db.get(q, email, classId, callback);
+  }
+
   userById(id, callback) {
     console.log(id);
     this.db.get('SELECT rowid as id, * from users where rowid = ?', id, callback);
   }
 
-  ensureUser(email, name, role, callback) {
+  ensureUser(email, name, callback) {
     this.user(email, (err, data) => {
       if (err) {
         callback(err, null);
@@ -289,11 +274,10 @@ class DB {
         // We create a user with the name we got from Google in both name fields
         // but later we may change `name` to be the student's preferred name.
         this.db.run(
-          'INSERT INTO users (email, name, google_name, role) VALUES (?, ?, ?, ?)',
+          'INSERT INTO users (email, name, google_name) VALUES (?, ?, ?)',
           email,
           name,
           name,
-          role,
           (err) => {
             if (err) {
               callback(err, null);
@@ -310,7 +294,7 @@ class DB {
     return this.db.run('update users set name = ? where email = ?', name, email);
   }
 
-  userStats(callback) {
+  userStats(classId, callback) {
     // N.B. the journal_days is unfortunately tied to UTC days. But fixing it
     // properly probably requires doing the counting outside the database.
     const q = `
@@ -328,6 +312,31 @@ class DB {
     `;
     this.db.all(q, callback);
   }
+
+  studentStats(classId, callback) {
+    // N.B. the journal_days is unfortunately tied to UTC days. But fixing it
+    // properly probably requires doing the counting outside the database.
+    const q = `
+      select
+        m.rowid as id,
+        m.*,
+        u.name,
+        count(distinct journal.rowid) as journal_entries,
+        count(distinct date(journal.time, 'unixepoch')) as journal_days,
+        count(distinct help.rowid) as help_requests
+      from class_members as m
+      left join journal using (email, class_id)
+      left join help using (email, class_id)
+      left join users as u using (email)
+      where
+        m.role = 'student' and
+        m.class_id = ?
+      group by m.email
+      order by u.name asc;
+    `;
+    this.db.all(q, classId, callback);
+  }
+
 
   journalsBetween(after, before, callback) {
     const base = 'select rowid as id, * from journal';

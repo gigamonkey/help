@@ -4,6 +4,7 @@ import express from 'express';
 import nunjucks from 'nunjucks';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import markdownFilter from 'nunjucks-markdown-filter';
 
 import DB from './modules/storage.js';
 import requireLogin from './modules/require-login.js';
@@ -26,18 +27,35 @@ const app = express();
 const login = requireLogin(noAuthRequired, db, SECRET);
 const permissions = new Permissions(db);
 
-nunjucks.configure('views', {
+const env = nunjucks.configure('views', {
   autoescape: true,
   express: app,
 });
+
+// FIXME: this doesn't run things through DOMpurify. May want to fix that.
+markdownFilter.install(env);
+
+env.addFilter('status', (h) => {
+  if (h.discard_time !== null) {
+    return 'Discarded';
+  } else if (h.end_time !== null) {
+    return 'Done';
+  } else if (h.start_time !== null) {
+    return 'In progress';
+  } else {
+    return 'On queue';
+  }
+});
+
 
 // Permission schemes.
 const isTeacher = permissions.oneOf('teacher');
 const isHelper = permissions.oneOf('teacher', 'helper');
 
 // Route permission handlers
-const teacherOnly = permissions.route(isTeacher);
-const helperOnly = permissions.route(isHelper);
+const teacherOnly = permissions.classRoute(isTeacher);
+const helperOnly = permissions.classRoute(isHelper);
+const adminOnly = permissions.route(permissions.isAdmin)
 
 // Thunk permission handlers.
 const ifTeacher = permissions.thunk(isTeacher);
@@ -79,10 +97,11 @@ app.get('/auth', (req, res) => {
 /*
  * Make a new request.
  */
-app.post('/api/help', (req, res) => {
+app.post('/api/:class_id/help', (req, res) => {
+  const { class_id } = req.params;
   const { problem, tried } = req.body;
   const { email, name } = req.session.user;
-  db.requestHelp(email, name || null, problem, tried, jsonSender(res));
+  db.requestHelp(email, class_id, problem, tried, jsonSender(res));
 });
 
 /*
@@ -96,8 +115,19 @@ app.get('/api/help/:id', (req, res) => {
  * Take a specific item from the queue and start helping.
  */
 app.get(
-  '/api/help/:id/take',
+  '/api/:class_id/help/:id/take',
   helperOnly((req, res) => {
+    db.take(req.params.id, req.session.user.email, jsonSender(res));
+  }),
+);
+
+/*
+ * Take the item.
+ */
+app.patch(
+  '/api/:class_id/help/:id/take',
+  helperOnly(
+  (req, res) => {
     db.take(req.params.id, req.session.user.email, jsonSender(res));
   }),
 );
@@ -205,7 +235,7 @@ app.get('/api/journals', (req, res) => {
 // Prompts
 
 app.post(
-  '/prompts',
+  '/c/:class_id/prompts',
   teacherOnly((req, res) => {
     const { title, text } = req.body;
     db.ensurePromptText(title, text, (err) => {
@@ -220,7 +250,7 @@ app.post(
 );
 
 app.get(
-  '/prompts',
+  '/c/:class_id/prompts',
   teacherOnly((req, res) => {
     db.allPrompts((err, prompts) => {
       res.render('prompts.njk', { prompts });
@@ -252,49 +282,157 @@ app.get('/api/user', (req, res) => {
 /*
  * Get the queue of requests for help that have not been picked up yet.
  */
-app.get('/api/queue', (req, res) => {
-  db.queue(jsonSender(res));
+app.get('/api/:class_id/queue', (req, res) => {
+  const { class_id } = req.params;
+  db.queue(class_id, jsonSender(res));
 });
 
 /*
  * Get the requests that are currently being helped.
  */
-app.get('/api/in-progress', (req, res) => {
-  db.inProgress(jsonSender(res));
+app.get('/api/:class_id/in-progress', (req, res) => {
+  const { class_id } = req.params;
+  db.inProgress(class_id, jsonSender(res));
 });
 
 /*
  * Get the requests that have been helped and finished.
  */
-app.get('/api/done', (req, res) => {
-  db.done(jsonSender(res));
+app.get('/api/:class_id/done', (req, res) => {
+  const { class_id } = req.params;
+  db.done(class_id, jsonSender(res));
 });
 
-app.get('/api/discarded', (req, res) => {
+app.get('/api/:class_id/discarded', (req, res) => {
   db.discarded(jsonSender(res));
 });
 
 ////////////////////////////////////////////////////////////////////////////////
 // Pages
 
-app.post('/help', (req, res) => {
-  const { problem, tried } = req.body;
-  const { email, name } = req.session.user;
-  db.requestHelp(email, name || null, problem, tried, () => res.redirect('/up-next'));
+app.get('/create-class', adminOnly((req, res) => {
+  res.render('create-class-form.njk');
+}));
+
+app.post('/create-class', (req, res) => {
+  const { id, name, google_id } = req.body;
+  console.log(req.body);
+  db.createClass(id, name, google_id || null, (err) => {
+    if (err) {
+      console.log(err);
+      res.sendStatus(500);
+    } else {
+      res.redirect(`/c/${id}/`);
+    }
+  });
 });
 
-app.get('/help/:id', (req, res) => {
+app.get('/c/:class_id', (req, res) => {
+  const { class_id } = req.params;
+  db.getClass(class_id, (err, clazz) => {
+    if (err) {
+      console.log(err);
+      res.sendStatus(500);
+    } else {
+      res.render('class.njk', clazz);
+    }
+  });
+});
+
+app.get('/c/:class_id/join', (req, res) => {
+  const { class_id } = req.params;
+  db.getClass(class_id, (err, clazz) => {
+    if (err) {
+      console.log(err);
+      res.sendStatus(500);
+    } else {
+      res.render('join-class-form.njk', clazz);
+    }
+  });
+});
+
+app.post('/c/:class_id/join', (req, res) => {
+  const { class_id } = req.params;
+
+  // FIXME: should actually check this. Or get rid of it if we're just going to preload the roster.
+  const { join_code } = req.body
+
+  const { email } = req.session.user;
+  db.joinClass(class_id, email, (err) => {
+    if (err) {
+      console.log(err);
+      res.sendStatus(500);
+    } else {
+      res.redirect(`/c/${class_id}`);
+    }
+  });
+});
+
+app.get('/c/:class_id/help', (req, res) => {
+  const { class_id } = req.params;
+  res.render('help-form.njk');
+});
+
+app.post('/c/:class_id/help', (req, res) => {
+  const { class_id } = req.params;
+  const { problem, tried } = req.body;
+  const { email, name } = req.session.user;
+  db.requestHelp(email, class_id, problem, tried, (err) => {
+    if (err) {
+      console.log(err);
+      res.sendStatus(500);
+    } else {
+      res.redirect(`up-next`);
+    }
+  });
+});
+
+
+app.get('/c/:class_id/help/:id', (req, res) => {
   // Can't use help/index.html because that's the form.
   res.sendFile(path.join(DIRNAME, 'public/help/show.html'));
 });
 
-app.get('/journal/:id', (req, res) => {
+app.get('/c/:class_id/journal/:id', (req, res) => {
   res.sendFile(path.join(DIRNAME, 'public/journal/show.html'));
 });
 
+app.get('/c/:class_id/old-up-next', (req, res) => {
+  const { class_id } = req.params;
+  res.render('old-up-next.njk', { class_id });
+});
+
+app.get('/c/:class_id/up-next', (req, res) => {
+  const { class_id } = req.params;
+  db.queue(class_id, (err, queue) => {
+    if (err) {
+      console.log(err);
+      res.sendStatus(500);
+    } else {
+      res.render('up-next.njk', { class_id, queue });
+    }
+  });
+});
+
+app.get('/c/:class_id/in-progress', (req, res) => {
+  const { class_id } = req.params;
+  res.render('in-progress.njk', { class_id });
+});
+
+app.get('/c/:class_id/done', (req, res) => {
+  const { class_id } = req.params;
+  res.render('done.njk', { class_id });
+});
+
+app.get('/c/:class_id/discarded', (req, res) => {
+  const { class_id } = req.params;
+  res.render('discarded.njk', { class_id });
+});
+
 app.get(
-  '/users',
+  '/c/:class_id/users',
   teacherOnly((req, res) => {
+    const { class_id } = req.params;
     db.userStats((err, users) => {
       res.render('users.njk', { users });
     });
@@ -302,12 +440,21 @@ app.get(
 );
 
 app.get(
-  '/users/:id',
+  '/c/:class_id/students',
   teacherOnly((req, res) => {
+    const { class_id } = req.params;
+    db.studentStats(class_id, (err, students) => {
+      console.log(students);
+      res.render('students.njk', { students });
+    });
+  }),
+);
+
+app.get(
+  '/users/:id',
+  adminOnly((req, res) => {
     const { id } = req.params;
-    console.log(id);
     db.userById(id, (err, user) => {
-      console.log(user);
       res.render('user.njk', user);
     });
   }),
