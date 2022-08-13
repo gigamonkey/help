@@ -397,11 +397,6 @@ app.get('/c/:class_id/journal/:id', (req, res) => {
   res.sendFile(path.join(DIRNAME, 'public/journal/show.html'));
 });
 
-app.get('/c/:class_id/old-up-next', (req, res) => {
-  const { class_id } = req.params;
-  res.render('old-up-next.njk', { class_id });
-});
-
 const dbRender = (res, err, template, data) => {
   if (err) {
     console.log(err);
@@ -430,16 +425,6 @@ app.get('/c/:class_id/discarded', (req, res) => {
   const { class_id } = req.params;
   db.discarded(class_id, (err, queue) => dbRender(res, err, 'discarded.njk', {class_id, queue}));
 });
-
-app.get(
-  '/c/:class_id/users',
-  teacherOnly((req, res) => {
-    const { class_id } = req.params;
-    db.userStats((err, users) => {
-      res.render('users.njk', { users });
-    });
-  }),
-);
 
 app.get(
   '/c/:class_id/students',
