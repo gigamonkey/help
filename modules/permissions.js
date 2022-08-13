@@ -22,7 +22,7 @@ class Permissions {
   }
 
   maybeDoIt(req, res, predicate, thunk) {
-    this.db.classMember(req.session.user.email, (err, user) => {
+    this.db.user(req.session.user.email, (err, user) => {
       if (err) {
         console.log(err);
         res.sendStatus(500);
