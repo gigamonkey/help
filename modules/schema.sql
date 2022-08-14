@@ -47,12 +47,12 @@ CREATE TABLE IF NOT EXISTS help (
   );
 
 CREATE TABLE IF NOT EXISTS journal (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
       email TEXT NOT NULL,
       class_id TEXT NOT NULL,
       text TEXT NOT NULL,
       time INTEGER NOT NULL,
-      prompt_id INTEGER,
-      PRIMARY KEY (email, class_id, time)
+      prompt_id INTEGER
     );
 
 -- Prompts are created in a class and will show up as current for students who

@@ -298,7 +298,7 @@ class DB {
       select j.*, p.text as prompt from journal as j
       left join prompts as p using (prompt_id)
       where j.email = ? and j.class_id = ?
-      order by time desc
+      order by id desc
     `;
     this.db.all(q, email, classId, (err, data) => {
       callback(err, data);
