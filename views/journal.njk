@@ -16,9 +16,13 @@
 {% endif %}
 
 <div id="journal" class="journal">
+  {% if days.length > 0 %}
   {% for day in days %}
   {% include 'journal-day.njk' %}
   {% endfor %}
+  {% else %}
+  <h2>No journal entries yet.</h2>
+  {% endif %}
 </div>
 
 {% endblock %}

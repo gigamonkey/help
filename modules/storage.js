@@ -41,14 +41,52 @@ class DB {
     });
   }
 
-  createClass(id, name, googleId, callback) {
+  createClass(classId, name, googleId, callback) {
     console.log('Creating class');
-    const q = 'insert into classes (id, name, join_code, google_id) values (?, ?, ?, ?)';
-    this.db.run(q, id, name, shortRandomString(), googleId, callback);
+    const q = 'insert into classes (id, name, google_id) values (?, ?, ?)';
+    this.db.run(q, classId, name, googleId, callback);
+  }
+
+  loadClass(classId, teacherEmail, name, googleId, students, callback) {
+    const createClass = 'insert into classes (id, name, google_id) values (?, ?, ?)';
+    const createMember = 'insert into class_members (email, class_id, role) values (?, ?, ?)';
+    const ensureUser = 'insert or ignore into users (email, name, google_name) VALUES (?, ?, ?)';
+
+
+    this.db.serialize(() => {
+      this.db.run("begin transaction");
+      this.db.run(createClass, classId, name, googleId);
+      this.db.run(createMember, teacherEmail, classId, 'teacher');
+
+      for (let s of students) {
+        console.log(s);
+        if (!s.profile.emailAddress) {
+          console.log(`No address in ${JSON.stringify(s)}`);
+        } else {
+          this.db.run(ensureUser, s.profile.emailAddress, s.profile.name.fullName, s.profile.name.fullName);
+          this.db.run(createMember, s.profile.emailAddress, classId, 'student');
+        }
+      }
+      this.db.run("commit");
+      callback(null, true);
+    });
+  }
+
+  classMemberships(email, callback) {
+    console.log(`Looking for memberships for ${email}`);
+    this.db.all('select * from class_members join classes where class_members.class_id = classes.id and email = ?', email, callback);
   }
 
   getClass(id, callback) {
     this.db.get('select * from classes where id = ?', id, callback);
+  }
+
+  googleClassroomIds(callback) {
+    this.db.all('select google_id from classes where google_id is not null', callback);
+  }
+
+  classByGoogleId(googleId, callback) {
+    this.db.get('select * from classes where google_id = ?', googleId, callback);
   }
 
   joinCode(id, callback) {

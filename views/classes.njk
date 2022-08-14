@@ -1,0 +1,18 @@
+{% extends 'layout.njk' %}
+
+
+{% block content %}
+
+<ul>
+{% for course in courses %}
+<li>{{ course.name }} -
+  {% if googleIds.indexOf(course.id) > -1 %}
+  <a href="/c/{{course.name | slug}}/students">Already created</a>
+  {% else %}
+  <a href="/classes/{{course.id}}">Create class</a>
+  {% endif %}
+</li>
+{% endfor %}
+</ul>
+
+{% endblock %}

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width,initial-scale=1" name="viewport">
+  <title>Classroom Help</title>
+  <link href="/css/style.css" media="all" rel="stylesheet" type="text/css">
+</head>
+<body class="welcome">
+
+  <h1>
+    Welcome to CS Classroom Help!
+  </h1>
+
+  <p>Here are the classe you are already a member of.</p>
+
+  <div class="classes">
+    {% for m in memberships %}
+    <h2><a href="/c/{{m.class_id}}/help">{{m.name}}</a></h2>
+    {% endfor %}
+  </div>
+
+  <p>Don't see your class here? Ask your teacher to add you.</p>
+
+</body>
+</html>

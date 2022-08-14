@@ -65,6 +65,7 @@ class RequireLogin {
     // went over the wire whereas the state did not.)
 
     const authData = await oauth.getToken(req.query.code);
+
     const session = decrypt(req.cookies.session, this.secret);
 
     this.db.getSession(session.id, (err, dbSession) => {
@@ -98,7 +99,9 @@ class RequireLogin {
                   res.clearCookie('session');
                   res.sendStatus(500);
                 } else {
-                  res.cookie('session', encrypt({ ...session, user, loggedIn: true }, this.secret));
+                  const newSession = {...session, user, loggedIn: true, auth: authData};
+                  console.log(JSON.stringify(newSession, null, 2));
+                  res.cookie('session', encrypt(newSession, this.secret));
                   res.redirect(state.split(':')[1]);
                 }
               });

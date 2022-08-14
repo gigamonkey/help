@@ -10,6 +10,11 @@ import DB from './modules/storage.js';
 import requireLogin from './modules/require-login.js';
 import Permissions from './modules/permissions.js';
 import { groupEntries } from './modules/journal.js';
+import oauth from './modules/oauth.js';
+
+import { google } from "googleapis";
+
+const classroom = google.classroom("v1");
 
 const FILENAME = fileURLToPath(import.meta.url);
 const DIRNAME = path.dirname(FILENAME);
@@ -47,6 +52,8 @@ env.addFilter('status', (h) => {
     return 'On queue';
   }
 });
+
+env.addFilter('slug', (s) => s.toLowerCase().replaceAll(/\W+/g, '-'));
 
 // Permission schemes.
 const isTeacher = permissions.oneOf('teacher');
@@ -221,10 +228,18 @@ app.get('/api/user', (req, res) => {
 ////////////////////////////////////////////////////////////////////////////////
 // Pages
 
+app.get('/', (req, res) => {
+  const { email } = req.session.user;
+  db.classMemberships(email, (err, memberships) => {
+    console.log(memberships);
+    dbRender(res, err, 'index.njk', {memberships});
+  });
+});
+
 app.get(
   '/create-class',
   adminOnly((req, res) => {
-    res.render('create-class-form.njk');
+    res.render('create-class-oform.njk');
   }),
 );
 
@@ -237,18 +252,6 @@ app.post('/create-class', (req, res) => {
       res.sendStatus(500);
     } else {
       res.redirect(`/c/${id}/`);
-    }
-  });
-});
-
-app.get('/c/:class_id', (req, res) => {
-  const { class_id } = req.params;
-  db.getClass(class_id, (err, clazz) => {
-    if (err) {
-      console.log(err);
-      res.sendStatus(500);
-    } else {
-      res.render('class.njk', clazz);
     }
   });
 });
@@ -267,9 +270,6 @@ app.get('/c/:class_id/join', (req, res) => {
 
 app.post('/c/:class_id/join', (req, res) => {
   const { class_id } = req.params;
-
-  // FIXME: should actually check this. Or get rid of it if we're just going to preload the roster.
-  // const { join_code } = req.body;
 
   const { email } = req.session.user;
   db.joinClass(class_id, email, (err) => {
@@ -381,6 +381,18 @@ app.get(
   }),
 );
 
+app.get('/c/:class_id', (req, res) => {
+  const { class_id } = req.params;
+  db.getClass(class_id, (err, clazz) => {
+    if (err) {
+      console.log(err);
+      res.sendStatus(500);
+    } else {
+      res.render('class.njk', clazz);
+    }
+  });
+});
+
 app.get(
   '/c/:class_id/students',
   teacherOnly((req, res) => {
@@ -401,6 +413,68 @@ app.get(
     });
   }),
 );
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Courses
+
+app.get('/classes', adminOnly(async (req, res) => {
+  const oauth2client = oauth.oauth2client();
+  oauth2client.setCredentials(req.session.auth);
+  const courses = await allCourses(oauth2client);
+  db.googleClassroomIds((err, ids) => dbRender(res, err, 'classes.njk', { courses, googleIds: extractIds(ids) }));
+}));
+
+app.get('/classes/:google_id', adminOnly(async (req, res) => {
+  const { google_id } = req.params;
+  const { email } = req.session.user;
+  const oauth2client = oauth.oauth2client();
+  oauth2client.setCredentials(req.session.auth);
+  const course = await oneCourse(oauth2client, google_id);
+
+  const c = course.data;
+  const students = await allStudents(oauth2client, c.id);
+  const classId = c.name.toLowerCase().replaceAll(/\W+/g, '-');
+  const teacherEmail = email;
+
+  db.loadClass(classId, teacherEmail, c.name, c.id, students, (err) => dbRedirect(res, err, `/c/${classId}/students`));
+  //jsonSender(res)(null, students);
+}));
+
+const extractIds = (googleIds) => googleIds.map((r) => r.google_id.toString(10));
+
+const oneCourse = (auth, id) => {
+  return classroom.courses.get({id, auth});
+}
+
+const allCourses = async (oauth2client) => {
+  let pageToken = undefined;
+  let results = [];
+  let mainArgs = {teacherId: 'me', courseStates: ["ACTIVE"], auth: oauth2client };
+  do {
+    const args = pageToken ? { ...mainArgs, pageToken} : mainArgs;
+    const res = await classroom.courses.list(args);
+    console.log(JSON.stringify(res, null, 2));
+    results = results.concat(res.data.courses);
+    console.log(JSON.stringify(results, null, 2));
+    pageToken = res.data.nextPageToken;
+    console.log(`pageToken: ${pageToken}`);
+  } while (pageToken);
+  return results;
+}
+
+const allStudents = async (oauth2client, courseId) => {
+  let pageToken = undefined;
+  let results = [];
+  let mainArgs = {courseId, auth: oauth2client };
+  do {
+    const args = pageToken ? {...mainArgs, pageToken} : mainArgs;
+    const res = await classroom.courses.students.list(args);
+    results = results.concat(res.data.students);
+    pageToken = res.data.nextPageToken;
+  } while (pageToken);
+  return results;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // Start server

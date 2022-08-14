@@ -14,10 +14,9 @@ CREATE TABLE IF NOT EXISTS sessions (
 CREATE TABLE IF NOT EXISTS classes (
       -- can be anything but probably a human readable slug.
       id TEXT NOT NULL PRIMARY KEY,
-      join_code TEXT NOT NULL,
       -- These three values come from Google classrom when there is one.
       name TEXT NOT NULL,
-      google_id INTEGER
+      google_id TEXT
   );
 
 -- Logged in users. Basically the information we get when they authenticate with
