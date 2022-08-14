@@ -209,9 +209,11 @@ app.get(
   '/c/:class_id/prompts',
   teacherOnly((req, res) => {
     const { class_id } = req.params;
-    db.allPromptsForClass(class_id, (err, prompts) =>
-      dbRender(res, err, 'prompts.njk', { ...req.params, prompts }),
-    );
+    db.allPromptsForClass(class_id, (err, prompts) => {
+      const open = openPrompts(prompts);
+      const unique = uniquePrompts(prompts);
+      dbRender(res, err, 'prompts.njk', { ...req.params, open, unique });
+    });
   }),
 );
 
@@ -219,9 +221,7 @@ app.get(
   '/c/:class_id/prompts/:id(\\d+)/close',
   teacherOnly((req, res) => {
     const { class_id, id } = req.params;
-    db.closePrompt(id, (err) =>
-      dbRedirect(res, err, `/c/${class_id}/prompts`)
-    );
+    db.closePrompt(id, (err) => dbRedirect(res, err, `/c/${class_id}/prompts`));
   }),
 );
 
@@ -229,11 +229,24 @@ app.get(
   '/c/:class_id/prompts/:id(\\d+)/again',
   teacherOnly((req, res) => {
     const { class_id, id } = req.params;
-    db.promptAgain(id, (err) =>
-      dbRedirect(res, err, `/c/${class_id}/prompts`)
-    );
+    db.promptAgain(id, (err) => dbRedirect(res, err, `/c/${class_id}/prompts`));
   }),
 );
+
+
+const openPrompts = (prompts) => prompts.filter((p) => p.closed_at === null);
+
+const uniquePrompts = (prompts) => {
+  const seen = {};
+  const unique = [];
+  prompts.forEach((p) => {
+    if (!seen[p.text]) {
+      seen[p.text] = true;
+      unique.push(p);
+    }
+  });
+  return unique;
+};
 
 ////////////////////////////////////////////////////////////////////////////////
 // Pages

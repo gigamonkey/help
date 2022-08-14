@@ -15,26 +15,47 @@
   <button id="submit">Make prompt</button>
 </form>
 
+
+{% if open.length > 0 %}
+
+<h2>Open prompts</h2>
 <table>
-  <thead>
-    <tr>
-      <th>Text</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
   <tbody>
-    {% for p in prompts %}
+    {% for p in open %}
     <tr>
-      <td>{{ p.text }}</td>
+      <td>{{ p.text | md | safe}}</td>
       <td class="actions">
-        {% if p.closed_at == null %}
         <a href="/c/{{class_id}}/prompts/{{p.prompt_id}}/close">Close</a>
-        {% endif %}
+
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% endif %}
+
+<h2>All prompts</h2>
+
+{% if unique.length > 0 %}
+
+<table>
+  <tbody>
+    {% for p in unique %}
+    <tr>
+      <td>{{ p.text | md | safe}}</td>
+      <td class="actions">
         <a href="/c/{{class_id}}/prompts/{{p.prompt_id}}/again">Again</a>
       </td>
     </tr>
     {% endfor %}
   </tbody>
 </table>
+
+{% else %}
+
+<p>No prompts yet.</p>
+
+{% endif %}
 
 {% endblock %}
