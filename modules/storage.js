@@ -8,11 +8,13 @@ const DIRNAME = url.fileURLToPath(new URL('.', import.meta.url));
 const DDL = fs.readFileSync(path.resolve(DIRNAME, 'schema.sql'), 'utf-8');
 
 const ADMINS = {
+  'mattalbinson@berkeley.net': true,
   'peterseibel@berkeley.net': true,
   'shoshanaokeefe@berkeley.net': true,
 };
 
 const OTHER_NAMES = {
+  'mattalbinson@berkeley.net': 'Mr. Albinson',
   'peterseibel@berkeley.net': 'Mr. Seibel',
   'shoshanaokeefe@berkeley.net': 'Ms. O’Keefe',
 };
