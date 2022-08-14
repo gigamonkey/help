@@ -160,7 +160,7 @@ app.get('/c/:class_id/journal/:id(\\d+)', (req, res) => {
 
   if (user.id === Number(req.params.id)) {
     // The authenticated user is requesting their own journal.
-    db.journalFor(user.email, class_id, renderJournal);
+    db.journalWithPrompts(user.email, class_id, renderJournal);
   } else {
     // Otherwise need to see if authenticated user is the teacher.
     ifTeacher(req, res, () => {
@@ -171,7 +171,7 @@ app.get('/c/:class_id/journal/:id(\\d+)', (req, res) => {
         } else if (!journalUser) {
           res.sendStatus(404);
         } else {
-          db.journalFor(journalUser.email, class_id, renderJournal);
+          db.journalWithPrompts(journalUser.email, class_id, renderJournal);
         }
       });
     });

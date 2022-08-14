@@ -16,9 +16,9 @@
   <tbody>
     {% for s in students %}
     <tr>
-      <td><a href="/users/{{s.id}}" target="_blank">{% if s.name %}{{s.name}}{% else %}{{s.email}}{% endif %}</td>
-      <td><a href="/c/{{class_id}}/journal/{{s.id}}">{{s.journal_days}}</a></td>
-      <td><a href="/c/{{class_id}}/journal/{{s.id}}">{{s.journal_entries}}</a></td>
+      <td><a href="/c/{{class_id}}/journal/{{s.id}}" target="_blank">{% if s.name %}{{s.name}}{% else %}{{s.email}}{% endif %}</td>
+      <td>{{s.journal_days}}</td>
+      <td>{{s.journal_entries}}</td>
       <td>{{s.help_requests}}</td>
     </tr>
     {% endfor %}
