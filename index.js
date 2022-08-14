@@ -1,18 +1,17 @@
 import 'dotenv/config';
 import cookieParser from 'cookie-parser';
 import express from 'express';
+import markdownFilter from 'nunjucks-markdown-filter';
 import nunjucks from 'nunjucks';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import markdownFilter from 'nunjucks-markdown-filter';
+import { google } from 'googleapis';
 
 import DB from './modules/storage.js';
 import requireLogin from './modules/require-login.js';
 import Permissions from './modules/permissions.js';
-import { groupEntries } from './modules/journal.js';
+import groupEntries from './modules/journal.js';
 import oauth from './modules/oauth.js';
-
-import { google } from 'googleapis';
 
 const classroom = google.classroom('v1');
 
@@ -73,6 +72,7 @@ app.use(cookieParser());
 app.use(login.require());
 app.use(express.static('public'));
 
+/* eslint-disable no-unused-vars */
 const jsonSender = (res) => (err, data) => {
   if (err) {
     console.log('Error in jsonSender');
@@ -86,6 +86,7 @@ const jsonSender = (res) => (err, data) => {
     res.send(JSON.stringify(data, null, 2));
   }
 };
+/* eslint-enable */
 
 const dbRender = (res, err, template, data) => {
   if (err) {
@@ -125,14 +126,7 @@ app.get('/auth', (req, res) => {
 app.get('/c/:class_id/journal', (req, res) => {
   const { class_id } = req.params;
   const { email } = req.session.user;
-  const renderJournal = (err, journal) => {
-    dbRender(res, err, 'journal.njk', {
-      ...req.params,
-      days: groupEntries(journal),
-      withForm: true,
-    });
-  };
-  db.journalFor(email, class_id, renderJournal);
+  db.journalFor(email, class_id, journalRenderer(req, res, true));
 });
 
 /*
@@ -155,13 +149,7 @@ app.get('/c/:class_id/journal/:id(\\d+)', (req, res) => {
   const { class_id } = req.params;
   const { user } = req.session;
 
-  const renderJournal = (err, journal) => {
-    dbRender(res, err, 'journal.njk', {
-      ...req.params,
-      days: groupEntries(journal),
-      withForm: false,
-    });
-  };
+  const renderJournal = journalRenderer(req, res, false);
 
   if (user.id === Number(req.params.id)) {
     // The authenticated user is requesting their own journal.
@@ -182,6 +170,10 @@ app.get('/c/:class_id/journal/:id(\\d+)', (req, res) => {
     });
   }
 });
+
+const journalRenderer = (req, res, withForm) => (err, journal) => {
+  dbRender(res, err, 'journal.njk', { ...req.params, days: groupEntries(journal), withForm });
+};
 
 ////////////////////////////////////////////////////////////////////////////////
 // Prompts
@@ -390,15 +382,15 @@ app.get(
 
 const extractIds = (googleIds) => googleIds.map((r) => r.google_id.toString(10));
 
-const oneCourse = (auth, id) => {
-  return classroom.courses.get({ id, auth });
-};
+const oneCourse = (auth, id) => classroom.courses.get({ id, auth });
 
 const allCourses = async (oauth2client) => {
-  let pageToken = undefined;
+  const mainArgs = { teacherId: 'me', courseStates: ['ACTIVE'], auth: oauth2client };
+
+  let pageToken;
   let results = [];
-  let mainArgs = { teacherId: 'me', courseStates: ['ACTIVE'], auth: oauth2client };
   do {
+    /* eslint-disable no-await-in-loop */
     const args = pageToken ? { ...mainArgs, pageToken } : mainArgs;
     const res = await classroom.courses.list(args);
     console.log(JSON.stringify(res, null, 2));
@@ -411,10 +403,12 @@ const allCourses = async (oauth2client) => {
 };
 
 const allStudents = async (oauth2client, courseId) => {
-  let pageToken = undefined;
+  const mainArgs = { courseId, auth: oauth2client };
+
+  let pageToken;
   let results = [];
-  let mainArgs = { courseId, auth: oauth2client };
   do {
+    /* eslint-disable no-await-in-loop */
     const args = pageToken ? { ...mainArgs, pageToken } : mainArgs;
     const res = await classroom.courses.students.list(args);
     results = results.concat(res.data.students);

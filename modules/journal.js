@@ -16,4 +16,4 @@ const groupEntries = (data) => {
   return grouped;
 };
 
-export { groupEntries };
+export default groupEntries;

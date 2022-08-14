@@ -3,8 +3,6 @@ import path from 'path';
 import sqlite3 from 'sqlite3';
 import * as url from 'url';
 
-import { shortRandomString } from './crypto.js';
-
 const DIRNAME = url.fileURLToPath(new URL('.', import.meta.url));
 
 const DDL = fs.readFileSync(path.resolve(DIRNAME, 'schema.sql'), 'utf-8');
@@ -57,7 +55,7 @@ class DB {
       this.db.run(createClass, classId, name, googleId);
       this.db.run(createMember, teacherEmail, classId, 'teacher');
 
-      for (let s of students) {
+      for (const s of students) {
         console.log(s);
         if (!s.profile.emailAddress) {
           console.log(`No address in ${JSON.stringify(s)}`);
