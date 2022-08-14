@@ -52,9 +52,8 @@ class DB {
     const createMember = 'insert into class_members (email, class_id, role) values (?, ?, ?)';
     const ensureUser = 'insert or ignore into users (email, name, google_name) VALUES (?, ?, ?)';
 
-
     this.db.serialize(() => {
-      this.db.run("begin transaction");
+      this.db.run('begin transaction');
       this.db.run(createClass, classId, name, googleId);
       this.db.run(createMember, teacherEmail, classId, 'teacher');
 
@@ -63,18 +62,27 @@ class DB {
         if (!s.profile.emailAddress) {
           console.log(`No address in ${JSON.stringify(s)}`);
         } else {
-          this.db.run(ensureUser, s.profile.emailAddress, s.profile.name.fullName, s.profile.name.fullName);
+          this.db.run(
+            ensureUser,
+            s.profile.emailAddress,
+            s.profile.name.fullName,
+            s.profile.name.fullName,
+          );
           this.db.run(createMember, s.profile.emailAddress, classId, 'student');
         }
       }
-      this.db.run("commit");
+      this.db.run('commit');
       callback(null, true);
     });
   }
 
   classMemberships(email, callback) {
     console.log(`Looking for memberships for ${email}`);
-    this.db.all('select * from class_members join classes where class_members.class_id = classes.id and email = ?', email, callback);
+    this.db.all(
+      'select * from class_members join classes where class_members.class_id = classes.id and email = ?',
+      email,
+      callback,
+    );
   }
 
   getClass(id, callback) {

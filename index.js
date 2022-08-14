@@ -12,9 +12,9 @@ import Permissions from './modules/permissions.js';
 import { groupEntries } from './modules/journal.js';
 import oauth from './modules/oauth.js';
 
-import { google } from "googleapis";
+import { google } from 'googleapis';
 
-const classroom = google.classroom("v1");
+const classroom = google.classroom('v1');
 
 const FILENAME = fileURLToPath(import.meta.url);
 const DIRNAME = path.dirname(FILENAME);
@@ -22,10 +22,10 @@ const DIRNAME = path.dirname(FILENAME);
 const { PORT, SECRET } = process.env;
 
 const noAuthRequired = {
-  '/logout': true,
   '/auth': true,
-  '/health.html': true,
+  '/favicon.ico': true,
   '/health': true,
+  '/logout': true,
 };
 
 const db = new DB('help.db');
@@ -183,13 +183,6 @@ app.get('/c/:class_id/journal/:id(\\d+)', (req, res) => {
   }
 });
 
-app.get('/api/journals', (req, res) => {
-  const { after, before } = req.query;
-  const start = after ? Number(after) : null;
-  const end = before ? Number(before) : null;
-  db.journalsBetween(start, end, jsonSender(res));
-});
-
 ////////////////////////////////////////////////////////////////////////////////
 // Prompts
 
@@ -218,67 +211,13 @@ app.get(
 );
 
 ////////////////////////////////////////////////////////////////////////////////
-// Start working on a request for help.
-
-app.get('/api/user', (req, res) => {
-  console.log(req.session.user);
-  db.user(req.session.user.email, jsonSender(res));
-});
-
-////////////////////////////////////////////////////////////////////////////////
 // Pages
 
 app.get('/', (req, res) => {
   const { email } = req.session.user;
   db.classMemberships(email, (err, memberships) => {
     console.log(memberships);
-    dbRender(res, err, 'index.njk', {memberships});
-  });
-});
-
-app.get(
-  '/create-class',
-  adminOnly((req, res) => {
-    res.render('create-class-oform.njk');
-  }),
-);
-
-app.post('/create-class', (req, res) => {
-  const { id, name, google_id } = req.body;
-  console.log(req.body);
-  db.createClass(id, name, google_id || null, (err) => {
-    if (err) {
-      console.log(err);
-      res.sendStatus(500);
-    } else {
-      res.redirect(`/c/${id}/`);
-    }
-  });
-});
-
-app.get('/c/:class_id/join', (req, res) => {
-  const { class_id } = req.params;
-  db.getClass(class_id, (err, clazz) => {
-    if (err) {
-      console.log(err);
-      res.sendStatus(500);
-    } else {
-      res.render('join-class-form.njk', clazz);
-    }
-  });
-});
-
-app.post('/c/:class_id/join', (req, res) => {
-  const { class_id } = req.params;
-
-  const { email } = req.session.user;
-  db.joinClass(class_id, email, (err) => {
-    if (err) {
-      console.log(err);
-      res.sendStatus(500);
-    } else {
-      res.redirect(`/c/${class_id}`);
-    }
+    dbRender(res, err, 'index.njk', { memberships });
   });
 });
 
@@ -414,45 +353,53 @@ app.get(
   }),
 );
 
-
 ////////////////////////////////////////////////////////////////////////////////
 // Courses
 
-app.get('/classes', adminOnly(async (req, res) => {
-  const oauth2client = oauth.oauth2client();
-  oauth2client.setCredentials(req.session.auth);
-  const courses = await allCourses(oauth2client);
-  db.googleClassroomIds((err, ids) => dbRender(res, err, 'classes.njk', { courses, googleIds: extractIds(ids) }));
-}));
+app.get(
+  '/classes',
+  adminOnly(async (req, res) => {
+    const oauth2client = oauth.oauth2client();
+    oauth2client.setCredentials(req.session.auth);
+    const courses = await allCourses(oauth2client);
+    db.googleClassroomIds((err, ids) =>
+      dbRender(res, err, 'classes.njk', { courses, googleIds: extractIds(ids) }),
+    );
+  }),
+);
 
-app.get('/classes/:google_id', adminOnly(async (req, res) => {
-  const { google_id } = req.params;
-  const { email } = req.session.user;
-  const oauth2client = oauth.oauth2client();
-  oauth2client.setCredentials(req.session.auth);
-  const course = await oneCourse(oauth2client, google_id);
+app.get(
+  '/classes/:google_id',
+  adminOnly(async (req, res) => {
+    const { google_id } = req.params;
+    const { email } = req.session.user;
+    const oauth2client = oauth.oauth2client();
+    oauth2client.setCredentials(req.session.auth);
+    const course = await oneCourse(oauth2client, google_id);
 
-  const c = course.data;
-  const students = await allStudents(oauth2client, c.id);
-  const classId = c.name.toLowerCase().replaceAll(/\W+/g, '-');
-  const teacherEmail = email;
+    const c = course.data;
+    const students = await allStudents(oauth2client, c.id);
+    const classId = c.name.toLowerCase().replaceAll(/\W+/g, '-');
+    const teacherEmail = email;
 
-  db.loadClass(classId, teacherEmail, c.name, c.id, students, (err) => dbRedirect(res, err, `/c/${classId}/students`));
-  //jsonSender(res)(null, students);
-}));
+    db.loadClass(classId, teacherEmail, c.name, c.id, students, (err) =>
+      dbRedirect(res, err, `/c/${classId}/students`),
+    );
+  }),
+);
 
 const extractIds = (googleIds) => googleIds.map((r) => r.google_id.toString(10));
 
 const oneCourse = (auth, id) => {
-  return classroom.courses.get({id, auth});
-}
+  return classroom.courses.get({ id, auth });
+};
 
 const allCourses = async (oauth2client) => {
   let pageToken = undefined;
   let results = [];
-  let mainArgs = {teacherId: 'me', courseStates: ["ACTIVE"], auth: oauth2client };
+  let mainArgs = { teacherId: 'me', courseStates: ['ACTIVE'], auth: oauth2client };
   do {
-    const args = pageToken ? { ...mainArgs, pageToken} : mainArgs;
+    const args = pageToken ? { ...mainArgs, pageToken } : mainArgs;
     const res = await classroom.courses.list(args);
     console.log(JSON.stringify(res, null, 2));
     results = results.concat(res.data.courses);
@@ -461,20 +408,20 @@ const allCourses = async (oauth2client) => {
     console.log(`pageToken: ${pageToken}`);
   } while (pageToken);
   return results;
-}
+};
 
 const allStudents = async (oauth2client, courseId) => {
   let pageToken = undefined;
   let results = [];
-  let mainArgs = {courseId, auth: oauth2client };
+  let mainArgs = { courseId, auth: oauth2client };
   do {
-    const args = pageToken ? {...mainArgs, pageToken} : mainArgs;
+    const args = pageToken ? { ...mainArgs, pageToken } : mainArgs;
     const res = await classroom.courses.students.list(args);
     results = results.concat(res.data.students);
     pageToken = res.data.nextPageToken;
   } while (pageToken);
   return results;
-}
+};
 
 ////////////////////////////////////////////////////////////////////////////////
 // Start server

@@ -43,10 +43,10 @@ const oauth = {
 
   url: (state) => `${BASE_AUTH_URL}?${authParams(state)}`,
 
-  getToken: (code) => fetch(TOKEN_URL, { method: 'POST', body: tokenParams(code) }).then((r) => r.json()),
+  getToken: (code) =>
+    fetch(TOKEN_URL, { method: 'POST', body: tokenParams(code) }).then((r) => r.json()),
 
   oauth2client: () => new google.auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URL),
-
 };
 
 export default oauth;
