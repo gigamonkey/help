@@ -175,6 +175,17 @@ body.prompts td:first-child {
   width: 50%;
 }
 
+body.prompts td a {
+  border: 1px solid grey;
+  border-radius: 2px;
+  padding: 3px;
+  font-size: 60%;
+}
+
+td.actions {
+  width: 20%;
+}
+
 .new-prompt input[type='text'] {
   border: 1px solid grey;
   margin: 10px 0;

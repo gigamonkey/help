@@ -437,6 +437,15 @@ class DB {
     this.db.run(q, classId, text, callback);
   }
 
+  closePrompt(promptId, callback) {
+    this.db.run("update prompts set closed_at = unixepoch('now') where prompt_id = ?", promptId, callback);
+  }
+
+  promptAgain(promptId, callback) {
+    const q = "insert into prompts (text, class_id, created_at) select text, class_id, unixepoch('now') from prompts where prompt_id = ?";
+    this.db.run(q, promptId, callback);
+  }
+
   allPromptsForClass(classId, callback) {
     this.db.all('select * from prompts where class_id = ?', classId, callback);
   }

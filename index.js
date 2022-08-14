@@ -215,6 +215,26 @@ app.get(
   }),
 );
 
+app.get(
+  '/c/:class_id/prompts/:id(\\d+)/close',
+  teacherOnly((req, res) => {
+    const { class_id, id } = req.params;
+    db.closePrompt(id, (err) =>
+      dbRedirect(res, err, `/c/${class_id}/prompts`)
+    );
+  }),
+);
+
+app.get(
+  '/c/:class_id/prompts/:id(\\d+)/again',
+  teacherOnly((req, res) => {
+    const { class_id, id } = req.params;
+    db.promptAgain(id, (err) =>
+      dbRedirect(res, err, `/c/${class_id}/prompts`)
+    );
+  }),
+);
+
 ////////////////////////////////////////////////////////////////////////////////
 // Pages
 
