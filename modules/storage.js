@@ -7,6 +7,16 @@ const DIRNAME = url.fileURLToPath(new URL('.', import.meta.url));
 
 const DDL = fs.readFileSync(path.resolve(DIRNAME, 'schema.sql'), 'utf-8');
 
+const ADMINS = {
+  'peterseibel@berkeley.net': true,
+  'shoshanaokeefe@berkeley.net': true,
+};
+
+const OTHER_NAMES = {
+  'peterseibel@berkeley.net': 'Mr. Seibel',
+  'shoshanaokeefe@berkeley.net': 'Ms. O’Keefe',
+};
+
 const QUEUE =
   'SELECT rowid as id, * FROM help WHERE start_time IS NULL AND discard_time IS NULL ORDER BY time ASC';
 
@@ -339,7 +349,7 @@ class DB {
     this.db.get('SELECT rowid as id, * from users where rowid = ?', id, callback);
   }
 
-  ensureUser(email, name, callback) {
+  ensureUser(email, googleName, callback) {
     this.user(email, (err, data) => {
       if (err) {
         callback(err, null);
@@ -348,19 +358,16 @@ class DB {
       } else {
         // We create a user with the name we got from Google in both name fields
         // but later we may change `name` to be the student's preferred name.
-        this.db.run(
-          'INSERT INTO users (email, name, google_name) VALUES (?, ?, ?)',
-          email,
-          name,
-          name,
-          (err) => {
-            if (err) {
-              callback(err, null);
-            } else {
-              this.user(email, callback);
-            }
-          },
-        );
+        const isAdmin = ADMINS[email] ? 1 : 0;
+        const name = OTHER_NAMES[email];
+        const q = 'insert into users (email, name, google_name, is_admin) values (?, ?, ?, ?)';
+        this.db.run(q, email, name, googleName, isAdmin, (err) => {
+          if (err) {
+            callback(err, null);
+          } else {
+            this.user(email, callback);
+          }
+        });
       }
     });
   }

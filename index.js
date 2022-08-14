@@ -233,7 +233,6 @@ app.get(
   }),
 );
 
-
 const openPrompts = (prompts) => prompts.filter((p) => p.closed_at === null);
 
 const uniquePrompts = (prompts) => {
