@@ -1,0 +1,28 @@
+{% extends 'layout.njk' %}
+
+{% set title = "Students" %}
+
+{% block content %}
+
+<table>
+  <thead>
+    <tr>
+      <th>Students</th>
+      <th>📅</th>
+      <th>✍️</th>
+      <th>✋</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for s in students %}
+    <tr>
+      <td><a href="/users/{{s.id}}" target="_blank">{% if s.name %}{{s.name}}{% else %}{{s.email}}{% endif %}</td>
+      <td><a href="/c/{{class_id}}/journal/{{s.id}}">{{s.journal_days}}</a></td>
+      <td><a href="/c/{{class_id}}/journal/{{s.id}}">{{s.journal_entries}}</a></td>
+      <td>{{s.help_requests}}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% endblock %}
