@@ -289,13 +289,34 @@ class DB {
   }
 
   journalFor(email, classId, callback) {
-    console.log(`Looking for jounal for ${email} and ${classId}`);
+    console.log(`Looking for journal for ${email} and ${classId}`);
     const q =
       'select rowid as id, * from journal where email = ? and class_id = ? order by time desc';
     this.db.all(q, email, classId, (err, data) => {
       console.log('journal');
       console.log(data);
       callback(err, data);
+    });
+  }
+
+  journalWithPrompts(email, classId, callback) {
+    console.log(`Looking for journal and prompts for ${email} and ${classId}`);
+
+    this.journalFor(email, classId, (err, journal) => {
+      if (err) {
+        callback(err, null);
+      } else {
+        this.openPromptsForStudent(email, classId, (err, prompts) => {
+          console.log('openPromptsForStudent');
+          console.log(err);
+          console.log(prompts);
+          if (err) {
+            callback(err, null);
+          } else {
+            callback(null, { journal, prompts });
+          }
+        });
+      }
     });
   }
 
@@ -411,75 +432,34 @@ class DB {
   //////////////////////////////////////////////////////////////////////////////
   // Journal prompts
 
-  // "select prompts.rowid as prompt_id, prompts.date, prompt_texts.prompt from prompts join prompt_texts on prompts.prompt_text_id = prompt_texts.rowid where prompts.date < unixepoch('now')"
-
-  promptText(text, callback) {
-    this.db.get('select rowid as id, * from prompt_texts where text = ?', callback);
+  createPrompt(classId, text, callback) {
+    const q = "insert into prompts (class_id, text, created_at) values (?, ?, unixepoch('now'))";
+    this.db.run(q, classId, text, callback);
   }
 
-  makePromptText(title, text, callback) {
-    const q = 'insert into prompt_texts (title, text) values (?, ?)';
-    this.db.run(q, title, text, callback);
+  allPromptsForClass(classId, callback) {
+    this.db.all('select * from prompts where class_id = ?', classId, callback);
   }
 
-  promptTexts(callback) {
-    this.db.all('select rowid as id, * from prompt_texts', callback);
+  openPrompts(classId, callback) {
+    this.db.all(
+      "select * from prompts where class_id = ? and closed_at < unixepoch('now')",
+      classId,
+      callback,
+    );
   }
 
-  ensurePromptText(title, text, callback) {
-    this.promptText(text, (err, data) => {
-      if (err) {
-        callback(err, null);
-      } else if (data) {
-        callback(null, data);
-      } else {
-        this.makePromptText(title, text, (err) => {
-          if (err) {
-            callback(err, null);
-          } else {
-            this.promptText(text, callback);
-          }
-        });
-      }
-    });
-  }
-
-  /*
-   * Create a prompt to be displayed after date.
-   */
-  createPrompt(promptTextId, date, callback) {
-    const q = 'insert into prompts (prompt_text_id, date) values (?, ?)';
-    this.db.run(q, promptTextId, date, callback);
-  }
-
-  prompt(id, callback) {
-    this.db.get('select rowid as id, * from prompts where rowid = ?', id, callback);
-  }
-
-  allPrompts(callback) {
+  openPromptsForStudent(email, classId, callback) {
     const q = `
-      select
-        prompt_texts.rowid as id,
-        prompt_texts.title,
-        count(prompts.rowid) as timesUsed,
-        max(prompts.opened_at) as lastUsed,
-        max(prompts.opened_at) > max(prompts.closed_at) as open
-      from prompt_texts
-      left join prompts on prompt_texts.rowid = prompts.prompt_text_id
-      group by prompt_texts.rowid
-   `;
-    this.db.all(q, callback);
-  }
-
-  openPrompt(id, callback) {
-    const q = `update prompts set closed_at = unixepoch('now') where id = ?`;
-    this.db.run(q, (err) => {
-      if (err) {
-        callback(err, null);
-      } else {
-        this.prompt(id, callback);
-      }
-    });
+      select prompts.* from prompts
+      left join journal using (prompt_id)
+      where
+        prompts.class_id = ?1 and
+        prompts.closed_at is null and
+        journal.text is null
+      order by prompts.prompt_id asc;
+    `;
+    this.db.all(q, classId, callback);
   }
 }
 

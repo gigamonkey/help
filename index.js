@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import cookieParser from 'cookie-parser';
+import dateFilter from 'nunjucks-date-filter';
 import express from 'express';
 import markdownFilter from 'nunjucks-markdown-filter';
 import nunjucks from 'nunjucks';
@@ -39,6 +40,7 @@ const env = nunjucks.configure('views', {
 
 // FIXME: this doesn't run things through DOMpurify. May want to fix that.
 markdownFilter.install(env);
+dateFilter.install(env);
 
 env.addFilter('status', (h) => {
   if (h.discard_time !== null) {
@@ -126,7 +128,7 @@ app.get('/auth', (req, res) => {
 app.get('/c/:class_id/journal', (req, res) => {
   const { class_id } = req.params;
   const { email } = req.session.user;
-  db.journalFor(email, class_id, journalRenderer(req, res, true));
+  db.journalWithPrompts(email, class_id, journalRenderer(req, res, true));
 });
 
 /*
@@ -172,7 +174,13 @@ app.get('/c/:class_id/journal/:id(\\d+)', (req, res) => {
 });
 
 const journalRenderer = (req, res, withForm) => (err, journal) => {
-  dbRender(res, err, 'journal.njk', { ...req.params, days: groupEntries(journal), withForm });
+  console.log(journal);
+  dbRender(res, err, 'journal.njk', {
+    ...req.params,
+    days: groupEntries(journal.journal),
+    prompts: journal.prompts,
+    withForm,
+  });
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -181,24 +189,19 @@ const journalRenderer = (req, res, withForm) => (err, journal) => {
 app.post(
   '/c/:class_id/prompts',
   teacherOnly((req, res) => {
-    const { title, text } = req.body;
-    db.ensurePromptText(title, text, (err) => {
-      if (err) {
-        console.log(err);
-        res.sendStatus(500);
-      } else {
-        res.redirect('/prompts');
-      }
-    });
+    const { class_id } = req.params;
+    const { text } = req.body;
+    db.createPrompt(class_id, text, (err) => dbRedirect(res, err, req.path));
   }),
 );
 
 app.get(
   '/c/:class_id/prompts',
   teacherOnly((req, res) => {
-    db.allPrompts((err, prompts) => {
-      res.render('prompts.njk', { prompts });
-    });
+    const { class_id } = req.params;
+    db.allPromptsForClass(class_id, (err, prompts) =>
+      dbRender(res, err, 'prompts.njk', { ...req.params, prompts }),
+    );
   }),
 );
 

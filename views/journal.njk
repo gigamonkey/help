@@ -9,11 +9,24 @@
 {% block content %}
 
 {% if withForm %}
-<form method="POST">
-  <textarea name="text" class="required"></textarea>
-  <button id="submit">Submit</button>
-</form>
+
+  {% if prompts %}
+    <form method="POST">
+    {% for p in prompts %}
+    <h2>{{p.text | md | safe}}</h2>
+    <textarea name="prompt-{{p.prompt_id}}" class="required"></textarea>
+    {% endfor %}
+    <button id="submit">Submit</button>
+    </form>
+    {% else %}
+    <h2>What's on your mind?</h2>
+    <form method="POST">
+      <textarea name="text" class="required"></textarea>
+      <button id="submit">Submit</button>
+    </form>
+  {% endif %}
 {% endif %}
+
 
 <div id="journal" class="journal">
   {% if days.length > 0 %}

@@ -4,44 +4,34 @@
 {% set class = "prompts" %}
 
 {% block scripts %}
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/dompurify@2.3.10/dist/purify.min.js"></script>
 <script src="/js/check-required.js" type="module"></script>
 {% endblock %}
 
 {% block content %}
 
 <form class="new-prompt" method="POST">
-  <label for="title">Title</label>
-  <input type="text" name="title" class="required">
   <label for="text">Text</label>
   <textarea name="text" class="required"></textarea>
-  <button id="submit">New prompt</button>
+  <button id="submit">Make prompt</button>
 </form>
 
 <table>
   <thead>
     <tr>
-      <th>Title</th>
-      <th>Times used</th>
-      <th>Last used</th>
-      <th>Open?</th>
-      <th>Actions</th>
+      <th>Text</th>
     </tr>
   </thead>
   <tbody>
     {% for p in prompts %}
     <tr>
-      <td>{{p.title}}</td>
-      <td>{{p.timesUsed}}</td>
-      <td>{{p.lastUsed}}</td>
-      <td>{% if p.open == 1 %}Yes{% else %}No{% endif %}</td>
-      <td>{% if p.open == 1 %}
-        <button data-id="{{ p.id }}" data-action="close">Close</button>
+      <td>{{ p.text }}</td>
+      <td>{{ (p.created_at * 1000) | date('YYYY-MM-DD') }}</td>
+      <td>
+        {% if p.closed_at %}
+        {{ (p.closed_at * 1000) | date('YYYY-MM-DD') }}
         {% else %}
-        <button data-id="{{ p.id }}" data-action="open">Open</button>
+        Open
         {% endif %}
-      </td>
     </tr>
     {% endfor %}
   </tbody>

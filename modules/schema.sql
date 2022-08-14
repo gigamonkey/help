@@ -7,14 +7,12 @@ CREATE TABLE IF NOT EXISTS sessions (
       state TEXT NOT NULL
   );
 
--- Classes can be but don't have to be linked to a Google classrom. If they are
--- we may be able to make sure the roster stays up to date. But all we really
--- need is a unique id to use in the URLs. And it's probably worth giving every
--- class a name.
+-- Classes can be but don't have to be linked to a Google classrom but for now
+-- the main way to create a class is from a Google classroom so in practice they
+-- always will be. The id can be anything but will be used in URLs so should be
+-- a human readable slug derived from the name of the course.
 CREATE TABLE IF NOT EXISTS classes (
-      -- can be anything but probably a human readable slug.
       id TEXT NOT NULL PRIMARY KEY,
-      -- These three values come from Google classrom when there is one.
       name TEXT NOT NULL,
       google_id TEXT
   );
@@ -44,7 +42,8 @@ CREATE TABLE IF NOT EXISTS help (
       helper TEXT,
       start_time INTEGER,
       end_time INTEGER,
-      discard_time integer
+      discard_time integer,
+      PRIMARY KEY (email, class_id, time)
   );
 
 CREATE TABLE IF NOT EXISTS journal (
@@ -52,18 +51,16 @@ CREATE TABLE IF NOT EXISTS journal (
       class_id TEXT NOT NULL,
       text TEXT NOT NULL,
       time INTEGER NOT NULL,
-      prompt_id INTEGER
+      prompt_id INTEGER,
+      PRIMARY KEY (email, class_id, time)
     );
 
-CREATE TABLE IF NOT EXISTS prompt_texts (
-      class_id TEXT NOT NULL,
-      title TEXT NOT NULL,
-      text TEXT NOT NULL
-  );
-
+-- Prompts are created in a class and will show up as current for students who
+-- haven't responded to them until they are closed.
 CREATE TABLE IF NOT EXISTS prompts (
+      prompt_id INTEGER PRIMARY KEY AUTOINCREMENT,
       class_id TEXT NOT NULL,
-      prompt_text_id INTEGER NOT NULL,
-      opened_at INTEGER NOT NULL,
+      text TEXT NOT NULL,
+      created_at INTEGER NOT NULL,
       closed_at INTEGER
   );
