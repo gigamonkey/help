@@ -40,7 +40,6 @@ class DB {
   }
 
   createClass(classId, name, googleId, callback) {
-    console.log('Creating class');
     const q = 'insert into classes (id, name, google_id) values (?, ?, ?)';
     this.db.run(q, classId, name, googleId, callback);
   }
@@ -55,22 +54,18 @@ class DB {
       this.db.run(createClass, classId, name, googleId);
       this.db.run(createMember, teacherEmail, classId, 'teacher');
 
+      /* eslint-disable no-restricted-syntax */
       for (const s of students) {
-        console.log(s);
-        if (!s.profile.emailAddress) {
-          console.log(`No address in ${JSON.stringify(s)}`);
-        } else {
-          this.db.run(
-            ensureUser,
-            s.profile.emailAddress,
-            s.profile.name.fullName,
-            s.profile.name.fullName,
-          );
-          this.db.run(createMember, s.profile.emailAddress, classId, 'student');
-        }
+        this.db.run(
+          ensureUser,
+          s.profile.emailAddress,
+          s.profile.name.fullName,
+          s.profile.name.fullName,
+        );
+        this.db.run(createMember, s.profile.emailAddress, classId, 'student');
       }
-      this.db.run('commit');
-      callback(null, true);
+      /* eslint-enable */
+      this.db.run('commit', callback);
     });
   }
 
@@ -123,16 +118,13 @@ class DB {
       if (err) {
         callback(err, null);
       } else {
-        console.log(`Created help with id ${this.lastID}`);
         that.getHelp(this.lastID, callback);
       }
     });
   }
 
   getHelp(id, callback) {
-    console.log(`Getting help ${id}`);
     this.db.get('select rowid as id, * from help where rowid = ?', id, (err, data) => {
-      console.log(`In callback for help ${id}`);
       callback(err, data);
     });
   }
@@ -278,38 +270,47 @@ class DB {
     this.db.run('DELETE from sessions where session_id = ?', id, callback);
   }
 
-  addJournalEntry(email, classId, text, promptId, callback) {
+  addJournalEntry(email, classId, text, callback) {
     const q = `
       insert into journal
-        (email, class_id, text, time, prompt_id)
+        (email, class_id, text, time)
       values
-        (?, ?, ?, unixepoch('now'), ?)
+        (?, ?, ?, unixepoch('now'))
     `;
-    this.db.run(q, email, classId, text, promptId, callback);
+    this.db.run(q, email, classId, text, callback);
+  }
+
+  addJournalEntries(email, classId, entries, callback) {
+    const q = `insert into journal (email, class_id, text, time, prompt_id) values (?, ?, ?, unixepoch('now'), ?)`;
+    this.db.serialize(() => {
+      this.db.run('begin transaction');
+      /* eslint-disable no-restricted-syntax */
+      for (const item of entries) {
+        this.db.run(q, email, classId, item.text, item.promptId);
+      }
+      /* eslint-enable */
+      this.db.run('commit', callback);
+    });
   }
 
   journalFor(email, classId, callback) {
-    console.log(`Looking for journal for ${email} and ${classId}`);
-    const q =
-      'select rowid as id, * from journal where email = ? and class_id = ? order by time desc';
+    const q = `
+      select j.*, p.text as prompt from journal as j
+      left join prompts as p using (prompt_id)
+      where j.email = ? and j.class_id = ?
+      order by time desc
+    `;
     this.db.all(q, email, classId, (err, data) => {
-      console.log('journal');
-      console.log(data);
       callback(err, data);
     });
   }
 
   journalWithPrompts(email, classId, callback) {
-    console.log(`Looking for journal and prompts for ${email} and ${classId}`);
-
     this.journalFor(email, classId, (err, journal) => {
       if (err) {
         callback(err, null);
       } else {
         this.openPromptsForStudent(email, classId, (err, prompts) => {
-          console.log('openPromptsForStudent');
-          console.log(err);
-          console.log(prompts);
           if (err) {
             callback(err, null);
           } else {
@@ -335,7 +336,6 @@ class DB {
   }
 
   userById(id, callback) {
-    console.log(id);
     this.db.get('SELECT rowid as id, * from users where rowid = ?', id, callback);
   }
 

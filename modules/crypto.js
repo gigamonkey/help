@@ -1,3 +1,5 @@
+/* eslint-disable new-cap */
+
 import crypto from 'crypto';
 import CryptoJS from 'crypto-js';
 

@@ -5,6 +5,9 @@
   <div class="entry">
     <p class="time">{{ entry.time }}</p>
     <div class="text">
+      {% if entry.prompt %}
+      <p class="prompt">{{entry.prompt | md | safe}}</p>
+      {% endif %}
       {{entry.text | md(false) | safe}}
     </div>
   </div>

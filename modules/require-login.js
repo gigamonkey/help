@@ -100,7 +100,6 @@ class RequireLogin {
                   res.sendStatus(500);
                 } else {
                   const newSession = { ...session, user, loggedIn: true, auth: authData };
-                  console.log(JSON.stringify(newSession, null, 2));
                   res.cookie('session', encrypt(newSession, this.secret));
                   res.redirect(state.split(':')[1]);
                 }

@@ -136,11 +136,16 @@ app.get('/c/:class_id/journal', (req, res) => {
  */
 app.post('/c/:class_id/journal', (req, res) => {
   const { class_id } = req.params;
-  const { text, prompt } = req.body;
+  const { text } = req.body;
   const { email } = req.session.user;
-  db.addJournalEntry(email, class_id, text, prompt || null, (err) =>
-    dbRedirect(res, err, req.path),
-  );
+  if (text) {
+    db.addJournalEntry(email, class_id, text, (err) => dbRedirect(res, err, req.path));
+  } else {
+    const responses = promptResponses(req.body);
+    db.addJournalEntries(email, class_id, responses, (err) => {
+      dbRedirect(res, err, req.path);
+    });
+  }
 });
 
 /*
@@ -173,8 +178,13 @@ app.get('/c/:class_id/journal/:id(\\d+)', (req, res) => {
   }
 });
 
+const promptResponses = (body) =>
+  Object.keys(body)
+    .map((s) => s.match(/prompt-(\d+)/))
+    .filter((m) => m)
+    .map((m) => ({ promptId: Number(m[1]), text: body[m[0]] }));
+
 const journalRenderer = (req, res, withForm) => (err, journal) => {
-  console.log(journal);
   dbRender(res, err, 'journal.njk', {
     ...req.params,
     days: groupEntries(journal.journal),
@@ -211,7 +221,6 @@ app.get(
 app.get('/', (req, res) => {
   const { email } = req.session.user;
   db.classMemberships(email, (err, memberships) => {
-    console.log(memberships);
     dbRender(res, err, 'index.njk', { memberships });
   });
 });
@@ -235,7 +244,6 @@ app.post('/c/:class_id/help', (req, res) => {
 });
 
 app.get('/c/:class_id/help/:id(\\d+)', (req, res) => {
-  console.log('here');
   const { id, class_id } = req.params;
   db.getHelp(id, (err, item) => dbRender(res, err, 'help.njk', { id, class_id, item }));
 });
@@ -332,7 +340,6 @@ app.get(
   teacherOnly((req, res) => {
     const { class_id } = req.params;
     db.studentStats(class_id, (err, students) => {
-      console.log(students);
       res.render('students.njk', { ...req.params, students });
     });
   }),
@@ -396,11 +403,8 @@ const allCourses = async (oauth2client) => {
     /* eslint-disable no-await-in-loop */
     const args = pageToken ? { ...mainArgs, pageToken } : mainArgs;
     const res = await classroom.courses.list(args);
-    console.log(JSON.stringify(res, null, 2));
     results = results.concat(res.data.courses);
-    console.log(JSON.stringify(results, null, 2));
     pageToken = res.data.nextPageToken;
-    console.log(`pageToken: ${pageToken}`);
   } while (pageToken);
   return results;
 };

@@ -205,6 +205,10 @@ body.prompts td:first-child {
   font-size: 80%;
 }
 
+.journal p.prompt {
+  font-weight: 500;
+}
+
 .journal .text p {
   margin: 1em 0;
   width: 90%;
