@@ -120,6 +120,22 @@ app.get('/auth', (req, res) => {
 });
 
 ////////////////////////////////////////////////////////////////////////////////
+// Class page
+
+app.get('/c/:class_id', (req, res) => {
+  const { class_id } = req.params;
+  const { email } = req.session.user;
+  db.getClass(class_id, email, (err, clazz) => {
+    if (err) {
+      console.log(err);
+      res.sendStatus(500);
+    } else {
+      res.render('class.njk', clazz);
+    }
+  });
+});
+
+////////////////////////////////////////////////////////////////////////////////
 // Journal
 
 /*
@@ -354,18 +370,6 @@ app.get(
     db.discardHelp(req.params.id, (err) => dbRedirect(res, err, `/c/${class_id}/help/${id}`));
   }),
 );
-
-app.get('/c/:class_id', (req, res) => {
-  const { class_id } = req.params;
-  db.getClass(class_id, (err, clazz) => {
-    if (err) {
-      console.log(err);
-      res.sendStatus(500);
-    } else {
-      res.render('class.njk', clazz);
-    }
-  });
-});
 
 app.get(
   '/c/:class_id/students',

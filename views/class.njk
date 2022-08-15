@@ -7,6 +7,18 @@
 
 {% block content %}
 
-<p><a href="help">Get help</a></p>
+<ul>
+
+<li><a href="/c/{{class_id}}/help">Help</a></li>
+<li><a href="/c/{{class_id}}/journal">Journal</a></li>
+
+{% if role == 'teacher' %}
+
+<li><a href="/c/{{class_id}}/up-next">Help queue</a></li>
+<li><a href="/c/{{class_id}}/students">Students</a></li>
+<li><a href="/c/{{class_id}}/prompts">Prompts</a></li>
+
+{% endif %}
+
 
 {% endblock %}

@@ -207,6 +207,11 @@ td.actions {
   font-size: 1.2em;
 }
 
+.journal form h2 {
+  font-weight: 300;
+  font-size: 1.1em;
+}
+
 .time {
   color: grey;
   text-align: right;

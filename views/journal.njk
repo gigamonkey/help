@@ -1,6 +1,7 @@
 {% extends 'layout.njk' %}
 
 {% set title = "Journal ✍️" %}
+{% set class = "journal" %}
 
 {% block scripts %}
 <script src="/js/check-required.js" type="module"></script>
@@ -27,7 +28,7 @@
 {% endif %}
 
 
-<div id="journal" class="journal">
+<div id="journal">
   {% if days.length > 0 %}
   {% for day in days %}
   {% include 'journal-day.njk' %}

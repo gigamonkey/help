@@ -90,8 +90,13 @@ class DB {
     );
   }
 
-  getClass(id, callback) {
-    this.db.get('select * from classes where id = ?', id, callback);
+  getClass(id, email, callback) {
+    const q = `
+      select classes.*, class_id, role from classes
+      join class_members where id = class_id and
+      id = ? and email = ?
+    `;
+    this.db.get(q, id, email, callback);
   }
 
   googleClassroomIds(callback) {

@@ -8,7 +8,7 @@
   {% block scripts %}
   {% endblock %}
 </head>
-<body class={{class}}>
+<body {% if class %}class={{class}}{% endif %}>
 
   {% include "toolbar.html" %}
 
