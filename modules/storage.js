@@ -469,25 +469,16 @@ class DB {
     this.db.all('select * from prompts where class_id = ?', classId, callback);
   }
 
-  openPrompts(classId, callback) {
-    this.db.all(
-      "select * from prompts where class_id = ? and closed_at < unixepoch('now')",
-      classId,
-      callback,
-    );
-  }
-
   openPromptsForStudent(email, classId, callback) {
     const q = `
-      select prompts.* from prompts
-      left join journal using (prompt_id)
+      select * from prompts
       where
-        prompts.class_id = ?1 and
-        prompts.closed_at is null and
-        journal.text is null
+        class_id = ?2 and
+        closed_at is null and
+        prompt_id not in (select prompt_id from journal where email = ?1)
       order by prompts.prompt_id asc;
     `;
-    this.db.all(q, classId, callback);
+    this.db.all(q, email, classId, callback);
   }
 }
 
