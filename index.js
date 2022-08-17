@@ -144,7 +144,7 @@ app.get('/c/:class_id', (req, res) => {
 app.get('/c/:class_id/journal', (req, res) => {
   const { class_id } = req.params;
   const { email } = req.session.user;
-  db.journalWithPrompts(email, class_id, journalRenderer(req, res, true));
+  db.journalWithPrompts(email, class_id, journalRenderer(req, res, null, true));
 });
 
 /*
@@ -172,26 +172,26 @@ app.get('/c/:class_id/journal/:id(\\d+)', (req, res) => {
   const { class_id } = req.params;
   const { user } = req.session;
 
-  const renderJournal = journalRenderer(req, res, false);
+  db.userById(req.params.id, (err, journalUser) => {
+    if (err) {
+      console.log(err);
+      res.sendStatus(500);
+    } else if (!journalUser) {
+      res.sendStatus(404);
+    } else {
+      const renderJournal = journalRenderer(req, res, journalUser, false);
 
-  if (user.id === Number(req.params.id)) {
-    // The authenticated user is requesting their own journal.
-    db.journalWithPrompts(user.email, class_id, renderJournal);
-  } else {
-    // Otherwise need to see if authenticated user is the teacher.
-    ifTeacher(req, res, () => {
-      db.userById(req.params.id, (err, journalUser) => {
-        if (err) {
-          console.log(err);
-          res.sendStatus(500);
-        } else if (!journalUser) {
-          res.sendStatus(404);
-        } else {
+      if (user.id === Number(req.params.id)) {
+        // The authenticated user is requesting their own journal.
+        db.journalWithPrompts(user.email, class_id, renderJournal);
+      } else {
+        // Otherwise need to see if authenticated user is the teacher.
+        ifTeacher(req, res, () => {
           db.journalWithPrompts(journalUser.email, class_id, renderJournal);
-        }
-      });
-    });
-  }
+        });
+      }
+    }
+  });
 });
 
 const promptResponses = (body) =>
@@ -200,11 +200,12 @@ const promptResponses = (body) =>
     .filter((m) => m)
     .map((m) => ({ promptId: Number(m[1]), text: body[m[0]] }));
 
-const journalRenderer = (req, res, withForm) => (err, journal) => {
+const journalRenderer = (req, res, user, withForm) => (err, journal) => {
   dbRender(res, err, 'journal.njk', {
     ...req.params,
     days: groupEntries(journal.journal),
     prompts: journal.prompts,
+    user,
     withForm,
   });
 };
