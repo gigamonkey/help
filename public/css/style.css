@@ -265,3 +265,7 @@ td {
   padding: 10px;
   width: calc(100% - 22px);
 }
+
+.responses h3 {
+  margin: 1em 0;
+}

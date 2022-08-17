@@ -478,6 +478,17 @@ class DB {
     `;
     this.db.all(q, email, classId, callback);
   }
+
+  responsesToPrompt(promptId, callback) {
+    const q = `
+      select prompts.text as prompt, u.name, u.email, journal.text
+      from prompts
+      join journal using (prompt_id)
+      join users as u using (email)
+      where prompt_id = ?
+    `;
+    this.db.all(q, promptId, callback);
+  }
 }
 
 export default DB;

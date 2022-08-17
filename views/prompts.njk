@@ -24,6 +24,9 @@
     {% for p in open %}
     <tr>
       <td>{{ p.text | md | safe}}</td>
+      <td>
+        <a href="/c/{{class_id}}/prompts/{{p.prompt_id}}">Responses</a>
+      </td>
       <td class="actions">
         <a href="/c/{{class_id}}/prompts/{{p.prompt_id}}/close">Close</a>
 

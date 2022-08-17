@@ -235,6 +235,17 @@ app.get(
 );
 
 app.get(
+  '/c/:class_id/prompts/:id(\\d+)',
+  teacherOnly((req, res) => {
+    // class_id isn't actually needed since prompt ids are globally unique.
+    const { id } = req.params;
+    db.responsesToPrompt(id, (err, responses) =>
+      dbRender(res, err, 'responses.njk', { ...req.params, responses }),
+    );
+  }),
+);
+
+app.get(
   '/c/:class_id/prompts/:id(\\d+)/close',
   teacherOnly((req, res) => {
     const { class_id, id } = req.params;
