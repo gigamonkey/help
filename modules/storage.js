@@ -317,9 +317,7 @@ class DB {
       where j.email = ? and j.class_id = ?
       order by id desc
     `;
-    this.db.all(q, email, classId, (err, data) => {
-      callback(err, data);
-    });
+    this.db.all(q, email, classId, callback);
   }
 
   journalWithPrompts(email, classId, callback) {
@@ -407,7 +405,7 @@ class DB {
     // properly probably requires doing the counting outside the database.
     const q = `
       select
-        m.rowid as id,
+        u.rowid as id,
         m.*,
         u.name,
         count(distinct journal.rowid) as journal_entries,
