@@ -473,7 +473,7 @@ class DB {
       where
         class_id = ?2 and
         closed_at is null and
-        prompt_id not in (select prompt_id from journal where email = ?1)
+        prompt_id not in (select prompt_id from journal where email = ?1 and prompt_id is not null)
       order by prompts.prompt_id asc;
     `;
     this.db.all(q, email, classId, callback);
