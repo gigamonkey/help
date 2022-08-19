@@ -429,7 +429,7 @@ app.get(
 
     const c = course.data;
     const students = await allStudents(oauth2client, c.id);
-    const classId = c.name.toLowerCase().replaceAll(/\W+/g, '-');
+    const classId = makeClassId(c);
     const teacherEmail = email;
 
     db.loadClass(classId, teacherEmail, c.name, c.id, students, (err) =>
@@ -437,6 +437,10 @@ app.get(
     );
   }),
 );
+
+const makeClassId = (c) => c.section ? slugify(`${c.name} ${c.section}`) : slugify(c.name);
+
+const slugify = (s) => s.toLowerCase().replaceAll(/\W+/g, '-');
 
 const extractIds = (googleIds) => googleIds.map((r) => r.google_id.toString(10));
 

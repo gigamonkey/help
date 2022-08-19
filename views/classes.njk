@@ -5,7 +5,11 @@
 
 <ul>
 {% for course in courses %}
-<li>{{ course.name }} -
+<li>{% if course.section %}
+  {{ course.name }} - {{ course.section }}
+  {% else %}
+  {{ course.name }}
+  {% endif %}
   {% if googleIds.indexOf(course.id) > -1 %}
   <a href="/c/{{course.name | slug}}/students">Already created</a>
   {% else %}
