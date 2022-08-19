@@ -364,8 +364,8 @@ class DB {
         // We create a user with the name we got from Google in both name fields
         // but later we may change `name` to be the student's preferred name.
         const isAdmin = ADMINS[email] ? 1 : 0;
-        const name = OTHER_NAMES[email];
-        const q = 'insert into users (email, name, google_name, is_admin) values (?, ?, ?, ?)';
+        const name = OTHER_NAMES[email] ?? googleName;
+        const q = 'insert or ignore into users (email, name, google_name, is_admin) values (?, ?, ?, ?)';
         this.db.run(q, email, name, googleName, isAdmin, (err) => {
           if (err) {
             callback(err, null);
