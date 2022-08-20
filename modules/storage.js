@@ -500,7 +500,13 @@ class DB {
   }
 
   allPromptsForClass(classId, callback) {
-    this.db.all('select * from prompts where class_id = ?', classId, callback);
+    const q = `
+      select * from prompts where
+        class_id = ?
+        and (closed_at is null or
+             prompt_id in (select prompt_id from journal where prompt_id is not null))
+    `;
+    this.db.all(q, classId, callback);
   }
 
   openPromptsForStudent(email, classId, callback) {
