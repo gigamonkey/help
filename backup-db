@@ -1,0 +1,7 @@
+#!/bin/bash
+
+timestamp=$(date +%Y%m%dT%H%M%S)
+
+if [ -e "help.db" ]; then
+    cp "help.db" "db-backups/help-${timestamp}.db"
+fi
