@@ -38,13 +38,13 @@
 
 {% endif %}
 
-<h2>All prompts</h2>
+{% if old.length > 0 %}
 
-{% if unique.length > 0 %}
+<h2>Old prompts</h2>
 
 <table>
   <tbody>
-    {% for p in unique %}
+    {% for p in old %}
     <tr>
       <td>{{ p.text | md | safe}}</td>
       <td class="actions">
@@ -54,10 +54,6 @@
     {% endfor %}
   </tbody>
 </table>
-
-{% else %}
-
-<p>No prompts yet.</p>
 
 {% endif %}
 

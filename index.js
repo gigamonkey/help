@@ -228,8 +228,8 @@ app.get(
     const { class_id } = req.params;
     db.allPromptsForClass(class_id, (err, prompts) => {
       const open = openPrompts(prompts);
-      const unique = uniquePrompts(prompts);
-      dbRender(res, err, 'prompts.njk', { ...req.params, open, unique });
+      const old = oldPrompts(prompts);
+      dbRender(res, err, 'prompts.njk', { ...req.params, open, old });
     });
   }),
 );
@@ -263,16 +263,16 @@ app.get(
 
 const openPrompts = (prompts) => prompts.filter((p) => p.closed_at === null);
 
-const uniquePrompts = (prompts) => {
+const oldPrompts = (prompts) => {
   const seen = {};
-  const unique = [];
+  const old = [];
   prompts.forEach((p) => {
     if (!seen[p.text]) {
       seen[p.text] = true;
-      unique.push(p);
+      if (p.closed_at !== null) old.push(p);
     }
   });
-  return unique;
+  return old;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
