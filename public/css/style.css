@@ -172,7 +172,8 @@ body.prompts td {
   padding: 6px 0;
 }
 
-body.prompts td a {
+body.prompts td a,
+a.button {
   border: 1px solid grey;
   border-radius: 3px;
   padding: 3px;

@@ -53,12 +53,7 @@ class DB {
     });
   }
 
-  createClass(classId, name, googleId, callback) {
-    const q = 'insert into classes (id, name, google_id) values (?, ?, ?)';
-    this.db.run(q, classId, name, googleId, callback);
-  }
-
-  loadClass(classId, teacherEmail, name, googleId, students, callback) {
+  createClass(classId, teacherEmail, name, googleId, students, callback) {
     const createClass = 'insert into classes (id, name, google_id) values (?, ?, ?)';
     const createMember = 'insert into class_members (email, class_id, role) values (?, ?, ?)';
     const ensureUser = 'insert or ignore into users (email, name, google_name) VALUES (?, ?, ?)';
@@ -80,6 +75,44 @@ class DB {
       }
       /* eslint-enable */
       this.db.run('commit', callback);
+    });
+  }
+
+  resyncClass(classId, students, callback) {
+    const currentStudentEmails = `select email from class_members where role = 'student' and class_id = ?`;
+    const ensureStudent =
+      'insert or ignore into users (email, name, google_name, is_admin) VALUES (?, ?, ?, 0)';
+    const ensureMember =
+      'insert or ignore into class_members (email, class_id, role) values (?, ?, ?)';
+    const removeMember = 'delete from class_members where email = ?';
+
+    this.db.all(currentStudentEmails, classId, (err, data) => {
+      const current = data.map((d) => d.email);
+      const toKeep = new Set(students.map((s) => s.profile.emailAddress));
+
+      this.db.serialize(() => {
+        this.db.run('begin transaction');
+
+        /* eslint-disable no-restricted-syntax */
+        for (const s of students) {
+          this.db.run(
+            ensureStudent,
+            s.profile.emailAddress,
+            s.profile.name.fullName,
+            s.profile.name.fullName,
+          );
+          this.db.run(ensureMember, s.profile.emailAddress, classId, 'student');
+        }
+
+        for (const c of current) {
+          if (!toKeep.has(c)) {
+            this.db.run(removeMember, c);
+          }
+        }
+        /* eslint-enable */
+
+        this.db.run('commit', callback);
+      });
     });
   }
 
@@ -367,7 +400,8 @@ class DB {
         // but later we may change `name` to be the student's preferred name.
         const isAdmin = ADMINS[email] ? 1 : 0;
         const name = OTHER_NAMES[email] ?? googleName;
-        const q = 'insert or ignore into users (email, name, google_name, is_admin) values (?, ?, ?, ?)';
+        const q =
+          'insert or ignore into users (email, name, google_name, is_admin) values (?, ?, ?, ?)';
         this.db.run(q, email, name, googleName, isAdmin, (err) => {
           if (err) {
             callback(err, null);

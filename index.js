@@ -412,6 +412,9 @@ app.get(
     const oauth2client = oauth.oauth2client();
     oauth2client.setCredentials(req.session.auth);
     const courses = await allCourses(oauth2client);
+    courses.forEach((c) => {
+      c.fullName = fullClassName(c);
+    });
     db.googleClassroomIds((err, ids) =>
       dbRender(res, err, 'classes.njk', { courses, googleIds: extractIds(ids) }),
     );
@@ -419,26 +422,44 @@ app.get(
 );
 
 app.get(
-  '/classes/:google_id',
+  '/classes/:google_id/create',
   adminOnly(async (req, res) => {
     const { google_id } = req.params;
-    const { email } = req.session.user;
+    const teacherEmail = req.session.user.email;
+    // FIXME: I think it may be possible to just pass the auth data rather than
+    // constructing an oauth2client object. Look into that later.
     const oauth2client = oauth.oauth2client();
     oauth2client.setCredentials(req.session.auth);
     const course = await oneCourse(oauth2client, google_id);
 
     const c = course.data;
     const students = await allStudents(oauth2client, c.id);
-    const classId = makeClassId(c);
-    const teacherEmail = email;
+    const className = fullClassName(c);
+    const classId = slugify(className);
 
-    db.loadClass(classId, teacherEmail, c.name, c.id, students, (err) =>
+    db.createClass(classId, teacherEmail, className, c.id, students, (err) =>
       dbRedirect(res, err, `/c/${classId}/students`),
     );
   }),
 );
 
-const makeClassId = (c) => c.section ? slugify(`${c.name} ${c.section}`) : slugify(c.name);
+app.get(
+  '/classes/:google_id/resync',
+  adminOnly(async (req, res) => {
+    const { google_id } = req.params;
+
+    const oauth2client = oauth.oauth2client();
+    oauth2client.setCredentials(req.session.auth);
+    const students = await allStudents(oauth2client, google_id);
+
+    db.classByGoogleId(google_id, (err, data) => {
+      const classId = data.id;
+      db.resyncClass(classId, students, (err) => dbRedirect(res, err, `/c/${classId}/students`));
+    });
+  }),
+);
+
+const fullClassName = (c) => (c.section ? `${c.name} - ${c.section}` : c.name);
 
 const slugify = (s) => s.toLowerCase().replaceAll(/\W+/g, '-');
 
@@ -458,6 +479,8 @@ const allCourses = async (oauth2client) => {
     results = results.concat(res.data.courses);
     pageToken = res.data.nextPageToken;
   } while (pageToken);
+
+  results.sort((a, b) => (fullClassName(a) < fullClassName(b) ? -1 : 1));
   return results;
 };
 
