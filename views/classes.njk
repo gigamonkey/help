@@ -3,20 +3,24 @@
 
 {% block content %}
 
-<ul>
+<table>
+  <tbody>
 {% for course in courses %}
-<li>{% if course.section %}
-  {{ course.name }} - {{ course.section }}
-  {% else %}
-  {{ course.name }}
-  {% endif %}
-  {% if googleIds.indexOf(course.id) > -1 %}
-  <a href="/c/{{course.name | slug}}/students">Already created</a>
-  {% else %}
-  <a href="/classes/{{course.id}}">Create class</a>
-  {% endif %}
-</li>
+<tr>
+  <td>
+    <a href="/c/{{course.fullName | slug}}/students">{{ course.fullName }}</a>
+  </td>
+  <td>
+    {% if googleIds.indexOf(course.id) > -1 %}
+    <a class="button" href="/classes/{{course.id}}/resync">Resync</a>
+    {% else %}
+    <a class="button" href="/classes/{{course.id}}/create">Create</a>
+    {% endif %}
+  </td>
+</tr>
 {% endfor %}
-</ul>
+  </tbody>
+</table>
+
 
 {% endblock %}
