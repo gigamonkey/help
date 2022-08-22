@@ -10,6 +10,10 @@
 </head>
 <body {% if class %}class={{class}}{% endif %}>
 
+  {% if className %}
+  <h1 class="classname">{{ className }}</h1>
+  {% endif %}
+
   {% include "toolbar.html" %}
 
   {% block beforeTitle %}

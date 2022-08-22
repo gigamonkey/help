@@ -72,6 +72,25 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(login.require());
+
+// Middleware to find the name of the class from the id if it's in the URL.
+app.use((req, res, next) => {
+  const m = req.path.match(/\/c\/(.*?)\//);
+  if (m) {
+    db.getClassName(m[1], (err, data) => {
+      if (err) {
+        res.sendStatus(500);
+      } else {
+        const { name } = data;
+        res.locals.className = name;
+        next();
+      }
+    });
+  } else {
+    next();
+  }
+});
+
 app.use(express.static('public'));
 
 /* eslint-disable no-unused-vars */
@@ -344,42 +363,40 @@ app.get('/c/:class_id/discarded', (req, res) => {
 app.get(
   '/c/:class_id/help/:id/take',
   helperOnly((req, res) => {
-    const { class_id, id } = req.params;
-    db.take(req.params.id, req.session.user.email, (err) =>
-      dbRedirect(res, err, `/c/${class_id}/help/${id}`),
-    );
+    const { id } = req.params;
+    db.take(id, req.session.user.email, (err) => dbRedirect(res, err, req.get('Referrer')));
   }),
 );
 
 app.get(
   '/c/:class_id/help/:id/requeue',
   helperOnly((req, res) => {
-    const { class_id, id } = req.params;
-    db.requeueHelp(req.params.id, (err) => dbRedirect(res, err, `/c/${class_id}/help/${id}`));
+    const { id } = req.params;
+    db.requeueHelp(id, (err) => dbRedirect(res, err, req.get('Referrer')));
   }),
 );
 
 app.get(
   '/c/:class_id/help/:id/done',
   helperOnly((req, res) => {
-    const { class_id, id } = req.params;
-    db.finishHelp(req.params.id, (err) => dbRedirect(res, err, `/c/${class_id}/help/${id}`));
+    const { id } = req.params;
+    db.finishHelp(id, (err) => dbRedirect(res, err, req.get('Referrer')));
   }),
 );
 
 app.get(
   '/c/:class_id/help/:id/reopen',
   helperOnly((req, res) => {
-    const { class_id, id } = req.params;
-    db.reopenHelp(req.params.id, (err) => dbRedirect(res, err, `/c/${class_id}/help/${id}`));
+    const { id } = req.params;
+    db.reopenHelp(id, (err) => dbRedirect(res, err, req.get('Referrer')));
   }),
 );
 
 app.get(
   '/c/:class_id/help/:id/discard',
   helperOnly((req, res) => {
-    const { class_id, id } = req.params;
-    db.discardHelp(req.params.id, (err) => dbRedirect(res, err, `/c/${class_id}/help/${id}`));
+    const { id } = req.params;
+    db.discardHelp(id, (err) => dbRedirect(res, err, req.get('Referrer')));
   }),
 );
 
