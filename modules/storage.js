@@ -125,6 +125,10 @@ class DB {
     );
   }
 
+  getClassName(classId, callback) {
+    this.db.get('select name from classes where id = ?', classId, callback);
+  }
+
   getClass(id, email, callback) {
     const q = `
       select classes.*, class_id, role from classes

@@ -18,7 +18,6 @@ const updatePage = () => {
   document.location.reload();
 };
 
-
 updateTimes();
 setInterval(updateTimes, 1000);
 setInterval(updatePage, 15 * 1000);

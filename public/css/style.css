@@ -52,6 +52,11 @@ ol {
   margin-left: 2em;
 }
 
+h1.classname {
+  font-size: 32px;
+  text-align: center;
+}
+
 .toolbar {
   display: flex;
   flex-direction: row;
