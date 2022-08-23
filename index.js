@@ -304,11 +304,11 @@ app.get('/', (req, res) => {
   });
 });
 
-app.get('/c/:class_id/help', (req, res) => {
+app.get('/c/:class_id/get-help', (req, res) => {
   res.render('help-form.njk', req.params);
 });
 
-app.post('/c/:class_id/help', (req, res) => {
+app.post('/c/:class_id/get-help', (req, res) => {
   const { class_id } = req.params;
   const { problem, tried } = req.body;
   const { email } = req.session.user;
@@ -317,7 +317,7 @@ app.post('/c/:class_id/help', (req, res) => {
       console.log(err);
       res.sendStatus(500);
     } else {
-      res.redirect(`up-next`);
+      res.redirect(`help`);
     }
   });
 });
@@ -331,7 +331,7 @@ app.get('/c/:class_id/journal/:id', (req, res) => {
   res.sendFile(path.join(DIRNAME, 'public/journal/show.html'));
 });
 
-app.get('/c/:class_id/up-next', (req, res) => {
+app.get('/c/:class_id/help', (req, res) => {
   const { class_id } = req.params;
   db.queue(class_id, (err, queue) => dbRender(res, err, 'up-next.njk', { class_id, queue }));
 });
