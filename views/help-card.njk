@@ -1,7 +1,7 @@
       <div class="item">
         <div class="who">
           <span><a href="/c/{{item.class_id}}/help/{{item.id}}">#{{item.id}}</a> -
-            <span>{{item.email}}</span>
+            <span>{{item.name}}</span>
           </span>
           <span class="time" data-time="{{item.time}}"></span>
         </div>
@@ -20,11 +20,7 @@
           {% if item.helper %}<span>Helping: {{item.helper}}</span>{% endif %}
           <span>
             <!-- FIXME show particular buttons based on the page and the role of the user -->
-            <a href="/c/{{class_id}}/help/{{item.id}}/take">Take</a>
-            <a href="/c/{{class_id}}/help/{{item.id}}/requeue">Requeue</a>
-            <a href="/c/{{class_id}}/help/{{item.id}}/done">Done</a>
-            <a href="/c/{{class_id}}/help/{{item.id}}/reopen">Reopen</a>
-            <a href="/c/{{class_id}}/help/{{item.id}}/discard">Discard</a>
+            <a href="/c/{{class_id}}/help/{{item.id}}/take">Help</a>
           </span>
         </div>
       </div>

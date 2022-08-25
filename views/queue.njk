@@ -5,26 +5,30 @@
   <meta content="width=device-width,initial-scale=1" name="viewport">
   <title>{{ title }}</title>
   <link href="/css/style.css" media="all" rel="stylesheet" type="text/css">
+  <script src="/js/update-times.js" type="module"></script>
   {% block scripts %}
   {% endblock %}
 </head>
-<body {% if class %}class="{{class}}"{% endif %}>
+<body class="queue">
 
   {% if className %}
   <h1 class="classname">{{ className }}</h1>
   {% endif %}
 
-  {% include "toolbar.html" %}
+  {% if queue.length > 0 %}
+    <div id="items" class="cards">
 
-  {% block beforeTitle %}
-  {% endblock %}
+    {% for item in queue %}
+    {% include 'help-card.njk' %}
+    {% endfor %}
 
-  {% if title %}
-  <h1>{{ title }}</h1>
+    </div>
+
+    {% else %}
+    <h2>
+      🎉 Nobody waiting! 🎉
+    </h2>
   {% endif %}
-
-  {% block content %}
-  {% endblock %}
 
 </body>
 </html>
