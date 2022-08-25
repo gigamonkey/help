@@ -180,9 +180,13 @@ class DB {
   }
 
   getHelp(id, callback) {
-    this.db.get('select rowid as id, * from help where rowid = ?', id, (err, data) => {
-      callback(err, data);
-    });
+    this.db.get(
+      'select help.rowid as id, help.*, users.name from help join users using (email) where help.rowid = ?',
+      id,
+      (err, data) => {
+        callback(err, data);
+      },
+    );
   }
 
   next(helper, callback) {
@@ -264,7 +268,9 @@ class DB {
    */
   queue(classId, callback) {
     const q = `
-      select rowid as id, * from help
+      select help.rowid as id, help.*, users.name
+      from help
+      join users using (email)
       where class_id = ? and
       start_time is null and
       discard_time is null

@@ -336,6 +336,11 @@ app.get('/c/:class_id/help', (req, res) => {
   db.queue(class_id, (err, queue) => dbRender(res, err, 'up-next.njk', { class_id, queue }));
 });
 
+app.get('/c/:class_id/queue', (req, res) => {
+  const { class_id } = req.params;
+  db.queue(class_id, (err, queue) => dbRender(res, err, 'queue.njk', { class_id, queue }));
+});
+
 app.get('/c/:class_id/in-progress', (req, res) => {
   const { class_id } = req.params;
   db.inProgress(class_id, (err, queue) =>
