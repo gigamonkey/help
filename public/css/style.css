@@ -19,7 +19,7 @@ body {
 body.queue {
   width: 80%;
   margin: 20px auto;
-  font-size: 64px;
+  font-size: calc(min(64px, 4vw));
 }
 
 body.queue h2 {
