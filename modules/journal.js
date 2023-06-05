@@ -4,16 +4,16 @@ const groupEntries = (data) => {
   const grouped = [];
   let current = {}; // dummy
   data.forEach((e) => {
-    const { time } = e;
-    const date = yyyymmdd(time);
+    const { created_at } = e;
+    const date = yyyymmdd(created_at);
     const prompted = e.prompt_id !== null;
 
     if (current.date !== date || current.prompted !== prompted) {
-      const nice = humandate(time);
+      const nice = humandate(created_at);
       current = { date, nice, prompted, entries: [] };
       grouped.push(current);
     }
-    current.entries.unshift({ ...e, time: hhmm(e.time) });
+    current.entries.unshift({ ...e, created_at: hhmm(e.created_at) });
   });
   return grouped;
 };

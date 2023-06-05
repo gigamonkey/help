@@ -155,7 +155,7 @@ class DB {
    */
   requestHelp(email, class_id, problem, callback) {
     const q = `
-      INSERT INTO help (email, class_id, problem, time)
+      INSERT INTO help (email, class_id, problem, created_at)
       VALUES (?, ?, ?, unixepoch('now'))
     `;
 
@@ -192,12 +192,12 @@ class DB {
   }
 
   finishHelp(id, callback) {
-    const q = `UPDATE help SET end_time = unixepoch('now') WHERE rowid = ?`;
+    const q = `UPDATE help SET closed_at = unixepoch('now') WHERE rowid = ?`;
     this.updateHelp(id, q, [], callback);
   }
 
   reopenHelp(id, callback) {
-    const q = `UPDATE help SET end_time = null WHERE rowid = ?`;
+    const q = `UPDATE help SET closed_at = null WHERE rowid = ?`;
     this.updateHelp(id, q, [], callback);
   }
 
@@ -210,8 +210,8 @@ class DB {
       from help
       join users using (email)
       where class_id = ? and
-      end_time is null
-      order by time asc
+      closed_at is null
+      order by created_at asc
     `;
     this.db.all(q, classId, callback);
   }
@@ -223,8 +223,8 @@ class DB {
     const q = `
       select rowid as id, * from help
       where class_id = ? and
-      end_time is not null
-      order by time asc
+      closed_at is not null
+      order by created_at asc
     `;
     this.db.all(q, classId, callback);
   }
@@ -246,7 +246,7 @@ class DB {
   addJournalEntry(email, classId, text, callback) {
     const q = `
       insert into journal
-        (email, class_id, text, time)
+        (email, class_id, text, created_at)
       values
         (?, ?, ?, unixepoch('now'))
     `;
@@ -254,7 +254,7 @@ class DB {
   }
 
   addJournalEntries(email, classId, entries, callback) {
-    const q = `insert into journal (email, class_id, text, time, prompt_id) values (?, ?, ?, unixepoch('now'), ?)`;
+    const q = `insert into journal (email, class_id, text, created_at, prompt_id) values (?, ?, ?, unixepoch('now'), ?)`;
     this.db.serialize(() => {
       this.db.run('begin transaction');
       /* eslint-disable no-restricted-syntax */
@@ -346,7 +346,7 @@ class DB {
         users.rowid as id,
         users.*,
         count(distinct journal.rowid) as journal_entries,
-        count(distinct date(journal.time, 'unixepoch')) as journal_days,
+        count(distinct date(journal.created_at, 'unixepoch')) as journal_days,
         count(distinct help.rowid) as help_requests
       from users
       left join journal on users.email = journal.email
@@ -366,7 +366,7 @@ class DB {
         m.*,
         u.name,
         count(distinct journal.rowid) as journal_entries,
-        count(distinct date(journal.time, 'unixepoch')) as journal_days,
+        count(distinct date(journal.created_at, 'unixepoch')) as journal_days,
         count(distinct help.rowid) as help_requests
       from class_members as m
       left join journal using (email, class_id)
@@ -385,13 +385,13 @@ class DB {
     const base = 'select rowid as id, * from journal';
 
     if (after && before) {
-      const q = `${base} where ? < time and time < ?`;
+      const q = `${base} where ? < created_at and created_at < ?`;
       this.db.all(q, after, before, callback);
     } else if (after) {
-      const q = `${base} where ? < time`;
+      const q = `${base} where ? < created_at`;
       this.db.all(q, after, callback);
     } else if (before) {
-      const q = `${base} where time < ?`;
+      const q = `${base} where created_at < ?`;
       this.db.all(q, before, callback);
     } else {
       this.db.all(base, callback);

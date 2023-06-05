@@ -37,9 +37,9 @@ CREATE TABLE IF NOT EXISTS help (
       email TEXT NOT NULL,
       class_id TEXT NOT NULL,
       problem TEXT NOT NULL,
-      time INTEGER NOT NULL,
-      end_time INTEGER,
-      PRIMARY KEY (email, class_id, time)
+      created_at INTEGER NOT NULL,
+      closed_at INTEGER,
+      PRIMARY KEY (email, class_id, created_at)
   );
 
 CREATE TABLE IF NOT EXISTS journal (
@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS journal (
       email TEXT NOT NULL,
       class_id TEXT NOT NULL,
       text TEXT NOT NULL,
-      time INTEGER NOT NULL,
+      created_at INTEGER NOT NULL,
       prompt_id INTEGER
     );
 

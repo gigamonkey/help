@@ -3,7 +3,7 @@
 
   {% for entry in day.entries %}
   <div class="entry">
-    <p class="time">{{ entry.time }}</p>
+    <p class="time">{{ entry.created_at }}</p>
     <div class="text">
       {% if entry.prompt %}
       <p class="prompt">{{entry.prompt | md | safe}}</p>

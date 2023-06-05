@@ -1,5 +1,3 @@
-- Rename time and end_time to created_at and closed_at
-
 - Allow discarding help requests (helpers and owner)
 
 - Use Google ID for user ids instead of email.
