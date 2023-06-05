@@ -81,7 +81,8 @@ class RequireLogin {
           console.log(`Bad session state ${dbSession.stat} vs ${state}`);
           res.sendStatus(401);
         } else {
-          const { name, email } = JSON.parse(atob(authData.id_token.split('.')[1]));
+
+          const { name, email, sub } = JSON.parse(atob(authData.id_token.split('.')[1]));
 
           // We've used the database session entry to confirm the session state.
           // Now we can get rid of it since we store all the relevant data in a
