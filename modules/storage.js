@@ -21,11 +21,6 @@ const OTHER_NAMES = {
   'shoshanaokeefe@berkeley.net': 'Ms. O’Keefe',
 };
 
-const QUEUE =
-  'SELECT rowid as id, * FROM help WHERE start_time IS NULL AND discard_time IS NULL ORDER BY time ASC';
-
-const QUEUE_TOP = `${QUEUE} LIMIT 1`;
-
 class DB {
   constructor(file) {
     this.db = new sqlite3.Database(file);
@@ -168,6 +163,7 @@ class DB {
       VALUES (?, ?, ?, unixepoch('now'))
     `;
 
+    // FIXME: use arrow function?
     const that = this;
 
     this.db.run(q, email, class_id, problem, function (err) {
@@ -189,17 +185,6 @@ class DB {
     );
   }
 
-  next(helper, callback) {
-    this.db.all(QUEUE_TOP, (err, rows) => {
-      if (err) {
-        callback(err, null);
-      } else {
-        const [row] = rows;
-        this.take(row.id, helper, callback);
-      }
-    });
-  }
-
   updateHelp(id, q, params, callback) {
     this.db.run(q, ...params, id, (err) => {
       if (err) {
@@ -210,61 +195,18 @@ class DB {
     });
   }
 
-  take(id, helper, callback) {
-    const q = `
-      UPDATE help SET
-        start_time = unixepoch('now'),
-        end_time = null,
-        discard_time = null,
-        helper = ?
-      WHERE rowid = ?
-    `;
-    this.updateHelp(id, q, [helper], callback);
-  }
-
   finishHelp(id, callback) {
-    const q = `
-      UPDATE help SET
-        end_time = unixepoch('now'),
-        discard_time = null
-      WHERE rowid = ?
-    `;
-    this.updateHelp(id, q, [], callback);
-  }
-
-  requeueHelp(id, callback) {
-    const q = `
-      UPDATE help SET
-        start_time = null,
-        end_time = null,
-        discard_time = null,
-        helper = null
-      WHERE rowid = ?
-     `;
+    const q = `UPDATE help SET end_time = unixepoch('now') WHERE rowid = ?`;
     this.updateHelp(id, q, [], callback);
   }
 
   reopenHelp(id, callback) {
-    const q = `
-      UPDATE help SET
-        end_time = null,
-        discard_time = null
-      WHERE rowid = ?
-    `;
-    this.updateHelp(id, q, [], callback);
-  }
-
-  discardHelp(id, callback) {
-    const q = `
-      UPDATE help SET
-        discard_time = unixepoch('now')
-      WHERE rowid = ?
-    `;
+    const q = `UPDATE help SET end_time = null WHERE rowid = ?`;
     this.updateHelp(id, q, [], callback);
   }
 
   /*
-   * Get all the help requests that have not been picked up to be helped yet.
+   * Get all the open help requests for the class.
    */
   queue(classId, callback) {
     const q = `
@@ -272,23 +214,7 @@ class DB {
       from help
       join users using (email)
       where class_id = ? and
-      start_time is null and
-      discard_time is null
-      order by time asc
-    `;
-    this.db.all(q, classId, callback);
-  }
-
-  /*
-   * Get all help requests that someone has started helping but not finished.
-   */
-  inProgress(classId, callback) {
-    const q = `
-      select rowid as id, * from help
-      where class_id = ? and
-      start_time is not null and
-      end_time is null and
-      discard_time is null
+      end_time is null
       order by time asc
     `;
     this.db.all(q, classId, callback);
@@ -301,18 +227,7 @@ class DB {
     const q = `
       select rowid as id, * from help
       where class_id = ? and
-      end_time is not null and
-      discard_time is null
-      order by time asc
-    `;
-    this.db.all(q, classId, callback);
-  }
-
-  discarded(classId, callback) {
-    const q = `
-      select rowid as id, * from help
-      where class_id = ? and
-      discard_time is not null
+      end_time is not null
       order by time asc
     `;
     this.db.all(q, classId, callback);

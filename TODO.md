@@ -1,5 +1,3 @@
-- Remove extra time fields from help items and get rid of state change code.
-
 - Get rid of seemingly unused joinCode
 
 - Remove helper field from help items.

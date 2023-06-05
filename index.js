@@ -42,18 +42,6 @@ const env = nunjucks.configure('views', {
 markdownFilter.install(env);
 dateFilter.install(env);
 
-env.addFilter('status', (h) => {
-  if (h.discard_time !== null) {
-    return 'Discarded';
-  } else if (h.end_time !== null) {
-    return 'Done';
-  } else if (h.start_time !== null) {
-    return 'In progress';
-  } else {
-    return 'On queue';
-  }
-});
-
 env.addFilter('slug', (s) => s.toLowerCase().replaceAll(/\W+/g, '-'));
 
 // Permission schemes.
@@ -341,21 +329,9 @@ app.get('/c/:class_id/queue', (req, res) => {
   db.queue(class_id, (err, queue) => dbRender(res, err, 'queue.njk', { class_id, queue }));
 });
 
-app.get('/c/:class_id/in-progress', (req, res) => {
-  const { class_id } = req.params;
-  db.inProgress(class_id, (err, queue) =>
-    dbRender(res, err, 'in-progress.njk', { class_id, queue }),
-  );
-});
-
 app.get('/c/:class_id/done', (req, res) => {
   const { class_id } = req.params;
   db.done(class_id, (err, queue) => dbRender(res, err, 'done.njk', { class_id, queue }));
-});
-
-app.get('/c/:class_id/discarded', (req, res) => {
-  const { class_id } = req.params;
-  db.discarded(class_id, (err, queue) => dbRender(res, err, 'discarded.njk', { class_id, queue }));
 });
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -364,22 +340,6 @@ app.get('/c/:class_id/discarded', (req, res) => {
 // FIXME: should perhaps pass req.session.user.email to all the state changes
 // and log the changes, especially if we're going to let students move things on
 // the queue.
-
-app.get(
-  '/c/:class_id/help/:id/take',
-  helperOnly((req, res) => {
-    const { id } = req.params;
-    db.take(id, req.session.user.email, (err) => dbRedirect(res, err, req.get('Referrer')));
-  }),
-);
-
-app.get(
-  '/c/:class_id/help/:id/requeue',
-  helperOnly((req, res) => {
-    const { id } = req.params;
-    db.requeueHelp(id, (err) => dbRedirect(res, err, req.get('Referrer')));
-  }),
-);
 
 app.get(
   '/c/:class_id/help/:id/done',
@@ -394,14 +354,6 @@ app.get(
   helperOnly((req, res) => {
     const { id } = req.params;
     db.reopenHelp(id, (err) => dbRedirect(res, err, req.get('Referrer')));
-  }),
-);
-
-app.get(
-  '/c/:class_id/help/:id/discard',
-  helperOnly((req, res) => {
-    const { id } = req.params;
-    db.discardHelp(id, (err) => dbRedirect(res, err, req.get('Referrer')));
   }),
 );
 

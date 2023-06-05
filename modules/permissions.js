@@ -27,6 +27,9 @@ class Permissions {
       if (err) {
         console.log(err);
         res.sendStatus(500);
+      } else if (!user) {
+        console.log('No user');
+        res.sendStatus(500);
       } else if (predicate(user)) {
         thunk();
       } else {
