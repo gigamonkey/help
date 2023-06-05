@@ -166,8 +166,7 @@ legend {
   font-family: sans-serif;
 }
 
-.problem > div,
-.tried > div {
+.problem > div {
   padding: 6px;
 }
 

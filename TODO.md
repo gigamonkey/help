@@ -1,5 +1,7 @@
 - Remove tried field from help table and form.
 
+- Remove extra time fields from help items and get rid of state change code.
+
 - Use Google ID for user ids instead of email.
 
 - Split prompt into prompt_text and prompt.

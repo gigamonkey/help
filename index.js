@@ -310,9 +310,9 @@ app.get('/c/:class_id/get-help', (req, res) => {
 
 app.post('/c/:class_id/get-help', (req, res) => {
   const { class_id } = req.params;
-  const { problem, tried } = req.body;
+  const { problem } = req.body;
   const { email } = req.session.user;
-  db.requestHelp(email, class_id, problem, tried, (err) => {
+  db.requestHelp(email, class_id, problem, (err) => {
     if (err) {
       console.log(err);
       res.sendStatus(500);

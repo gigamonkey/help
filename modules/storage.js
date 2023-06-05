@@ -162,15 +162,15 @@ class DB {
   /*
    * Create a new request for help.
    */
-  requestHelp(email, class_id, problem, tried, callback) {
+  requestHelp(email, class_id, problem, callback) {
     const q = `
-      INSERT INTO help (email, class_id, problem, tried, time)
-      VALUES (?, ?, ?, ?, unixepoch('now'))
+      INSERT INTO help (email, class_id, problem, time)
+      VALUES (?, ?, ?, unixepoch('now'))
     `;
 
     const that = this;
 
-    this.db.run(q, email, class_id, problem, tried, function (err) {
+    this.db.run(q, email, class_id, problem, function (err) {
       if (err) {
         callback(err, null);
       } else {
