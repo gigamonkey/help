@@ -1,5 +1,3 @@
-- Get rid of seemingly unused joinCode
-
 - Remove helper field from help items.
 
 - Allow discarding help requests (helpers and owner)

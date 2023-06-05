@@ -141,10 +141,6 @@ class DB {
     this.db.get('select * from classes where google_id = ?', googleId, callback);
   }
 
-  joinCode(id, callback) {
-    this.db.get('select joinCode from classes where id = ?', id, callback);
-  }
-
   joinClass(id, email, callback) {
     this.db.run(
       "insert into class_members (email, class_id, role) values (?, ?, 'student')",
