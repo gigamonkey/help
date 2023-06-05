@@ -1,4 +1,4 @@
-- Remove helper field from help items.
+- Rename time and end_time to created_at and closed_at
 
 - Allow discarding help requests (helpers and owner)
 

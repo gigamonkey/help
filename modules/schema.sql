@@ -38,7 +38,6 @@ CREATE TABLE IF NOT EXISTS help (
       class_id TEXT NOT NULL,
       problem TEXT NOT NULL,
       time INTEGER NOT NULL,
-      helper TEXT,
       end_time INTEGER,
       PRIMARY KEY (email, class_id, time)
   );
