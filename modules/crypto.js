@@ -18,7 +18,7 @@ const randomString = () => {
 };
 
 /*
- * Make a random string.
+ * Make a short random string.
  */
 const shortRandomString = () => {
   const array = new Uint32Array(1);
