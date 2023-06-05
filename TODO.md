@@ -1,14 +1,16 @@
-- Remove tried field from help table and form.
-
 - Remove extra time fields from help items and get rid of state change code.
+
+- Get rid of seemingly unused joinCode
+
+- Remove helper field from help items.
+
+- Allow discarding help requests (helpers and owner)
 
 - Use Google ID for user ids instead of email.
 
 - Split prompt into prompt_text and prompt.
 
 - Make queue into first-class thing that combines one or more classes.
-
-- Allow discarding help requests (helpers and owner)
 
 - Teacher-only user management page: change name, set role, block account.
 
@@ -19,3 +21,5 @@
 - Allow editing own help requests.
 
 - Fix DST handling in modules/dateformat.js
+
+- Maybe make /help just be the get-help page since we have /queue now.
