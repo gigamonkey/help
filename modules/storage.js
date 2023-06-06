@@ -269,7 +269,7 @@ class DB {
   journalFor(email, classId, callback) {
     const q = `
       select j.*, p.text as prompt from journal as j
-      left join prompts as p using (prompt_id)
+      left join prompts as p on j.prompt_id = p.id
       where j.email = ? and j.class_id = ?
       order by id desc
     `;
@@ -407,7 +407,7 @@ class DB {
   }
 
   closePrompt(promptId, callback) {
-    const q = "update prompts set closed_at = unixepoch('now') where prompt_id = ?";
+    const q = "update prompts set closed_at = unixepoch('now') where id = ?";
     this.db.run(q, promptId, callback);
   }
 
@@ -415,7 +415,7 @@ class DB {
     const q = `
       insert into prompts (text, class_id, created_at)
       select text, class_id, unixepoch('now') from prompts
-      where prompt_id = ?
+      where id = ?
     `;
     this.db.run(q, promptId, callback);
   }
@@ -425,7 +425,7 @@ class DB {
       select * from prompts where
         class_id = ?
         and (closed_at is null or
-             prompt_id in (select prompt_id from journal where prompt_id is not null))
+             id in (select prompt_id from journal where prompt_id is not null))
     `;
     this.db.all(q, classId, callback);
   }
@@ -436,8 +436,8 @@ class DB {
       where
         class_id = ?2 and
         closed_at is null and
-        prompt_id not in (select prompt_id from journal where email = ?1 and prompt_id is not null)
-      order by prompts.prompt_id asc;
+        id not in (select prompt_id from journal where email = ?1 and prompt_id is not null)
+      order by id asc;
     `;
     this.db.all(q, email, classId, callback);
   }
@@ -446,7 +446,7 @@ class DB {
     const q = `
       select prompts.text as prompt, u.name, u.email, journal.text
       from prompts
-      join journal using (prompt_id)
+      join journal on prompts.id = journal.prompt_id
       join users as u using (email)
       where prompt_id = ?
     `;

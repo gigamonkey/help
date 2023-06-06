@@ -19,7 +19,7 @@
     <form method="POST">
     {% for p in prompts %}
     <h2>{{p.text | md | safe}}</h2>
-    <textarea name="prompt-{{p.prompt_id}}" class="required"></textarea>
+    <textarea name="prompt-{{p.id}}" class="required"></textarea>
     {% endfor %}
     <button id="submit">Submit</button>
     </form>

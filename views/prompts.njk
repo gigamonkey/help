@@ -25,10 +25,10 @@
     <tr>
       <td>{{ p.text | md | safe}}</td>
       <td>
-        <a href="/c/{{class_id}}/prompts/{{p.prompt_id}}">Responses</a>
+        <a href="/c/{{class_id}}/prompts/{{p.id}}">Responses</a>
       </td>
       <td class="actions">
-        <a href="/c/{{class_id}}/prompts/{{p.prompt_id}}/close">Close</a>
+        <a href="/c/{{class_id}}/prompts/{{p.id}}/close">Close</a>
 
       </td>
     </tr>
@@ -48,7 +48,7 @@
     <tr>
       <td>{{ p.text | md | safe}}</td>
       <td class="actions">
-        <a href="/c/{{class_id}}/prompts/{{p.prompt_id}}/again">Again</a>
+        <a href="/c/{{class_id}}/prompts/{{p.id}}/again">Again</a>
       </td>
     </tr>
     {% endfor %}

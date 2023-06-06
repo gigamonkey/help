@@ -1,5 +1,7 @@
 - Split prompt into prompt_text and prompt.
 
+- When there are multiple open prompts allow submitting them separately.
+
 - Allow discarding help requests (helpers and owner)
 
 - Use Google ID for user ids instead of email.
@@ -19,3 +21,7 @@
 - Maybe make /help just be the get-help page since we have /queue now.
 
 - Use websockets to update Queue
+
+- When students submits help request pop up a menu with their name in it.
+
+- Make toolbar different for teachers to give access to prompts and other teacher-only features.

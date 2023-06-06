@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS journal (
 -- Prompts are created in a class and will show up as current for students who
 -- haven't responded to them until they are closed.
 CREATE TABLE IF NOT EXISTS prompts (
-      prompt_id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
       class_id TEXT NOT NULL,
       text TEXT NOT NULL,
       created_at INTEGER NOT NULL,
