@@ -2,8 +2,21 @@
 
 {% set title = "Up next" %}
 
+{% block scripts %}
+{{ super() }}
+<script src="/js/check-required.js" type="module"></script>
+{% endblock %}
+
 {% block beforeTitle %}
-<p class="get-help"><a href="/c/{{class_id}}/get-help">Get help ✋</a></p>
+<form method="POST">
+  <label for="problem">
+    What do you need help with?
+  </label>
+
+  <textarea name="problem" class="required"></textarea>
+
+  <button id="submit">Submit</button>
+</form>
 {% endblock %}
 
 {% block emptyQueue %}

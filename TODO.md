@@ -30,8 +30,6 @@
 
 - Fix DST handling in modules/dateformat.js
 
-- Maybe make /help just be the get-help page since we have /queue now.
-
 - Use websockets to update Queue
 
 - When students submits help request pop up a menu with their name in it.

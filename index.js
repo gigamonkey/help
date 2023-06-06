@@ -296,24 +296,6 @@ app.get('/', (req, res) => {
   });
 });
 
-app.get('/c/:class_id/get-help', (req, res) => {
-  res.render('help-form.njk', req.params);
-});
-
-app.post('/c/:class_id/get-help', (req, res) => {
-  const { class_id } = req.params;
-  const { problem } = req.body;
-  const { email } = req.session.user;
-  db.requestHelp(email, class_id, problem, (err) => {
-    if (err) {
-      console.log(err);
-      res.sendStatus(500);
-    } else {
-      res.redirect(`help`);
-    }
-  });
-});
-
 app.get('/c/:class_id/help/:id(\\d+)', (req, res) => {
   const { id, class_id } = req.params;
   db.getHelp(id, (err, item) => dbRender(res, err, 'help.njk', { id, class_id, item }));
@@ -326,6 +308,20 @@ app.get('/c/:class_id/journal/:id', (req, res) => {
 app.get('/c/:class_id/help', (req, res) => {
   const { class_id } = req.params;
   db.queue(class_id, (err, queue) => dbRender(res, err, 'up-next.njk', { class_id, queue }));
+});
+
+app.post('/c/:class_id/help', (req, res) => {
+  const { class_id } = req.params;
+  const { problem } = req.body;
+  const { email } = req.session.user;
+  db.requestHelp(email, class_id, problem, (err) => {
+    if (err) {
+      console.log(err);
+      res.sendStatus(500);
+    } else {
+      res.redirect(`help`);
+    }
+  });
 });
 
 app.get('/c/:class_id/queue', (req, res) => {
