@@ -1,8 +1,8 @@
+- Split prompt into prompt_text and prompt.
+
 - Allow discarding help requests (helpers and owner)
 
 - Use Google ID for user ids instead of email.
-
-- Split prompt into prompt_text and prompt.
 
 - Make queue into first-class thing that combines one or more classes.
 
@@ -17,3 +17,5 @@
 - Fix DST handling in modules/dateformat.js
 
 - Maybe make /help just be the get-help page since we have /queue now.
+
+- Use websockets to update Queue
