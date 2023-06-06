@@ -7,6 +7,11 @@
 - Create prompt should include specifying start and end date and picking prompt
   text from drop down of previous prompt texts.
 
+- Recurring prompts: create a prompt text that is automatically made into a new
+  prompt at a given time with a given start and end date relative to that time.
+  Ideally this is linked to period schedules so you can schedule a prompt to be
+  posted every Monday at the start of class lasting until the following Monday.
+
 - When there are multiple open prompts allow submitting them separately.
 
 - Let prompt texts be optionally named (with a slug) and provide a way to see
