@@ -1,6 +1,20 @@
 - Split prompt into prompt_text and prompt.
 
+- Rejigger prompts page to show old prompts with dates when they are active
+
+- Provide links to see all responses to a given prompt_text.
+
+- Show number of responses to each prompt on prompt page
+
+- Create prompt should include specifying start and end date and picking prompt
+  text from drop down of previous prompt texts.
+
 - When there are multiple open prompts allow submitting them separately.
+
+- Let prompt texts be optionally named (with a slug) and provide a way to see
+  all responses to a named prompt at a given url, e.g.
+  http://help.gigamonkeys.com/c/class-id/journal/1/weekly-reflection where
+  'weekly-reflection' is the slug.
 
 - Allow discarding help requests (helpers and owner)
 
@@ -24,4 +38,5 @@
 
 - When students submits help request pop up a menu with their name in it.
 
-- Make toolbar different for teachers to give access to prompts and other teacher-only features.
+- Make toolbar different for teachers to give access to prompts, classes and any
+  other teacher-only features.
