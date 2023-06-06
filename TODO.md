@@ -43,9 +43,6 @@
 
 - When students submits help request pop up a menu with their name in it.
 
-- Make toolbar different for teachers to give access to prompts, classes and any
-  other teacher-only features.
-
 - Add a button to clear the whole queue and/or all tickets over 20 hours old or
   something.
 

@@ -61,22 +61,31 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(login.require());
 
-// Middleware to find the name of the class from the id if it's in the URL.
-app.use((req, res, next) => {
-  const m = req.path.match(/\/c\/(.*?)\//);
-  if (m) {
-    db.getClassName(m[1], (err, data) => {
-      if (err) {
-        res.sendStatus(500);
-      } else {
-        const { name } = data;
-        res.locals.className = name;
-        next();
+// Middleware to find the name of the class and the users role in the class.
+app.use('/c/:class_id', (req, res, next) => {
+  const { class_id } = req.params;
+  db.getClassName(class_id, (err, data) => {
+    if (err) {
+      res.sendStatus(500);
+    } else {
+      const { name } = data;
+      res.locals.className = name;
+      if (req.session?.user) {
+        res.locals.user = req.session.user;
+        db.classMember(req.session.user.email, class_id, (err, user) => {
+          if (err) {
+            console.log(err);
+            res.sendStatus(500);
+          } else {
+            console.log(user);
+            console.log(`Setting user role to ${user.role}`);
+            res.locals.user.role = user.role;
+          }
+        });
       }
-    });
-  } else {
-    next();
-  }
+      next();
+    }
+  });
 });
 
 app.use(express.static('public'));
@@ -207,12 +216,12 @@ const promptResponses = (body) =>
     .filter((m) => m)
     .map((m) => ({ promptId: Number(m[1]), text: body[m[0]] }));
 
-const journalRenderer = (req, res, user, withForm) => (err, journal) => {
+const journalRenderer = (req, res, author, withForm) => (err, journal) => {
   dbRender(res, err, 'journal.njk', {
     ...req.params,
     days: groupEntries(journal.journal),
     prompts: journal.prompts,
-    user,
+    author,
     withForm,
   });
 };
