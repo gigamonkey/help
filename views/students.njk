@@ -1,15 +1,15 @@
 {% extends 'layout.njk' %}
 
-{% set title = "Students" %}
+{% set title %}
+{{students.length}} Student{% if students.length != 1 %}s{% endif %}
+{% endset %}
 
 {% block content %}
-
-<h2>{{ students.length }} students</h2>
 
 <table>
   <thead>
     <tr>
-      <th>Students</th>
+      <th></th>
       <th>📅</th>
       <th>✍️</th>
       <th>✋</th>

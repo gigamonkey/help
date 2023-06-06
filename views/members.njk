@@ -1,0 +1,30 @@
+{% extends 'layout.njk' %}
+
+{% set title %}
+{{members.length}} Member{% if students.length != 1 %}s{% endif %}
+{% endset %}
+
+{% block content %}
+
+<table>
+  <thead>
+    <tr>
+      <th></th>
+      <th>📅</th>
+      <th>✍️</th>
+      <th>✋</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for m in members %}
+    <tr>
+      <td><a href="/c/{{class_id}}/journal/{{m.id}}">{% if m.name %}{{m.name}}{% else %}{{m.email}}{% endif %}</td>
+      <td>{{m.journal_days}}</td>
+      <td>{{m.journal_entries}}</td>
+      <td>{{m.help_requests}}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% endblock %}

@@ -382,6 +382,29 @@ class DB {
     this.db.all(q, classId, callback);
   }
 
+  memberStats(classId, callback) {
+    // N.B. the journal_days is unfortunately tied to UTC days. But fixing it
+    // properly probably requires doing the counting outside the database.
+    const q = `
+      select
+        u.rowid as id,
+        m.*,
+        u.name,
+        count(distinct journal.rowid) as journal_entries,
+        count(distinct date(journal.created_at, 'unixepoch')) as journal_days,
+        count(distinct help.rowid) as help_requests
+      from class_members as m
+      left join journal using (email, class_id)
+      left join help using (email, class_id)
+      left join users as u using (email)
+      where
+        m.class_id = ?
+      group by m.email
+      order by u.name asc;
+    `;
+    this.db.all(q, classId, callback);
+  }
+
   journalsBetween(after, before, callback) {
     const base = 'select rowid as id, * from journal';
 

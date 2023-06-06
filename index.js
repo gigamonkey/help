@@ -372,6 +372,16 @@ app.get(
 );
 
 app.get(
+  '/c/:class_id/members',
+  teacherOnly((req, res) => {
+    const { class_id } = req.params;
+    db.memberStats(class_id, (err, members) => {
+      res.render('members.njk', { ...req.params, members });
+    });
+  }),
+);
+
+app.get(
   '/users/:id',
   adminOnly((req, res) => {
     const { id } = req.params;
