@@ -18,6 +18,10 @@
 
 - Use Google ID for user ids instead of email.
 
+- Store pronouns in the users table.
+
+- Provide a profile page for students to set name, pronoun, and avatar
+
 - Make queue into first-class thing that combines one or more classes.
 
 - Teacher-only user management page: change name, set role, block account.
@@ -36,3 +40,15 @@
 
 - Make toolbar different for teachers to give access to prompts, classes and any
   other teacher-only features.
+
+- Add a button to clear the whole queue and/or all tickets over 20 hours old or
+  something.
+
+- Get pictures of students and show them in the queue.
+
+- Provide endpoint for exporting data of help requests from a time period and
+  classes.
+
+- Use bell schedule data to give the system knowledge of period times so you can
+  do things like schedule Journal prompts at five minutes before the end of
+  class.
