@@ -51,12 +51,22 @@ CREATE TABLE IF NOT EXISTS journal (
       prompt_id INTEGER
     );
 
--- Prompts are created in a class and will show up as current for students who
--- haven't responded to them until they are closed.
-CREATE TABLE IF NOT EXISTS prompts (
+-- Prompt text can be reused in different prompts. The are tied to a given class
+CREATE TABLE IF NOT EXISTS prompt_texts (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       class_id TEXT NOT NULL,
       text TEXT NOT NULL,
+      created_at INTEGER NOT NULL
+  );
+
+-- Prompts are created in a class and will show up as current for students who
+-- haven't responded to them until they are closed. A given prompt has a life
+-- span and responses are directly to the prompt. But if we make multiple
+-- prompts from the same prompt_text we can also collect all responses to the
+-- same prompt text across different prompts.
+CREATE TABLE IF NOT EXISTS prompts (
+      id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+      prompt_text_id INTEGER NOT NULL,
       created_at INTEGER NOT NULL,
       closed_at INTEGER
   );

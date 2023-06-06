@@ -234,9 +234,13 @@ app.get(
   teacherOnly((req, res) => {
     const { class_id } = req.params;
     db.allPromptsForClass(class_id, (err, prompts) => {
-      const open = openPrompts(prompts);
-      const old = oldPrompts(prompts);
-      dbRender(res, err, 'prompts.njk', { ...req.params, open, old });
+      if (err) {
+        console.log(err);
+      } else {
+        const open = openPrompts(prompts);
+        const old = oldPrompts(prompts);
+        dbRender(res, err, 'prompts.njk', { ...req.params, open, old });
+      }
     });
   }),
 );

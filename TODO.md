@@ -1,5 +1,3 @@
-- Split prompt into prompt_text and prompt.
-
 - Rejigger prompts page to show old prompts with dates when they are active
 
 - Provide links to see all responses to a given prompt_text.

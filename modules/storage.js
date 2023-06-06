@@ -159,7 +159,7 @@ class DB {
       VALUES (?, ?, ?, unixepoch('now'))
     `;
 
-    // FIXME: use arrow function?
+    // Can't use arrow function because we need to access this.lastID
     const that = this;
 
     this.db.run(q, email, class_id, problem, function (err) {
@@ -268,8 +268,9 @@ class DB {
 
   journalFor(email, classId, callback) {
     const q = `
-      select j.*, p.text as prompt from journal as j
+      select j.*, pt.text as prompt from journal as j
       left join prompts as p on j.prompt_id = p.id
+      left join prompt_texts as pt on p.prompt_text_id = pt.id
       where j.email = ? and j.class_id = ?
       order by id desc
     `;
@@ -402,8 +403,22 @@ class DB {
   // Journal prompts
 
   createPrompt(classId, text, callback) {
-    const q = "insert into prompts (class_id, text, created_at) values (?, ?, unixepoch('now'))";
-    this.db.run(q, classId, text, callback);
+    const makeText = "insert into prompt_texts (class_id, text, created_at) values (?, ?, unixepoch('now'))";
+    const makePrompt = "insert into prompts (prompt_text_id, created_at) values (?, unixepoch('now'))";
+
+    const that = this;
+
+    this.db.serialize(() => {
+      this.db.run('begin transaction');
+      this.db.run(makeText, classId, text, function (err) {
+        if (err) {
+          callback(err, null);
+        } else {
+          that.db.run(makePrompt, this.lastID);
+        }
+      });
+      this.db.run('commit', callback);
+    });
   }
 
   closePrompt(promptId, callback) {
@@ -413,8 +428,8 @@ class DB {
 
   promptAgain(promptId, callback) {
     const q = `
-      insert into prompts (text, class_id, created_at)
-      select text, class_id, unixepoch('now') from prompts
+      insert into prompts (prompt_text_id, created_at)
+      select prompt_text_id, unixepoch('now') from prompts
       where id = ?
     `;
     this.db.run(q, promptId, callback);
@@ -422,21 +437,24 @@ class DB {
 
   allPromptsForClass(classId, callback) {
     const q = `
-      select * from prompts where
+      select prompts.*, prompt_texts.text as text from prompts
+      left join prompt_texts on prompts.prompt_text_id = prompt_texts.id
+      where
         class_id = ?
         and (closed_at is null or
-             id in (select prompt_id from journal where prompt_id is not null))
+             prompts.id in (select prompt_id from journal where prompt_id is not null))
     `;
     this.db.all(q, classId, callback);
   }
 
   openPromptsForStudent(email, classId, callback) {
     const q = `
-      select * from prompts
+      select prompts.*, prompt_texts.text from prompts
+      left join prompt_texts on prompts.prompt_text_id = prompt_texts.id
       where
-        class_id = ?2 and
-        closed_at is null and
-        id not in (select prompt_id from journal where email = ?1 and prompt_id is not null)
+        prompt_texts.class_id = ?2 and
+        prompts.closed_at is null and
+        prompts.id not in (select prompt_id from journal where email = ?1 and prompt_id is not null)
       order by id asc;
     `;
     this.db.all(q, email, classId, callback);
@@ -444,8 +462,9 @@ class DB {
 
   responsesToPrompt(promptId, callback) {
     const q = `
-      select prompts.text as prompt, u.name, u.email, journal.text
+      select prompt_texts.text as prompt, u.name, u.email, journal.text
       from prompts
+      left join prompt_texts on prompts.prompt_text_id = prompt_texts.id
       join journal on prompts.id = journal.prompt_id
       join users as u using (email)
       where prompt_id = ?
