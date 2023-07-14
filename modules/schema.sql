@@ -18,7 +18,8 @@ CREATE TABLE IF NOT EXISTS classes (
   );
 
 -- Logged in users. Basically the information we get when they authenticate with
--- Google.
+-- Google. ID is their Google ID since that's going to be stable (I assume!)
+-- whereas name and email can change over the course of the year.
 CREATE TABLE IF NOT EXISTS users (
       id TEXT NOT NULL PRIMARY KEY,
       email TEXT NOT NULL,
