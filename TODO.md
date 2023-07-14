@@ -1,13 +1,13 @@
-- Allow discarding help requests (helpers and owner)
+- Provide a profile page for students to set name, pronoun, and avatar
 
-- Use Google ID for user ids instead of email.
+- Allow discarding help requests (helpers and owner)
 
 - Store pronouns in the users table.
 
 - Store the period in the class table and use it to automatically display the
   right class based on the current time.
 
-- Provide a profile page for students to set name, pronoun, and avatar
+- Give a view of recently closed tickets with a reopen button.
 
 - Make queue into first-class thing that combines one or more classes.
 
