@@ -186,81 +186,14 @@ textarea {
   height: 10em;
 }
 
-body.prompts td {
-  padding: 6px 0;
-}
-
-body.prompts td a,
-a.button {
-  border: 1px solid grey;
-  border-radius: 3px;
-  padding: 3px;
-  font-size: 60%;
-}
-
 td.actions {
   width: 20%;
-}
-
-.new-prompt input[type='text'] {
-  border: 1px solid grey;
-  margin: 10px 0;
-  padding: 10px;
-  width: calc(100% - 22px);
-}
-
-.new-prompt textarea {
-  border: 1px solid grey;
-  margin: 10px 0;
-  padding: 10px;
-  width: calc(100% - 22px);
-  height: 5em;
-}
-
-.new-prompt label {
-  margin-top: 0.5em;
-}
-
-.journal h2 {
-  font-weight: 600;
-  font-size: 1.2em;
-}
-
-.journal form h2 {
-  font-weight: 300;
-  font-size: 1.1em;
 }
 
 .time {
   color: grey;
   text-align: right;
   font-size: 80%;
-}
-
-.journal p.prompt {
-  font-weight: 500;
-}
-
-.journal .text p {
-  margin: 1em 0;
-  width: 90%;
-}
-
-.journal .day {
-  margin: 10px 0;
-  padding: 1em;
-  border: 1px solid rgba(196, 196, 196, 0.5);
-  background: rgba(196, 196, 196, 0.1);
-}
-
-.journal p.time {
-  margin: 0;
-  padding: 0;
-  float: right;
-}
-
-.journal pre {
-  margin: 1em 0;
 }
 
 table {

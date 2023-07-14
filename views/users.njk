@@ -8,8 +8,6 @@
   <thead>
     <tr>
       <th>User</th>
-      <th>📅</th>
-      <th>✍️</th>
       <th>✋</th>
       <th>Role</th>
     </tr>
@@ -18,8 +16,6 @@
     {% for u in users %}
     <tr>
       <td><a href="/users/{{u.id}}" target="_blank">{{u.name}}</td>
-      <td><a href="/journal/{{u.id}}">{{u.journal_days}}</a></td>
-      <td><a href="/journal/{{u.id}}">{{u.journal_entries}}</a></td>
       <td>{{u.help_requests}}</td>
       <td>
         {% if u.role == 'teacher' %}

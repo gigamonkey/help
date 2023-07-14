@@ -24,6 +24,7 @@ class Permissions {
 
   maybeDoIt(req, res, predicate, thunk) {
     this.db.user(req.session.user.email, (err, user) => {
+      console.log(`Looking for user ${req.session.user.email}`);
       if (err) {
         console.log(err);
         res.sendStatus(500);

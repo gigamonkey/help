@@ -10,17 +10,13 @@
   <thead>
     <tr>
       <th></th>
-      <th>📅</th>
-      <th>✍️</th>
       <th>✋</th>
     </tr>
   </thead>
   <tbody>
     {% for s in students %}
     <tr>
-      <td><a href="/c/{{class_id}}/journal/{{s.id}}">{% if s.name %}{{s.name}}{% else %}{{s.email}}{% endif %}</td>
-      <td>{{s.journal_days}}</td>
-      <td>{{s.journal_entries}}</td>
+      <td>{% if s.name %}{{s.name}}{% else %}{{s.email}}{% endif %}</td>
       <td>{{s.help_requests}}</td>
     </tr>
     {% endfor %}

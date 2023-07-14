@@ -1,9 +1,0 @@
-update users set name = 'Chai Dewi' where email = 'luhputudewi@students.berkeley.net';
-update users set name = 'Irene Sriraksa' where email = 'siriraksriraksa@students.berkeley.net';
-update users set name = 'Mr. Chang' where email = 'edwardchang@berkeley.net';
-update users set name = 'Mr. Seibel' where email = 'peterseibel@berkeley.net';
-update users set name = 'Ms. O’Keefe' where email = 'shoshanaokeefe@berkeley.net';
-update users set name = 'Nas Imtair' where email = 'nasrallahimtair@students.berkeley.net';
-update users set name = 'Rae Armstrong-Temple' where email = 'annabellearmstrongtemple@students.berkeley.net';
-update users set name = 'Riley Pritchard' where email = 'zoepritchard@students.berkeley.net';
-update users set name = 'Sanusi Signateh' where email = 'alhajisignateh@students.berkeley.net';

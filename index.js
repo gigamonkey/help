@@ -11,7 +11,6 @@ import { google } from 'googleapis';
 import DB from './modules/storage.js';
 import requireLogin from './modules/require-login.js';
 import Permissions from './modules/permissions.js';
-import groupEntries from './modules/journal.js';
 import oauth from './modules/oauth.js';
 
 const classroom = google.classroom('v1');
@@ -151,149 +150,6 @@ app.get('/c/:class_id', (req, res) => {
   });
 });
 
-////////////////////////////////////////////////////////////////////////////////
-// Journal
-
-/*
- * Display the current user's journal with a form for new entries.
- */
-app.get('/c/:class_id/journal', (req, res) => {
-  const { class_id } = req.params;
-  const { email } = req.session.user;
-  db.journalWithPrompts(email, class_id, journalRenderer(req, res, null, true));
-});
-
-/*
- * Accept a POST of a new journal entry.
- */
-app.post('/c/:class_id/journal', (req, res) => {
-  const { class_id } = req.params;
-  const { text } = req.body;
-  const { email } = req.session.user;
-  if (text) {
-    db.addJournalEntry(email, class_id, text, (err) => dbRedirect(res, err, req.path));
-  } else {
-    const responses = promptResponses(req.body);
-    db.addJournalEntries(email, class_id, responses, (err) => {
-      dbRedirect(res, err, req.path);
-    });
-  }
-});
-
-/*
- * Display a particular user's journal with no form. Only allowed if the current
- * user is the owner of the journal or the teacher.
- */
-app.get('/c/:class_id/journal/:id(\\d+)', (req, res) => {
-  const { class_id } = req.params;
-  const { user } = req.session;
-
-  db.userById(req.params.id, (err, journalUser) => {
-    if (err) {
-      console.log(err);
-      res.sendStatus(500);
-    } else if (!journalUser) {
-      res.sendStatus(404);
-    } else {
-      const renderJournal = journalRenderer(req, res, journalUser, false);
-
-      if (user.id === Number(req.params.id)) {
-        // The authenticated user is requesting their own journal.
-        db.journalWithPrompts(user.email, class_id, renderJournal);
-      } else {
-        // Otherwise need to see if authenticated user is the teacher.
-        ifTeacher(req, res, () => {
-          db.journalWithPrompts(journalUser.email, class_id, renderJournal);
-        });
-      }
-    }
-  });
-});
-
-const promptResponses = (body) =>
-  Object.keys(body)
-    .map((s) => s.match(/prompt-(\d+)/))
-    .filter((m) => m)
-    .map((m) => ({ promptId: Number(m[1]), text: body[m[0]] }));
-
-const journalRenderer = (req, res, author, withForm) => (err, journal) => {
-  dbRender(res, err, 'journal.njk', {
-    ...req.params,
-    days: groupEntries(journal.journal),
-    prompts: journal.prompts,
-    author,
-    withForm,
-  });
-};
-
-////////////////////////////////////////////////////////////////////////////////
-// Prompts
-
-app.post(
-  '/c/:class_id/prompts',
-  teacherOnly((req, res) => {
-    const { class_id } = req.params;
-    const { text } = req.body;
-    db.createPrompt(class_id, text, (err) => dbRedirect(res, err, req.path));
-  }),
-);
-
-app.get(
-  '/c/:class_id/prompts',
-  teacherOnly((req, res) => {
-    const { class_id } = req.params;
-    db.allPromptsForClass(class_id, (err, prompts) => {
-      if (err) {
-        console.log(err);
-      } else {
-        const open = openPrompts(prompts);
-        const old = oldPrompts(prompts);
-        dbRender(res, err, 'prompts.njk', { ...req.params, open, old });
-      }
-    });
-  }),
-);
-
-app.get(
-  '/c/:class_id/prompts/:id(\\d+)',
-  teacherOnly((req, res) => {
-    // class_id isn't actually needed since prompt ids are globally unique.
-    const { id } = req.params;
-    db.responsesToPrompt(id, (err, responses) =>
-      dbRender(res, err, 'responses.njk', { ...req.params, responses }),
-    );
-  }),
-);
-
-app.get(
-  '/c/:class_id/prompts/:id(\\d+)/close',
-  teacherOnly((req, res) => {
-    const { class_id, id } = req.params;
-    db.closePrompt(id, (err) => dbRedirect(res, err, `/c/${class_id}/prompts`));
-  }),
-);
-
-app.get(
-  '/c/:class_id/prompts/:id(\\d+)/again',
-  teacherOnly((req, res) => {
-    const { class_id, id } = req.params;
-    db.promptAgain(id, (err) => dbRedirect(res, err, `/c/${class_id}/prompts`));
-  }),
-);
-
-const openPrompts = (prompts) => prompts.filter((p) => p.closed_at === null);
-
-const oldPrompts = (prompts) => {
-  const seen = {};
-  const old = [];
-  prompts.forEach((p) => {
-    if (!seen[p.text]) {
-      seen[p.text] = true;
-      if (p.closed_at !== null) old.push(p);
-    }
-  });
-  return old;
-};
 
 ////////////////////////////////////////////////////////////////////////////////
 // Pages
@@ -308,10 +164,6 @@ app.get('/', (req, res) => {
 app.get('/c/:class_id/help/:id(\\d+)', (req, res) => {
   const { id, class_id } = req.params;
   db.getHelp(id, (err, item) => dbRender(res, err, 'help.njk', { id, class_id, item }));
-});
-
-app.get('/c/:class_id/journal/:id', (req, res) => {
-  res.sendFile(path.join(DIRNAME, 'public/journal/show.html'));
 });
 
 app.get('/c/:class_id/help', (req, res) => {
