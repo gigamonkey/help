@@ -298,7 +298,7 @@ class DB {
   studentStats(classId, callback) {
     const q = `
       select
-        u.rowid as id,
+        u.id as id,
         m.*,
         u.name,
         count(distinct help.rowid) as help_requests
@@ -317,7 +317,7 @@ class DB {
   memberStats(classId, callback) {
     const q = `
       select
-        u.rowid as id,
+        u.id as id,
         m.*,
         u.name,
         count(distinct help.rowid) as help_requests
