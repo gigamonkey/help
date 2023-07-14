@@ -51,17 +51,18 @@ class DB {
   createClass(classId, teacherEmail, name, googleId, students, callback) {
     const createClass = 'insert into classes (id, name, google_id) values (?, ?, ?)';
     const createMember = 'insert into class_members (email, class_id, role) values (?, ?, ?)';
-    const ensureUser = 'insert or ignore into users (email, name, google_name) VALUES (?, ?, ?)';
+    const ensureUser = 'insert or ignore into users (id, email, name, google_name) VALUES (?, ?, ?, ?)';
 
     this.db.serialize(() => {
       this.db.run('begin transaction');
       this.db.run(createClass, classId, name, googleId);
-      this.db.run(createMember, teacherEmail, classId, 'teacher');
+      this.db.run(createMember, teacherEmail, classId, 'teacher'); // FIXME should be teacher id
 
       /* eslint-disable no-restricted-syntax */
       for (const s of students) {
         this.db.run(
           ensureUser,
+          s.profile.id,
           s.profile.emailAddress,
           s.profile.name.fullName,
           s.profile.name.fullName,
@@ -244,8 +245,8 @@ class DB {
   }
 
 
-  user(email, callback) {
-    this.db.get('SELECT rowid as id, * from users where email = ?', email, callback);
+  user(id, callback) {
+    this.db.get('SELECT rowid as id, * from users where id = ?', id, callback);
   }
 
   classMember(email, classId, callback) {
@@ -262,24 +263,27 @@ class DB {
     this.db.get('SELECT rowid as id, * from users where rowid = ?', id, callback);
   }
 
-  ensureUser(email, googleName, callback) {
-    this.user(email, (err, data) => {
+  ensureUser(id, email, googleName, callback) {
+    this.user(id, (err, data) => {
       if (err) {
         callback(err, null);
       } else if (data) {
         callback(null, data);
       } else {
+
+        console.log(`Creating user for id ${id} and email ${email}`);
         // We create a user with the name we got from Google in both name fields
         // but later we may change `name` to be the student's preferred name.
         const isAdmin = ADMINS[email] ? 1 : 0;
         const name = OTHER_NAMES[email] ?? googleName;
         const q =
-          'insert or ignore into users (email, name, google_name, is_admin) values (?, ?, ?, ?)';
-        this.db.run(q, email, name, googleName, isAdmin, (err) => {
+              'insert or ignore into users (id, email, name, google_name, is_admin) values (?, ?, ?, ?, ?)';
+        this.db.run(q, id, email, name, googleName, isAdmin, (err) => {
           if (err) {
+            console.log('here', err);
             callback(err, null);
           } else {
-            this.user(email, callback);
+            this.user(id, callback);
           }
         });
       }

@@ -20,7 +20,8 @@ CREATE TABLE IF NOT EXISTS classes (
 -- Logged in users. Basically the information we get when they authenticate with
 -- Google.
 CREATE TABLE IF NOT EXISTS users (
-      email TEXT NOT NULL PRIMARY KEY,
+      id TEXT NOT NULL PRIMARY KEY,
+      email TEXT NOT NULL,
       name TEXT NOT NULL,
       google_name TEXT NOT NULL,
       is_admin INTEGER

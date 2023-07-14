@@ -93,7 +93,7 @@ class RequireLogin {
               console.log(err);
               res.sendStatus(500);
             } else {
-              this.db.ensureUser(email, name, (err, user) => {
+              this.db.ensureUser(sub, email, name, (err, user) => {
                 if (err || !user) {
                   console.log('Error ensuring user');
                   console.log(err);
