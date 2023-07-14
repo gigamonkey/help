@@ -39,9 +39,9 @@ class Permissions {
   }
 
   maybeDoItWithClass(req, res, predicate, thunk) {
-    const { email } = req.session.user;
+    const { id } = req.session.user;
     const { class_id } = req.params;
-    this.db.classMember(email, class_id, (err, user) => {
+    this.db.classMember(id, class_id, (err, user) => {
       console.log('User from classMember');
       console.log(JSON.stringify(user, null, 2));
       if (err) {

@@ -71,7 +71,8 @@ app.use('/c/:class_id', (req, res, next) => {
       res.locals.className = name;
       if (req.session?.user) {
         res.locals.user = req.session.user;
-        db.classMember(req.session.user.email, class_id, (err, user) => {
+        console.log('USER', req.session.user);
+        db.classMember(req.session.user.id, class_id, (err, user) => {
           if (err) {
             console.log(err);
             res.sendStatus(500);
@@ -139,8 +140,8 @@ app.get('/auth', (req, res) => {
 
 app.get('/c/:class_id', (req, res) => {
   const { class_id } = req.params;
-  const { email } = req.session.user;
-  db.getClass(class_id, email, (err, clazz) => {
+  const { id } = req.session.user;
+  db.getClass(class_id, id, (err, clazz) => {
     if (err) {
       console.log(err);
       res.sendStatus(500);
@@ -155,8 +156,8 @@ app.get('/c/:class_id', (req, res) => {
 // Pages
 
 app.get('/', (req, res) => {
-  const { email } = req.session.user;
-  db.classMemberships(email, (err, memberships) => {
+  const { id } = req.session.user;
+  db.classMemberships(id, (err, memberships) => {
     dbRender(res, err, 'index.njk', { memberships });
   });
 });
@@ -174,8 +175,8 @@ app.get('/c/:class_id/help', (req, res) => {
 app.post('/c/:class_id/help', (req, res) => {
   const { class_id } = req.params;
   const { problem } = req.body;
-  const { email } = req.session.user;
-  db.requestHelp(email, class_id, problem, (err) => {
+  const { id } = req.session.user;
+  db.requestHelp(id, class_id, problem, (err) => {
     if (err) {
       console.log(err);
       res.sendStatus(500);
@@ -197,10 +198,6 @@ app.get('/c/:class_id/done', (req, res) => {
 
 ////////////////////////////////////////////////////////////////////////////////
 // Help items state changes.
-
-// FIXME: should perhaps pass req.session.user.email to all the state changes
-// and log the changes, especially if we're going to let students move things on
-// the queue.
 
 app.get(
   '/c/:class_id/help/:id/done',
@@ -270,7 +267,9 @@ app.get(
   '/classes/:google_id/create',
   adminOnly(async (req, res) => {
     const { google_id } = req.params;
-    const teacherEmail = req.session.user.email;
+    console.log(req.session.user);
+
+    const teacherId = req.session.user.id;
     // FIXME: I think it may be possible to just pass the auth data rather than
     // constructing an oauth2client object. Look into that later.
     const oauth2client = oauth.oauth2client();
@@ -282,7 +281,7 @@ app.get(
     const className = fullClassName(c);
     const classId = slugify(className);
 
-    db.createClass(classId, teacherEmail, className, c.id, students, (err) =>
+    db.createClass(classId, teacherId, className, c.id, students, (err) =>
       dbRedirect(res, err, `/c/${classId}/students`),
     );
   }),

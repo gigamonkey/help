@@ -50,7 +50,7 @@ class DB {
 
   createClass(classId, teacherEmail, name, googleId, students, callback) {
     const createClass = 'insert into classes (id, name, google_id) values (?, ?, ?)';
-    const createMember = 'insert into class_members (email, class_id, role) values (?, ?, ?)';
+    const createMember = 'insert into class_members (user_id, class_id, role) values (?, ?, ?)';
     const ensureUser = 'insert or ignore into users (id, email, name, google_name) VALUES (?, ?, ?, ?)';
 
     this.db.serialize(() => {
@@ -67,7 +67,7 @@ class DB {
           s.profile.name.fullName,
           s.profile.name.fullName,
         );
-        this.db.run(createMember, s.profile.emailAddress, classId, 'student');
+        this.db.run(createMember, s.profile.id, classId, 'student');
       }
       /* eslint-enable */
       this.db.run('commit', callback);
@@ -75,16 +75,16 @@ class DB {
   }
 
   resyncClass(classId, students, callback) {
-    const currentStudentEmails = `select email from class_members where role = 'student' and class_id = ?`;
+    const currentStudentIds = `select user_id from class_members where role = 'student' and class_id = ?`;
     const ensureStudent =
-      'insert or ignore into users (email, name, google_name, is_admin) VALUES (?, ?, ?, 0)';
+          'insert or ignore into users (id, email, name, google_name, is_admin) VALUES (?, ?, ?, ?, 0)';
     const ensureMember =
-      'insert or ignore into class_members (email, class_id, role) values (?, ?, ?)';
-    const removeMember = 'delete from class_members where email = ?';
+      'insert or ignore into class_members (user_id, class_id, role) values (?, ?, ?)';
+    const removeMember = 'delete from class_members where user_id = ?';
 
-    this.db.all(currentStudentEmails, classId, (err, data) => {
-      const current = data.map((d) => d.email);
-      const toKeep = new Set(students.map((s) => s.profile.emailAddress));
+    this.db.all(currentStudentIds, classId, (err, data) => {
+      const current = data.map((d) => d.user_id);
+      const toKeep = new Set(students.map((s) => s.profile.id));
 
       this.db.serialize(() => {
         this.db.run('begin transaction');
@@ -93,11 +93,12 @@ class DB {
         for (const s of students) {
           this.db.run(
             ensureStudent,
+            s.profile.id,
             s.profile.emailAddress,
             s.profile.name.fullName,
             s.profile.name.fullName,
           );
-          this.db.run(ensureMember, s.profile.emailAddress, classId, 'student');
+          this.db.run(ensureMember, s.profile.id, classId, 'student');
         }
 
         for (const c of current) {
@@ -112,11 +113,11 @@ class DB {
     });
   }
 
-  classMemberships(email, callback) {
-    console.log(`Looking for memberships for ${email}`);
+  classMemberships(id, callback) {
+    console.log(`Looking for memberships for ${id}`);
     this.db.all(
-      'select * from class_members join classes where class_members.class_id = classes.id and email = ?',
-      email,
+      'select * from class_members join classes where class_members.class_id = classes.id and user_id = ?',
+      id,
       callback,
     );
   }
@@ -125,13 +126,13 @@ class DB {
     this.db.get('select name from classes where id = ?', classId, callback);
   }
 
-  getClass(id, email, callback) {
+  getClass(id, userId, callback) {
     const q = `
       select classes.*, class_id, role from classes
       join class_members where id = class_id and
-      id = ? and email = ?
+      id = ? and user_id = ?
     `;
-    this.db.get(q, id, email, callback);
+    this.db.get(q, id, userId, callback);
   }
 
   googleClassroomIds(callback) {
@@ -142,10 +143,10 @@ class DB {
     this.db.get('select * from classes where google_id = ?', googleId, callback);
   }
 
-  joinClass(id, email, callback) {
+  joinClass(id, userId, callback) {
     this.db.run(
-      "insert into class_members (email, class_id, role) values (?, ?, 'student')",
-      email,
+      "insert into class_members (user_id, class_id, role) values (?, ?, 'student')",
+      userId,
       id,
       callback,
     );
@@ -154,16 +155,16 @@ class DB {
   /*
    * Create a new request for help.
    */
-  requestHelp(email, class_id, problem, callback) {
+  requestHelp(user_id, class_id, problem, callback) {
     const q = `
-      INSERT INTO help (email, class_id, problem, created_at)
+      INSERT INTO help (user_id, class_id, problem, created_at)
       VALUES (?, ?, ?, unixepoch('now'))
     `;
 
     // Can't use arrow function because we need to access this.lastID
     const that = this;
 
-    this.db.run(q, email, class_id, problem, function (err) {
+    this.db.run(q, user_id, class_id, problem, function (err) {
       if (err) {
         callback(err, null);
       } else {
@@ -174,7 +175,7 @@ class DB {
 
   getHelp(id, callback) {
     this.db.get(
-      'select help.rowid as id, help.*, users.name from help join users using (email) where help.rowid = ?',
+      'select help.rowid as id, help.*, users.name from help join users on users.id = help.user_id where help.rowid = ?',
       id,
       (err, data) => {
         callback(err, data);
@@ -209,7 +210,7 @@ class DB {
     const q = `
       select help.rowid as id, help.*, users.name
       from help
-      join users using (email)
+      join users on users.id = help.user_id
       where class_id = ? and
       closed_at is null
       order by created_at asc
@@ -249,14 +250,14 @@ class DB {
     this.db.get('SELECT rowid as id, * from users where id = ?', id, callback);
   }
 
-  classMember(email, classId, callback) {
+  classMember(id, classId, callback) {
     const q = `
-      select u.rowid as id, u.*, m.role
-      from users as u join class_members as m using (email)
-      where u.email = ? and class_id = ?
+      select u.*, m.role
+      from users as u join class_members as m on u.id = m.user_id
+      where u.id = ? and class_id = ?
     `;
-    console.log(`Looking for classMember with ${email} and ${classId}`);
-    this.db.get(q, email, classId, callback);
+    console.log(`Looking for classMember with id ${id} and ${classId}`);
+    this.db.get(q, id, classId, callback);
   }
 
   userById(id, callback) {
@@ -290,8 +291,8 @@ class DB {
     });
   }
 
-  setPreferredName(email, name) {
-    return this.db.run('update users set name = ? where email = ?', name, email);
+  setPreferredName(user_id, name) {
+    return this.db.run('update users set name = ? where user_id = ?', name, user_id);
   }
 
   studentStats(classId, callback) {
@@ -302,12 +303,12 @@ class DB {
         u.name,
         count(distinct help.rowid) as help_requests
       from class_members as m
-      left join help using (email, class_id)
-      left join users as u using (email)
+      left join help using (user_id, class_id)
+      left join users as u on u.id = m.user_id
       where
         m.role = 'student' and
         m.class_id = ?
-      group by m.email
+      group by m.user_id
       order by u.name asc;
     `;
     this.db.all(q, classId, callback);
@@ -321,11 +322,11 @@ class DB {
         u.name,
         count(distinct help.rowid) as help_requests
       from class_members as m
-      left join help using (email, class_id)
-      left join users as u using (email)
+      left join help using (user_id, class_id)
+      left join users as u on u.id = m.user_id
       where
         m.class_id = ?
-      group by m.email
+      group by m.user_id
       order by u.name asc;
     `;
     this.db.all(q, classId, callback);

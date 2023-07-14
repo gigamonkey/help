@@ -28,17 +28,17 @@ CREATE TABLE IF NOT EXISTS users (
   );
 
 CREATE TABLE IF NOT EXISTS class_members (
-       email TEXT NOT NULL,
+       user_id TEXT NOT NULL,
        class_id TEXT NOT NULL,
        role TEXT NOT NULL,
-       PRIMARY KEY (email, class_id)
+       PRIMARY KEY (user_id, class_id)
   );
 
 CREATE TABLE IF NOT EXISTS help (
-      email TEXT NOT NULL,
+      user_id TEXT NOT NULL,
       class_id TEXT NOT NULL,
       problem TEXT NOT NULL,
       created_at INTEGER NOT NULL,
       closed_at INTEGER,
-      PRIMARY KEY (email, class_id, created_at)
+      PRIMARY KEY (user_id, class_id, created_at)
   );
