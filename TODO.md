@@ -25,13 +25,16 @@
 
 - Store pronouns in the users table.
 
+- Store the period in the class table and use it to automatically display the
+  right class based on the current time.
+
 - Provide a profile page for students to set name, pronoun, and avatar
 
 - Make queue into first-class thing that combines one or more classes.
 
 - Teacher-only user management page: change name, set role, block account.
 
-- Allow deleting jourrnal entries.
+- Allow deleting journal entries.
 
 - Provide in-app journal prompts.
 
@@ -54,3 +57,13 @@
 - Use bell schedule data to give the system knowledge of period times so you can
   do things like schedule Journal prompts at five minutes before the end of
   class.
+
+- Make a way to clone prompts from one class to another. (Or possibly make a
+  first-class course entity which classes are linked to and link prompts to
+  courses.)
+
+- Build something like Mr. W's "Zoom Waterfall" where students can answer a
+  question and the answers are held until everyone answers (or a time limit,
+  whichever comes first) and then displayed. Probably want to have two display
+  modes: one where the answers are anonymous, another, for the teacher, where
+  they are attached to student names.
