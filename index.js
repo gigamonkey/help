@@ -237,13 +237,36 @@ app.get(
 
 app.get(
   '/users/:id',
-  adminOnly((req, res) => {
+  (req, res) => {
     const { id } = req.params;
-    db.userById(id, (err, user) => {
-      res.render('user.njk', user);
+    db.userById(id, (err1, requestedUser) => {
+      db.userById(req.session.user.id, (err2, currentUser) => {
+        if (requestedUser.id == currentUser.id || permissions.isAdmin(currentUser)) {
+          res.render('user.njk', requestedUser);
+        } else {
+          res.sendStatus(401);
+        }
+      });
     });
-  }),
-);
+  });
+
+app.post(
+  '/users/:id',
+  (req, res) => {
+    const { id } = req.params;
+    db.userById(id, (err1, requestedUser) => {
+      db.userById(req.session.user.id, (err2, currentUser) => {
+        if (requestedUser.id == currentUser.id || permissions.isAdmin(currentUser)) {
+          db.updateName(requestedUser.id, req.body.preferredName, (err3, user) => {
+            res.render('user.njk', user);
+          });
+        } else {
+          res.sendStatus(401);
+        }
+      });
+    });
+  });
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // Courses

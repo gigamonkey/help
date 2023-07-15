@@ -4,9 +4,11 @@
 
 {% block content %}
 
-<p>
-  <a href="mailto:{{email}}" target="_blank">Email</a>
-</p>
+<form method="POST" action="">
+  <p>Preferred name: <input name="preferredName" type="text" size="60" value="{{name}}"></p>
+  <p>Pronouns: <input name="pronouns" type="text" size="60" value="-"></p>
+  <input type="submit">
+</form>
 
 
 {% endblock %}

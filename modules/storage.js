@@ -247,7 +247,7 @@ class DB {
 
 
   user(id, callback) {
-    this.db.get('SELECT rowid as id, * from users where id = ?', id, callback);
+    this.db.get('SELECT * from users where id = ?', id, callback);
   }
 
   classMember(id, classId, callback) {
@@ -261,7 +261,7 @@ class DB {
   }
 
   userById(id, callback) {
-    this.db.get('SELECT rowid as id, * from users where rowid = ?', id, callback);
+    this.db.get('SELECT * from users where id = ?', id, callback);
   }
 
   ensureUser(id, email, googleName, callback) {
@@ -291,8 +291,14 @@ class DB {
     });
   }
 
-  setPreferredName(user_id, name) {
-    return this.db.run('update users set name = ? where user_id = ?', name, user_id);
+  updateName(user_id, name, callback) {
+    this.db.run('update users set name = ? where id = ?', name, user_id, (err) => {
+      if (err) {
+        callback(err, null);
+      } else {
+        this.user(user_id, callback);
+      }
+    });
   }
 
   studentStats(classId, callback) {
