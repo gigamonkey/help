@@ -24,10 +24,33 @@
     </p>
 
     {% if isAdmin %}
-    <p>
-      Teachers set up your <a href="/classes"><b>classes</b></a
-      >.
-    </p>
+    <div class="teachers">
+      <h2>For teachers</h2>
+      <p class='fine-print'>
+        These are your classes. You can Create a help queue or Resync with the
+        students currently in Google Classroom. Add missing students and will
+        remove students no longer in your class but will not touch current
+        students.
+      </p>
+      <table>
+        <tbody>
+          {% for course in courses %}
+          <tr>
+            <td>
+              <a href="/c/{{course.fullName | slug}}/students">{{ course.fullName }}</a>
+            </td>
+            <td>
+              {% if googleIds.indexOf(course.id) > -1 %}
+              <a class="button" href="/classes/{{course.id}}/resync">Resync</a>
+              {% else %}
+              <a class="button" href="/classes/{{course.id}}/create">Create</a>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
     {% endif %}
   </body>
 </html>

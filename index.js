@@ -157,12 +157,26 @@ app.get('/c/:class_id', (req, res) => {
 app.get('/', (req, res) => {
   const { id } = req.session.user;
   db.userById(req.session.user.id, async (err1, user) => {
+
     if (permissions.isAdmin(user)) {
       res.locals.isAdmin = true;
+
+      const oauth2client = oauth.oauth2client();
+      oauth2client.setCredentials(req.session.auth);
+      const courses = await allCourses(oauth2client, req.session.user.id);
+      courses.forEach((c) => {
+        c.fullName = fullClassName(c);
+      });
+      db.googleClassroomIds((err, ids) => {
+        db.classMemberships(id, (err, memberships) => {
+          dbRender(res, err, 'index.njk', { memberships, courses, googleIds: extractIds(ids) });
+        });
+      });
+    } else {
+      db.classMemberships(id, (err, memberships) => {
+        dbRender(res, err, 'index.njk', { memberships });
+      });
     }
-    db.classMemberships(id, (err, memberships) => {
-      dbRender(res, err, 'index.njk', { memberships });
-    });
   });
 });
 
@@ -274,21 +288,6 @@ app.post(
 
 ////////////////////////////////////////////////////////////////////////////////
 // Courses
-
-app.get(
-  '/classes',
-  adminOnly(async (req, res) => {
-    const oauth2client = oauth.oauth2client();
-    oauth2client.setCredentials(req.session.auth);
-    const courses = await allCourses(oauth2client, req.session.user.id);
-    courses.forEach((c) => {
-      c.fullName = fullClassName(c);
-    });
-    db.googleClassroomIds((err, ids) =>
-      dbRender(res, err, 'classes.njk', { courses, googleIds: extractIds(ids) }),
-    );
-  }),
-);
 
 app.get(
   '/classes/:google_id/create',

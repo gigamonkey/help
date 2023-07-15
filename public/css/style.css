@@ -17,6 +17,10 @@ body {
 }
 
 body.queue {
+  width: 95%;
+}
+
+body.queue .container {
   width: 80%;
   margin: 20px auto;
   font-size: calc(min(64px, 4vw));
@@ -25,6 +29,12 @@ body.queue {
 body.queue h2 {
   text-align: center;
 }
+
+body.queue a.homeicon {
+  color: black;
+  float: left;
+}
+
 
 a {
   text-decoration: none;
@@ -56,6 +66,14 @@ body.welcome .fine-print {
   font-size: 80%;
 }
 
+body.welcome .teachers {
+  background: #eee;
+  margin-top: 20px;
+  padding: 20px;
+  padding-bottom: 40px;
+  border-radius: 12px;
+}
+
 h1,
 h2 {
   margin: 0.5em 0;
@@ -69,6 +87,10 @@ ol {
 h1.classname {
   font-size: 32px;
   text-align: center;
+}
+
+h1.classname a {
+  color: black;
 }
 
 .toolbar {
