@@ -291,8 +291,9 @@ class DB {
     });
   }
 
-  updateName(user_id, name, callback) {
-    this.db.run('update users set name = ? where id = ?', name, user_id, (err) => {
+  updateNameAndPronouns(user_id, name, pronouns, callback) {
+    console.log(`Updating name ${name} and pronouns ${pronouns}`);
+    this.db.run('update users set name = ?, pronouns = ? where id = ?', name, pronouns, user_id, (err) => {
       if (err) {
         callback(err, null);
       } else {

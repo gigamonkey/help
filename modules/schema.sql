@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS users (
       id TEXT NOT NULL PRIMARY KEY,
       email TEXT NOT NULL,
       name TEXT NOT NULL,
+      pronouns TEXT,
       google_name TEXT NOT NULL,
       is_admin INTEGER
   );

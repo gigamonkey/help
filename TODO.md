@@ -1,8 +1,4 @@
-- Provide a profile page for students to set name, pronoun, and avatar
-
 - Allow discarding help requests (helpers and owner)
-
-- Store pronouns in the users table.
 
 - Store the period in the class table and use it to automatically display the
   right class based on the current time.
@@ -28,3 +24,7 @@
 
 - Provide endpoint for exporting data of help requests from a time period and
   classes.
+
+- Maybe add avatars.
+
+- Add a popup window when students ask for help so it's easier to find them in the room.

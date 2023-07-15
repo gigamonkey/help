@@ -71,7 +71,6 @@ app.use('/c/:class_id', (req, res, next) => {
       res.locals.className = name;
       if (req.session?.user) {
         res.locals.user = req.session.user;
-        console.log('USER', req.session.user);
         db.classMember(req.session.user.id, class_id, (err, user) => {
           if (err) {
             console.log(err);
@@ -257,7 +256,7 @@ app.post(
     db.userById(id, (err1, requestedUser) => {
       db.userById(req.session.user.id, (err2, currentUser) => {
         if (requestedUser.id == currentUser.id || permissions.isAdmin(currentUser)) {
-          db.updateName(requestedUser.id, req.body.preferredName, (err3, user) => {
+          db.updateNameAndPronouns(requestedUser.id, req.body.preferredName, req.body.pronouns, (err3, user) => {
             res.render('user.njk', user);
           });
         } else {
@@ -290,7 +289,6 @@ app.get(
   '/classes/:google_id/create',
   adminOnly(async (req, res) => {
     const { google_id } = req.params;
-    console.log(req.session.user);
 
     const teacherId = req.session.user.id;
     // FIXME: I think it may be possible to just pass the auth data rather than
