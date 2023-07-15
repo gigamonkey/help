@@ -221,3 +221,18 @@ td {
 .responses h3 {
   margin: 1em 0;
 }
+
+.userform {
+  display: grid;
+  grid-template-columns: auto 2fr;
+  gap: 20px;
+}
+
+.userform > * {
+  padding: 0;
+  margin: 0;
+}
+
+.userform > input[type="submit"] {
+  grid-column: 1 / 3;
+}

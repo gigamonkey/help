@@ -4,9 +4,11 @@
 
 {% block content %}
 
-<form method="POST" action="">
-  <p>Preferred name: <input name="preferredName" type="text" size="60" value="{{name}}"></p>
-  <p>Pronouns: <input name="pronouns" type="text" size="60" value="-"></p>
+<form class="userform" method="POST" action="">
+  <label for="preferredName">Preferred name</label>
+  <input name="preferredName" type="text"  value="{{name}}">
+  <label for="pronouns">Pronouns</label>
+  <input name="pronouns" type="text" value="">
   <input type="submit">
 </form>
 
