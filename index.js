@@ -156,8 +156,13 @@ app.get('/c/:class_id', (req, res) => {
 
 app.get('/', (req, res) => {
   const { id } = req.session.user;
-  db.classMemberships(id, (err, memberships) => {
-    dbRender(res, err, 'index.njk', { memberships });
+  db.userById(req.session.user.id, async (err1, user) => {
+    if (permissions.isAdmin(user)) {
+      res.locals.isAdmin = true;
+    }
+    db.classMemberships(id, (err, memberships) => {
+      dbRender(res, err, 'index.njk', { memberships });
+    });
   });
 });
 
@@ -275,7 +280,7 @@ app.get(
   adminOnly(async (req, res) => {
     const oauth2client = oauth.oauth2client();
     oauth2client.setCredentials(req.session.auth);
-    const courses = await allCourses(oauth2client);
+    const courses = await allCourses(oauth2client, req.session.user.id);
     courses.forEach((c) => {
       c.fullName = fullClassName(c);
     });
@@ -332,7 +337,7 @@ const extractIds = (googleIds) => googleIds.map((r) => r.google_id.toString(10))
 
 const oneCourse = (auth, id) => classroom.courses.get({ id, auth });
 
-const allCourses = async (oauth2client) => {
+const allCourses = async (oauth2client, userId) => {
   const mainArgs = { teacherId: 'me', courseStates: ['ACTIVE'], auth: oauth2client };
 
   let pageToken;
@@ -345,8 +350,9 @@ const allCourses = async (oauth2client) => {
     pageToken = res.data.nextPageToken;
   } while (pageToken);
 
-  results.sort((a, b) => (fullClassName(a) < fullClassName(b) ? -1 : 1));
-  return results;
+  const owned = results.filter(c => c.ownerId === userId);
+  return owned.sort((a, b) => (fullClassName(a) < fullClassName(b) ? -1 : 1));
+
 };
 
 const allStudents = async (oauth2client, courseId) => {

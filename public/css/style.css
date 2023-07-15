@@ -52,6 +52,10 @@ body.welcome li {
   margin-right: auto;
 }
 
+body.welcome .fine-print {
+  font-size: 80%;
+}
+
 h1,
 h2 {
   margin: 0.5em 0;
@@ -74,10 +78,10 @@ h1.classname {
   gap: 0.5em;
   margin-bottom: 40px;
   background: rgba(196, 196, 196, 0.2);
-  padding: 6px 4px;
+  padding: 6px 0;
 }
 
-.toolbar a {
+.toolbar > * {
   flex: auto;
   text-align: center;
   font-size: 80%;
@@ -123,7 +127,7 @@ p.get-help a {
   display: flex;
   flex-direction: row;
   font-size: 0.7em;
-  justify-content: space-between;
+  justify-content: end;
 }
 
 .item img {

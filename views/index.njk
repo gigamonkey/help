@@ -1,28 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta content="width=device-width,initial-scale=1" name="viewport">
-  <title>Classroom Help</title>
-  <link href="/css/style.css" media="all" rel="stylesheet" type="text/css">
-</head>
-<body class="welcome">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width,initial-scale=1" name="viewport" />
+    <title>Classroom Help</title>
+    <link href="/css/style.css" media="all" rel="stylesheet" type="text/css" />
+  </head>
+  <body class="welcome">
+    <h1>Welcome to BHS CS Classroom Help!</h1>
 
-  <h1>
-    Welcome to BHS CS Classroom Help!
-  </h1>
+    <p>Here are the classes you are already a member of.</p>
 
-  <p>Here are the classes you are already a member of.</p>
+    <div class="classes">
+      {% for m in memberships %}
+      <h2><a href="/c/{{m.class_id}}/help">{{m.name}}</a></h2>
+      {% endfor %}
+    </div>
 
-  <div class="classes">
-    {% for m in memberships %}
-    <h2><a href="/c/{{m.class_id}}/help">{{m.name}}</a></h2>
-    {% endfor %}
-  </div>
+    <p class="fine-print">
+      Don't see your class here? Ask your teacher if the class has been set up.
+      They may need to resync with Classroom if you've joined since they set up
+      their help queue.
+    </p>
 
-  <p>Don't see your class here? Ask your teacher to add you.</p>
-
-  <p>Teachers: <a href="/classes">Classes</a></p>
-
-</body>
+    {% if isAdmin %}
+    <p>
+      Teachers set up your <a href="/classes"><b>classes</b></a
+      >.
+    </p>
+    {% endif %}
+  </body>
 </html>
