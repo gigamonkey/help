@@ -44,7 +44,6 @@ class RequireLogin {
    */
   require() {
     return (req, res, next) => {
-      console.log(req.originalUrl);
       if (this.noAuthRequired[req.path] || this.isLoggedIn(req)) {
         next();
       } else {

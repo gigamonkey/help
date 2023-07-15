@@ -76,7 +76,6 @@ app.use('/c/:class_id', (req, res, next) => {
             console.log(err);
             res.sendStatus(500);
           } else {
-            console.log(user);
             console.log(`Setting user role to ${user.role}`);
             res.locals.user.role = user.role;
           }
@@ -156,8 +155,7 @@ app.get('/c/:class_id', (req, res) => {
 
 app.get('/', (req, res) => {
   const { id } = req.session.user;
-  db.userById(req.session.user.id, async (err1, user) => {
-
+  db.userById(id, async (err1, user) => {
     if (permissions.isAdmin(user)) {
       res.locals.isAdmin = true;
 
