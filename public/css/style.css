@@ -16,16 +16,6 @@ body {
   margin: 20px auto;
 }
 
-body.queue {
-  width: 80%;
-  margin: 20px auto;
-  font-size: calc(min(64px, 4vw));
-}
-
-body.queue h2 {
-  text-align: center;
-}
-
 a {
   text-decoration: none;
 }
@@ -82,52 +72,6 @@ h1.classname {
   text-align: center;
   font-size: 80%;
   color: #666;
-}
-
-p.get-help {
-  text-align: center;
-}
-
-p.get-help a {
-  display: inline-block;
-  border: 1px solid grey;
-  border-radius: 4px;
-  width: calc(50% - 22px);
-  padding: 10px;
-  margin: 10px auto;
-  color: black;
-  background: rgba(100, 128, 255, 0.3);
-}
-.cards {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.item {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 10px;
-  border: 1px solid rgba(196, 196, 196, 0.5);
-  background: rgba(196, 196, 196, 0.1);
-}
-
-.item > .who {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-}
-
-.item > .buttons {
-  display: flex;
-  flex-direction: row;
-  font-size: 0.7em;
-  justify-content: space-between;
-}
-
-.item img {
-  max-width: 100%;
 }
 
 .buttons button {
