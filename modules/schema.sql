@@ -33,15 +33,6 @@ CREATE TABLE IF NOT EXISTS class_members (
        PRIMARY KEY (email, class_id)
   );
 
-CREATE TABLE IF NOT EXISTS help (
-      email TEXT NOT NULL,
-      class_id TEXT NOT NULL,
-      problem TEXT NOT NULL,
-      created_at INTEGER NOT NULL,
-      closed_at INTEGER,
-      PRIMARY KEY (email, class_id, created_at)
-  );
-
 CREATE TABLE IF NOT EXISTS journal (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       email TEXT NOT NULL,
