@@ -150,85 +150,6 @@ class DB {
     );
   }
 
-  /*
-   * Create a new request for help.
-   */
-  requestHelp(email, class_id, problem, callback) {
-    const q = `
-      INSERT INTO help (email, class_id, problem, created_at)
-      VALUES (?, ?, ?, unixepoch('now'))
-    `;
-
-    // Can't use arrow function because we need to access this.lastID
-    const that = this;
-
-    this.db.run(q, email, class_id, problem, function (err) {
-      if (err) {
-        callback(err, null);
-      } else {
-        that.getHelp(this.lastID, callback);
-      }
-    });
-  }
-
-  getHelp(id, callback) {
-    this.db.get(
-      'select help.rowid as id, help.*, users.name from help join users using (email) where help.rowid = ?',
-      id,
-      (err, data) => {
-        callback(err, data);
-      },
-    );
-  }
-
-  updateHelp(id, q, params, callback) {
-    this.db.run(q, ...params, id, (err) => {
-      if (err) {
-        callback(err, null);
-      } else {
-        this.getHelp(id, callback);
-      }
-    });
-  }
-
-  finishHelp(id, callback) {
-    const q = `UPDATE help SET closed_at = unixepoch('now') WHERE rowid = ?`;
-    this.updateHelp(id, q, [], callback);
-  }
-
-  reopenHelp(id, callback) {
-    const q = `UPDATE help SET closed_at = null WHERE rowid = ?`;
-    this.updateHelp(id, q, [], callback);
-  }
-
-  /*
-   * Get all the open help requests for the class.
-   */
-  queue(classId, callback) {
-    const q = `
-      select help.rowid as id, help.*, users.name
-      from help
-      join users using (email)
-      where class_id = ? and
-      closed_at is null
-      order by created_at asc
-    `;
-    this.db.all(q, classId, callback);
-  }
-
-  /*
-   * Get all help requests that have been finished.
-   */
-  done(classId, callback) {
-    const q = `
-      select rowid as id, * from help
-      where class_id = ? and
-      closed_at is not null
-      order by created_at asc
-    `;
-    this.db.all(q, classId, callback);
-  }
-
   newSession(id, state, callback) {
     const q =
       "INSERT INTO sessions (session_id, created_at, state) VALUES (?, unixepoch('now'), ?)";
@@ -347,11 +268,9 @@ class DB {
         users.rowid as id,
         users.*,
         count(distinct journal.rowid) as journal_entries,
-        count(distinct date(journal.created_at, 'unixepoch')) as journal_days,
-        count(distinct help.rowid) as help_requests
+        count(distinct date(journal.created_at, 'unixepoch')) as journal_days
       from users
       left join journal on users.email = journal.email
-      left join help on users.email = help.email
       group by users.email
       order by users.name asc;
     `;
@@ -367,11 +286,9 @@ class DB {
         m.*,
         u.name,
         count(distinct journal.rowid) as journal_entries,
-        count(distinct date(journal.created_at, 'unixepoch')) as journal_days,
-        count(distinct help.rowid) as help_requests
+        count(distinct date(journal.created_at, 'unixepoch')) as journal_days
       from class_members as m
       left join journal using (email, class_id)
-      left join help using (email, class_id)
       left join users as u using (email)
       where
         m.role = 'student' and
@@ -391,11 +308,9 @@ class DB {
         m.*,
         u.name,
         count(distinct journal.rowid) as journal_entries,
-        count(distinct date(journal.created_at, 'unixepoch')) as journal_days,
-        count(distinct help.rowid) as help_requests
+        count(distinct date(journal.created_at, 'unixepoch')) as journal_days
       from class_members as m
       left join journal using (email, class_id)
-      left join help using (email, class_id)
       left join users as u using (email)
       where
         m.class_id = ?
