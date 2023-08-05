@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import dateFilter from 'nunjucks-date-filter';
 import express from 'express';
@@ -56,6 +57,7 @@ const adminOnly = permissions.route(permissions.isAdmin);
 const ifTeacher = permissions.thunk(isTeacher);
 
 app.use(express.json());
+app.use(morgan('dev'));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(login.require());
