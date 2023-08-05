@@ -44,8 +44,20 @@ class RequireLogin {
    */
   require() {
     return (req, res, next) => {
-      if (this.noAuthRequired[req.path] || this.isLoggedIn(req)) {
+      if (this.noAuthRequired[req.path]) {
         next();
+      } else if (this.isLoggedIn(req)) {
+        // If the user has an old cookie and the database has been cleared we
+        // need to treat them as not logged in so they go through the flow that
+        // creates the user in the database.
+        this.db.userById(req.session.user.id, (err, user) => {
+          if (user) {
+            next();
+          } else {
+            res.clearCookie('session');
+            this.makeNewSession(req, res);
+          }
+        });
       } else {
         this.makeNewSession(req, res);
       }
