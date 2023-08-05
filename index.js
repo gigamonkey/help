@@ -163,15 +163,20 @@ app.get('/', (req, res) => {
 
       const oauth2client = oauth.oauth2client();
       oauth2client.setCredentials(req.session.auth);
-      const courses = await allCourses(oauth2client, req.session.user.id);
-      courses.forEach((c) => {
-        c.fullName = fullClassName(c);
-      });
-      db.googleClassroomIds((err, ids) => {
-        db.classMemberships(id, (err, memberships) => {
-          dbRender(res, err, 'index.njk', { memberships, courses, googleIds: extractIds(ids) });
+      try {
+        const courses = await allCourses(oauth2client, req.session.user.id);
+        courses.forEach((c) => {
+          c.fullName = fullClassName(c);
         });
-      });
+        db.googleClassroomIds((err, ids) => {
+          db.classMemberships(id, (err, memberships) => {
+            dbRender(res, err, 'index.njk', { memberships, courses, googleIds: extractIds(ids) });
+          });
+        });
+      } catch {
+        login.logout(res);
+        res.redirect('/logout');
+      }
     } else {
       db.classMemberships(id, (err, memberships) => {
         dbRender(res, err, 'index.njk', { memberships });
