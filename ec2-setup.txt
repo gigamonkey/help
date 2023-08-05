@@ -16,8 +16,8 @@ curl -fsSL https://deb.nodesource.com/setup_current.x | sudo -E bash -
 
 # Some random thing I grabbed off of the internet to solve some problem.
 # From: https://github.com/nodesource/distributions/issues/1157#issuecomment-1131212089
-sudo dpkg --remove --force-remove-reinstreq libnode-dev
-sudo dpkg --remove --force-remove-reinstreq libnode72:amd64
+#sudo dpkg --remove --force-remove-reinstreq libnode-dev
+#sudo dpkg --remove --force-remove-reinstreq libnode72:amd64
 
 # Finally install node and sqlite3
 sudo apt install nodejs
