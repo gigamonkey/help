@@ -16,7 +16,7 @@
   <tbody>
     {% for s in students %}
     <tr>
-      <td><a href="/users/{{s.id}}">{% if s.name %}{{s.name}}{% else %}Anonymous: {{s.id}}{% endif %}</a></td>
+      <td><a href="/users/{{s.id}}">{% if s.name %}{{s.name}}{% else %}Anonymous: {{s.id}}{% endif %}</a>{% if s.pronouns %} ({{ s.pronouns }}){% endif %}</td>
       <td>{{s.help_requests}}</td>
     </tr>
     {% endfor %}

@@ -308,6 +308,7 @@ class DB {
         u.id as id,
         m.*,
         u.name,
+        u.pronouns,
         count(distinct help.rowid) as help_requests
       from class_members as m
       left join help using (user_id, class_id)
