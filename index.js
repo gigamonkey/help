@@ -309,7 +309,7 @@ app.get(
     const c = course.data;
     const students = await allStudents(oauth2client, c.id);
     const className = fullClassName(c);
-    const classId = slugify(className);
+    const classId = c.id;
 
     db.createClass(classId, teacherId, className, c.id, students, (err) =>
       dbRedirect(res, err, `/c/${classId}/students`),
