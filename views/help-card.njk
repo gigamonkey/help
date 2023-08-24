@@ -12,8 +12,9 @@
         </div>
         <div class="buttons">
           <span>
-            <!-- FIXME show particular buttons based on the page and the role of the user -->
-            <a href="/c/{{class_id}}/help/{{item.id}}/done">Close</a>
+            {% if user.role === 'teacher' or user.id === item.user_id %}
+              <a href="/c/{{class_id}}/help/{{item.id}}/done">Close</a>
+            {% endif %}
           </span>
         </div>
       </div>

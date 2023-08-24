@@ -224,10 +224,18 @@ app.get('/c/:class_id/done', (req, res) => {
 
 app.get(
   '/c/:class_id/help/:id/done',
-  helperOnly((req, res) => {
+  (req, res) => {
     const { id } = req.params;
-    db.finishHelp(id, (err) => dbRedirect(res, err, req.get('Referrer')));
-  }),
+
+    db.getHelp(id, (err, help) => {
+      const pred = (user) => {
+        return isHelper(user) || user.id === help.user_id;
+      };
+      permissions.classRoute(pred)((req, res) => {
+        db.finishHelp(id, (err) => dbRedirect(res, err, req.get('Referrer')));
+      })(req, res);
+    })
+  },
 );
 
 app.get(
