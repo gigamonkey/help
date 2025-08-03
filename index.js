@@ -185,7 +185,7 @@ app.get('/', (req, res) => {
   });
 });
 
-app.get('/c/:class_id/help/:id(\\d+)', (req, res) => {
+app.get('/c/:class_id/help/:id', (req, res) => {
   const { id, class_id } = req.params;
   db.getHelp(id, (err, item) => dbRender(res, err, 'help.njk', { id, class_id, item }));
 });
