@@ -387,5 +387,12 @@ const allStudents = async (oauth2client, courseId) => {
 
 db.setup(() => {
   console.log('DB is set up.');
-  app.listen(PORT, () => console.log(`Listening on port ${PORT}!`));
+  const server = app.listen(PORT, '0.0.0.0', (error) => {
+    if (error) {
+      throw error;
+    }
+    const { address, port } = server.address();
+    console.log(`App is listening on port ${server.address().port}`);
+    console.log(`http://${address}:${port}/`);
+  })
 });
