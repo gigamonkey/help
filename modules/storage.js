@@ -7,23 +7,6 @@ const DIRNAME = url.fileURLToPath(new URL('.', import.meta.url));
 
 const DDL = fs.readFileSync(path.resolve(DIRNAME, 'schema.sql'), 'utf-8');
 
-const ADMINS = {
-  'edwardchang@berkeley.net': true,
-  'mattalbinson@berkeley.net': true,
-  'peterseibel@berkeley.net': true,
-  'shoshanaokeefe@berkeley.net': true,
-  'noahlaroianguyen@berkeley.net': true,
-
-};
-
-const OTHER_NAMES = {
-  'edwardchang@berkeley.net': 'Mr. Chang',
-  'mattalbinson@berkeley.net': 'Mr. Albinson',
-  'peterseibel@berkeley.net': 'Mr. Seibel',
-  'shoshanaokeefe@berkeley.net': 'Ms. O’Keefe',
-  'noahlaroianguyen@berkeley.net': 'Mx. Laroia-Nguyen',
-};
-
 class DB {
   constructor(file) {
     this.db = new sqlite3.Database(file);
@@ -276,15 +259,20 @@ class DB {
       } else {
 
         console.log(`Creating user for id ${id} and email ${email}`);
+
+        // admin really means teacher. Anyone with a non-student berkeley.net
+        // address can use this.
+        const isAdmin = email.endsWith('@berkeley.net') ? 1 : 0;
+
         // We create a user with the name we got from Google in both name fields
         // but later we may change `name` to be the student's preferred name.
-        const isAdmin = ADMINS[email] ? 1 : 0;
-        const name = OTHER_NAMES[email] ?? googleName;
-        const q =
-              'insert or ignore into users (id, email, name, google_name, is_admin) values (?, ?, ?, ?, ?)';
-        this.db.run(q, id, email, name, googleName, isAdmin, (err) => {
+        const q = `
+          insert or ignore into users
+            (id, email, name, google_name, is_admin) values (?, ?, ?, ?, ?)
+          `;
+
+        this.db.run(q, id, email, googleName, googleName, isAdmin, (err) => {
           if (err) {
-            console.log('here', err);
             callback(err, null);
           } else {
             this.user(id, callback);
