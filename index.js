@@ -8,6 +8,7 @@ import nunjucks from 'nunjucks';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { google } from 'googleapis';
+import process from 'node:process';
 
 import DB from './modules/storage.js';
 import requireLogin from './modules/require-login.js';
@@ -28,7 +29,9 @@ const noAuthRequired = {
   '/logout': true,
 };
 
-const db = new DB('help.db');
+const { DB_DIR, DB_FILE } = process.env;
+
+const db = new DB(`${DB_DIR}/${DB_FILE}`);
 const app = express();
 const login = requireLogin(noAuthRequired, db, SECRET);
 const permissions = new Permissions(db);

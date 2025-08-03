@@ -1,6 +1,9 @@
 import DB from './modules/storage.js';
+import process from 'node:process';
 
-const db = new DB('help.db');
+const { DB_DIR, DB_FILE } = process.env;
+
+const db = new DB(`${DB_DIR}/${DB_FILE}`);
 
 db.setup(() => {
   db.close(() => {
