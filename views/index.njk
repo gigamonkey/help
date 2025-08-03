@@ -38,7 +38,7 @@
           <tr>
             <td>
               {% if googleIds.indexOf(course.id) > -1 %}
-                <a href="/c/{{course.fullName | slug}}/students">{{ course.fullName }}</a>
+                <a href="/c/{{course.id}}/students">{{ course.fullName }}</a>
               {% else %}
                 {{ course.fullName }}
               {% endif %}
