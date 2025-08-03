@@ -1,0 +1,11 @@
+dbs:
+  - path: ${DB_DIR}/${DB_FILE}
+    replicas:
+      - type: s3
+        bucket: ${LITESTREAM_BUCKET_NAME}
+        path: ${LITESTREAM_PATH}
+        endpoint: ${LITESTREAM_ENDPOINT_URL}
+        region: auto
+        force-path-style: false
+        access-key-id: ${LITESTREAM_ACCESS_KEY_ID}
+        secret-access-key: ${LITESTREAM_SECRET_ACCESS_KEY}
