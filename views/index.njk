@@ -9,52 +9,56 @@
   <body class="welcome">
     <h1>Welcome to BHS CS Classroom Help!</h1>
 
-    <p>Here are the classes you are already a member of.</p>
+    {% if isAdmin %}
+      <p>Here are the classes you’ve already set up.</p>
+    {% else %}
+      <p>Here are the classes you are already a member of.</p>
+    {% endif %}
 
     <div class="classes">
       {% for m in memberships %}
-      <h2><a href="/c/{{m.class_id}}/help">{{m.name}}</a></h2>
+        <h2><a href="/c/{{m.class_id}}/help">{{m.name}}</a></h2>
       {% endfor %}
     </div>
 
-    <p class="fine-print">
-      Don't see your class here? Ask your teacher if the class has been set up.
-      They may need to resync with Classroom if you've joined since they set up
-      their help queue.
-    </p>
-
     {% if isAdmin %}
-    <div class="teachers">
-      <h2>For teachers</h2>
-      <p class='fine-print'>
-        These are your classes in Google Classroom. Click Create to import the
-        class from Classroom and create a help queue or Resync to synchronize
-        our database with Classroom. Resync will add missing students and remove
-        students no longer in your class but will not touch current students.
+      <div class="teachers">
+        <h2>For teachers</h2>
+        <p class='fine-print'>
+          These are your classes in Google Classroom. Click Create to import the
+          class from Classroom and create a help queue or Resync to synchronize
+          our database with Classroom. Resync will add missing students and remove
+          students no longer in your class but will not touch current students.
+        </p>
+        <table>
+          <tbody>
+            {% for course in courses %}
+              <tr>
+                <td>
+                  {% if googleIds.indexOf(course.id) > -1 %}
+                    <a href="/c/{{course.id}}/students">{{ course.fullName }}</a>
+                  {% else %}
+                    {{ course.fullName }}
+                  {% endif %}
+                </td>
+                <td>
+                  {% if googleIds.indexOf(course.id) > -1 %}
+                    <a class="button" href="/classes/{{course.id}}/resync">Resync</a>
+                  {% else %}
+                    <a class="button" href="/classes/{{course.id}}/create">Create</a>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p>
+        Don’t see your class here? Ask your teacher if the class has been set up.
+        They may need to resync with Classroom if you’ve joined since they set up
+        their help queue.
       </p>
-      <table>
-        <tbody>
-          {% for course in courses %}
-          <tr>
-            <td>
-              {% if googleIds.indexOf(course.id) > -1 %}
-                <a href="/c/{{course.id}}/students">{{ course.fullName }}</a>
-              {% else %}
-                {{ course.fullName }}
-              {% endif %}
-            </td>
-            <td>
-              {% if googleIds.indexOf(course.id) > -1 %}
-              <a class="button" href="/classes/{{course.id}}/resync">Resync</a>
-              {% else %}
-              <a class="button" href="/classes/{{course.id}}/create">Create</a>
-              {% endif %}
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
     {% endif %}
   </body>
 </html>
