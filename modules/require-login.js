@@ -14,9 +14,14 @@ class RequireLogin {
 
   isLoggedIn(req) {
     if (req.cookies.session) {
-      req.session = decrypt(req.cookies.session, this.secret);
-      if (req.session.loggedIn) {
-        return true;
+      try {
+        req.session = decrypt(req.cookies.session, this.secret);
+        if (req.session.loggedIn) {
+          return true;
+        }
+      } catch (e) {
+        console.log(`Failed to decrypt session`);
+        return false;
       }
     }
     return false;
