@@ -11,28 +11,28 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@js-temporal/polyfill": "^0.4.4",
-    "cookie-parser": "^1.4.6",
+    "@js-temporal/polyfill": "^0.5.1",
+    "cookie-parser": "^1.4.7",
     "crypto-js": "^4.2.0",
-    "dompurify": "^3.1.6",
-    "dotenv": "^16.4.5",
-    "express": "^4.19.2",
-    "googleapis": "^140.0.1",
-    "marked": "^13.0.3",
-    "morgan": "^1.10.0",
-    "nodemon": "^3.1.4",
+    "dompurify": "^3.2.6",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "googleapis": "^154.1.0",
+    "marked": "^16.1.1",
+    "morgan": "^1.10.1",
+    "nodemon": "^3.1.10",
     "nunjucks": "^3.2.4",
     "nunjucks-date-filter": "^0.1.1",
     "nunjucks-markdown-filter": "^0.1.0",
-    "pm2": "^5.4.2",
+    "pm2": "^6.0.8",
     "sqlite": "^5.1.1",
     "sqlite3": "^5.1.7"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3.1.0",
-    "@eslint/js": "^9.8.0",
-    "eslint": "^9.8.0",
+    "@eslint/eslintrc": "^3.3.1",
+    "@eslint/js": "^9.32.0",
+    "eslint": "^9.32.0",
     "eslint-formatter-unix": "^8.40.0",
-    "globals": "^15.9.0"
+    "globals": "^16.3.0"
   }
 }
