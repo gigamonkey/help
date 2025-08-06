@@ -336,10 +336,12 @@ app.get(
     const oauth2client = oauth.oauth2client();
     oauth2client.setCredentials(req.session.auth);
     const students = await allStudents(oauth2client, google_id);
+    const course = await oneCourse(oauth2client, google_id);
 
     db.classByGoogleId(google_id, (err, data) => {
       const classId = data.id;
-      db.resyncClass(classId, students, (err) => dbRedirect(res, err, `/c/${classId}/students`));
+      const name = fullClassName(course.data);
+      db.resyncClass(classId, name, students, (err) => dbRedirect(res, err, `/c/${classId}/students`));
     });
   }),
 );

@@ -60,13 +60,14 @@ class DB {
     });
   }
 
-  resyncClass(classId, students, callback) {
+  resyncClass(classId, name, students, callback) {
     const currentStudentIds = `select user_id from class_members where role = 'student' and class_id = ?`;
     const ensureStudent =
           'insert or ignore into users (id, email, name, google_name, is_admin) VALUES (?, ?, ?, ?, 0)';
     const ensureMember =
       'insert or ignore into class_members (user_id, class_id, role) values (?, ?, ?)';
     const removeMember = 'delete from class_members where user_id = ?';
+    const updateName = 'update classes set name = ? where id = ?';
 
     this.db.all(currentStudentIds, classId, (err, data) => {
       const current = data.map((d) => d.user_id);
@@ -74,6 +75,8 @@ class DB {
 
       this.db.serialize(() => {
         this.db.run('begin transaction');
+
+        this.db.run(updateName, name, classId)
 
         /* eslint-disable no-restricted-syntax */
         for (const s of students) {
