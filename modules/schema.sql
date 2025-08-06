@@ -1,3 +1,8 @@
+-- Pragmas suggested in https://litestream.io/tips/
+PRAGMA busy_timeout = 5000;
+PRAGMA synchronous = NORMAL;
+PRAGMA wal_autocheckpoint = 0;
+
 -- Used transiently for the OAuth dance and normally deleted when the dance is
 -- done. Can delete old ones at some point that stick around when the dance
 -- isn't completed.
