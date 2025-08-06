@@ -105,7 +105,7 @@ class DB {
   classMemberships(id, callback) {
     console.log(`Looking for memberships for ${id}`);
     this.db.all(
-      'select * from class_members join classes where class_members.class_id = classes.id and user_id = ?',
+      'select * from class_members join classes where class_members.class_id = classes.id and user_id = ? order by classes.name',
       id,
       callback,
     );
