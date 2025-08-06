@@ -10,7 +10,7 @@ if [[ -f "$DB_DIR/$DB_FILE" ]]; then
     echo "Database already exists, skipping restore"
 else
     echo "No database found, restoring from replica if exists"
-    litestream restore -if-replica-exists -config /etc/litestream.yml /data/db.db
+    litestream restore -if-replica-exists -config /etc/litestream.yml "$DB_DIR/$DB_FILE"
 fi
 
 # Run litestream with your app as the subprocess.
