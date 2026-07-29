@@ -47,8 +47,6 @@ const tokenParams = (code: string) =>
   });
 
 const oauth = {
-  newSessionID: randomString,
-
   newState: randomString,
 
   url: (state: string) => `${BASE_AUTH_URL}?${authParams(state)}`,

@@ -3,14 +3,10 @@ PRAGMA busy_timeout = 5000;
 PRAGMA synchronous = NORMAL;
 PRAGMA wal_autocheckpoint = 0;
 
--- Used transiently for the OAuth dance and normally deleted when the dance is
--- done. Can delete old ones at some point that stick around when the dance
--- isn't completed.
-CREATE TABLE IF NOT EXISTS sessions (
-      session_id TEXT NOT NULL,
-      created_at INTEGER NOT NULL,
-      state TEXT NOT NULL
-  );
+-- The sessions table was used transiently for the OAuth dance; the state
+-- nonce now lives in the session cookie. Dropped here (idempotently) to
+-- clean up databases that predate the change.
+DROP TABLE IF EXISTS sessions;
 
 -- Classes can be but don't have to be linked to a Google classrom but for now
 -- the main way to create a class is from a Google classroom so in practice they

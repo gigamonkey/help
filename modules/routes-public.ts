@@ -12,13 +12,13 @@ const routes = (login: RequireLogin): Router => {
     res.send('Ok.');
   });
 
-  router.get('/logout', (_req, res) => {
-    login.logout(res);
+  router.get('/logout', (req, res) => {
+    login.logout(req);
     res.send('<html><body><p>Logged out. <a href="/">Start over</a></p></html>');
   });
 
-  router.get('/auth', (req, res) => {
-    login.finish(req, res);
+  router.get('/auth', async (req, res) => {
+    await login.finish(req, res);
   });
 
   return router;

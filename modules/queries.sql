@@ -78,6 +78,10 @@ order by created_at asc;
 -- :name userById :get
 select * from users where id = :id;
 
+-- :name allUsers :all
+-- Everyone, for the DEV_MODE login page.
+select * from users order by name;
+
 -- :name insertUser :run
 insert or ignore into users (id, email, name, google_name, is_admin)
 values (:id, :email, :name, :google_name, :is_admin);
@@ -119,18 +123,3 @@ left join users as u on u.id = m.user_id
 where m.class_id = :class_id
 group by m.user_id
 order by u.name asc;
-
---------------------------------------------------------------------------------
--- Sessions (transient rows used only during the OAuth dance; the whole
--- table goes away when the auth phase moves the state nonce into the
--- session cookie)
-
--- :name newSession :run
-insert into sessions (session_id, created_at, state)
-values (:session_id, unixepoch('now'), :state);
-
--- :name getSession :get
-select rowid as id, * from sessions where session_id = :session_id;
-
--- :name deleteSession :run
-delete from sessions where session_id = :session_id;

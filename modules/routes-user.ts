@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { allCourses, fullClassName } from './classroom.ts';
+import { DEV_MODE } from './config.ts';
 import db from './db.ts';
 import oauth from './oauth.ts';
 import { isAdmin } from './permissions.ts';
@@ -20,6 +21,12 @@ const routes = (login: RequireLogin): Router => {
     if (isAdmin(user)) {
       res.locals.isAdmin = true;
 
+      // No real OAuth in DEV_MODE, so no Classroom course list either.
+      if (DEV_MODE) {
+        res.render('index.njk', { memberships, courses: [], googleIds: [] });
+        return;
+      }
+
       const oauth2client = oauth.oauth2client();
       oauth2client.setCredentials(req.session?.auth ?? {});
       try {
@@ -30,7 +37,7 @@ const routes = (login: RequireLogin): Router => {
         const googleIds = db.googleClassroomIds().map(String);
         res.render('index.njk', { memberships, courses, googleIds });
       } catch {
-        login.logout(res);
+        login.logout(req);
         res.redirect('/logout');
       }
     } else {

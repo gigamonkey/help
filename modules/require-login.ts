@@ -1,44 +1,20 @@
 import type { NextFunction, Request, Response } from 'express';
-import { decrypt, encrypt } from './crypto.ts';
+import { DEV_MODE } from './config.ts';
+import { randomString } from './crypto.ts';
 import db, { ensureUser } from './db.ts';
 import oauth from './oauth.ts';
 
 /*
- * Express middleware that redirects all un-logged-in requests to Google sign-in
- * except for a few special endpoints.
+ * Express middleware that redirects all un-logged-in requests to Google
+ * sign-in (or /dev/login in DEV_MODE) except for a few special endpoints.
+ * The whole session, including the OAuth state nonce, lives in the signed
+ * session cookie.
  */
 class RequireLogin {
   noAuthRequired: Record<string, boolean>;
-  secret: string;
 
-  constructor(noAuthRequired: Record<string, boolean>, secret: string) {
+  constructor(noAuthRequired: Record<string, boolean>) {
     this.noAuthRequired = noAuthRequired;
-    this.secret = secret;
-  }
-
-  isLoggedIn(req: Request) {
-    if (req.cookies.session) {
-      try {
-        req.session = decrypt(req.cookies.session, this.secret);
-        if (req.session?.loggedIn) {
-          return true;
-        }
-      } catch (_e) {
-        console.log(`Failed to decrypt session`);
-        return false;
-      }
-    }
-    return false;
-  }
-
-  makeNewSession(req: Request, res: Response) {
-    const id = oauth.newSessionID();
-    const state = `${oauth.newState()}:${req.originalUrl}`;
-
-    db.newSession({ session_id: id, state });
-    req.session = { id, loggedIn: false };
-    res.cookie('session', encrypt(req.session, this.secret));
-    res.redirect(oauth.url(state));
   }
 
   /*
@@ -46,79 +22,81 @@ class RequireLogin {
    */
   require() {
     return (req: Request, res: Response, next: NextFunction) => {
-      if (this.noAuthRequired[req.path]) {
+      if (this.noAuthRequired[req.path] || (DEV_MODE && req.path.startsWith('/dev/login'))) {
         next();
-      } else if (this.isLoggedIn(req)) {
-        // If the user has an old cookie and the database has been cleared we
-        // need to treat them as not logged in so they go through the flow that
-        // creates the user in the database.
-        if (db.userById({ id: req.session?.user?.id })) {
-          next();
-        } else {
-          res.clearCookie('session');
-          this.makeNewSession(req, res);
-        }
+        return;
+      }
+      const sessionUser = req.session?.user;
+      // If the user has an old cookie and the database has been cleared we
+      // treat them as not logged in so they go through the flow that creates
+      // the user in the database.
+      if (sessionUser && db.userById({ id: sessionUser.id })) {
+        next();
       } else {
-        this.makeNewSession(req, res);
+        this.start(req, res);
       }
     };
   }
 
   /*
-   * To be called from auth endpoint.
+   * Kick off the sign-in dance, remembering where to come back to.
    */
-  async finish(req: Request, res: Response) {
-    // In theory we were redirected here by Google but also in theory an
-    // attacker could just hit this endpoint. So we need to check that the state
-    // associated with the session (which an attacker wouldn't know) is the same
-    // as what came in the query params. (They'd still need to know the right
-    // code so it's not clear what kind of attack this is. But the code at least
-    // went over the wire whereas the state did not.)
-
-    const authData = await oauth.getToken(String(req.query.code));
-
-    const session = decrypt(req.cookies.session, this.secret);
-
-    const dbSession = db.getSession({ session_id: session.id });
-    if (!dbSession) {
-      console.log('Error getting session in /auth');
-      res.sendStatus(500);
+  start(req: Request, res: Response) {
+    if (DEV_MODE) {
+      req.session = { returnTo: req.originalUrl };
+      res.redirect('/dev/login');
       return;
     }
+    const nonce = randomString();
+    req.session = { nonce, returnTo: req.originalUrl };
+    res.redirect(oauth.url(nonce));
+  }
 
-    const state = String(req.query.state);
-    if (dbSession.state !== state) {
-      console.log(`Bad session state ${dbSession.state} vs ${state}`);
+  /*
+   * To be called from the /auth endpoint. In theory we were redirected here
+   * by Google but also in theory an attacker could just hit this endpoint,
+   * so the state from the query params must match the nonce we stashed in
+   * the session cookie before redirecting to Google.
+   */
+  async finish(req: Request, res: Response) {
+    const nonce = req.session?.nonce;
+    if (!nonce || String(req.query.state) !== nonce) {
+      console.log('Bad OAuth state');
       res.sendStatus(401);
       return;
     }
 
+    const authData = await oauth.getToken(String(req.query.code));
     const { name, email, sub } = JSON.parse(atob(authData.id_token.split('.')[1] as string));
-
-    // We've used the database session entry to confirm the session state. Now
-    // we can get rid of it since we store all the relevant data in a cookie.
-    db.deleteSession({ session_id: session.id });
 
     const user = ensureUser(sub, email, name);
     if (!user) {
       console.log('Error ensuring user');
-      res.clearCookie('session');
+      req.session = null;
       res.sendStatus(500);
       return;
     }
 
-    const newSession = { ...session, user, loggedIn: true, auth: authData };
-    res.cookie('session', encrypt(newSession, this.secret));
-    res.redirect(state.split(':')[1] as string);
+    const returnTo = req.session?.returnTo ?? '/';
+    // Keep only what the Classroom API calls need: the full token response
+    // (with its ~1KB id_token) could push the cookie past the 4KB limit.
+    req.session = {
+      user,
+      auth: {
+        access_token: authData.access_token,
+        scope: authData.scope,
+        token_type: authData.token_type,
+      },
+    };
+    res.redirect(returnTo);
   }
 
-  logout(res: Response) {
-    res.clearCookie('session');
+  logout(req: Request) {
+    req.session = null;
   }
 }
 
-const requireLogin = (noAuthRequired: Record<string, boolean>, secret: string) =>
-  new RequireLogin(noAuthRequired, secret);
+const requireLogin = (noAuthRequired: Record<string, boolean>) => new RequireLogin(noAuthRequired);
 
 export default requireLogin;
 export type { RequireLogin };
