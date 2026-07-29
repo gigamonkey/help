@@ -69,29 +69,40 @@ The old ritual — download the db, delete it, restart — no longer works:
    logic can't be tested without starting the server; `boot-prep.sh` can
    be run standalone against a scratch directory.
 
-2. Add `reset-year` handling to `boot-prep.sh`, ordered for crash
-   safety (consume the sentinel first so no step ever runs twice; each
-   later failure leaves the old db in place):
+2. Add `reset-year` handling to `boot-prep.sh`, running **before** the
+   existing restore logic and composing with it: the reset path ends by
+   touching the `no-restore` sentinel, so the existing branch (copied
+   from bhs-cs website/run.sh) then does what it already knows how to
+   do — skip the replica restore, clean out Litestream's shadow state
+   (`rm -rf "$DB_DIR/.$DB_FILE-litestream"`), and consume the sentinel.
+   Exactly as if the operator had deleted the db and touched
+   `no-restore` by hand, except the archive happened first and there was
+   no window for writes.
+
+   Ordered for crash safety (consume the sentinel first so no step ever
+   runs twice; each later failure leaves the old db in place):
 
    ```bash
-   if [[ -f "$DB_DIR/reset-year" ]]; then
+   if [[ -e "$DB_DIR/reset-year" ]]; then
        rm "$DB_DIR/reset-year"
        mkdir -p "$DB_DIR/archives"
        archive="$DB_DIR/archives/help-$(date +%Y%m%d).db"
        sqlite3 "$DB_DIR/$DB_FILE" "VACUUM INTO '$archive'"
        rm -f "$DB_DIR/$DB_FILE" "$DB_DIR/$DB_FILE-wal" "$DB_DIR/$DB_FILE-shm"
+       touch "$DB_DIR/no-restore"
        # loud banner: archived to $archive, starting the year fresh
    fi
    ```
 
-   A reset implies skipping the replica restore (that's the whole
-   point), so this path sets the same skip-restore flag the `no-restore`
-   sentinel sets. The sentinel logic must work in bare mode too
-   (`LITESTREAM_BUCKET_NAME` unset) so it can be exercised locally.
+   The logic must work in bare mode too (`LITESTREAM_BUCKET_NAME`
+   unset) so it can be exercised locally — note the no-restore branch
+   only runs under Litestream, so in bare mode the leftover `no-restore`
+   sentinel is inert and the shadow-dir cleanup doesn't happen (there is
+   none in bare mode).
 
-   Edge case: sentinel present but no db file (e.g. someone touched it
-   on a fresh volume) — skip the archive step, still skip the restore,
-   still start clean.
+   Edge case: `reset-year` present but no db file (e.g. someone touched
+   it on a fresh volume) — skip the archive step, still touch
+   `no-restore`, still start clean.
 
 3. `test/year-end.test.ts` (node:test, shelling out): in a temp dir,
    seed a db through the real layer, touch `reset-year`, run

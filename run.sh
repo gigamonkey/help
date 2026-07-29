@@ -2,29 +2,37 @@
 
 # Adapted from:
 # https://github.com/benbjohnson/litestream-docker-example/blob/main/scripts/run.sh
+# following the shape of bhs-cs website/run.sh.
 
 set -euo pipefail
 
-# Without Litestream config, run bare. Loudly: in production this means no
-# replication, so it should only ever happen on purpose.
+# Litestream is optional so a fresh app can be brought up (and its database
+# freely reset) before replication is configured. It is opt-in via the
+# LITESTREAM_* secrets; with them unset we run the server bare. This must
+# never be the steady state once real data exists.
 if [[ -z "${LITESTREAM_BUCKET_NAME:-}" ]]; then
-    echo "################################################################"
-    echo "## LITESTREAM_BUCKET_NAME is not set.                         ##"
-    echo "## Running WITHOUT Litestream: no restore, NO REPLICATION.    ##"
-    echo "################################################################"
+    echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+    echo "!!! LITESTREAM NOT CONFIGURED: no replication, no restore.     !!!"
+    echo "!!! Database exists only on this volume (+ fly's daily volume  !!!"
+    echo "!!! snapshots). Do not run real data this way.                 !!!"
+    echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
     exec node index.ts
 fi
 
-# Touch $DB_DIR/no-restore for a deliberate fresh start: skips the replica
-# restore exactly once (the sentinel is consumed).
-if [[ -f "$DB_DIR/no-restore" ]]; then
-    echo "no-restore sentinel found: skipping restore and removing sentinel"
-    rm "$DB_DIR/no-restore"
-elif [[ -f "$DB_DIR/$DB_FILE" ]]; then
+# Restore the database if it does not already exist.
+if [[ -f "$DB_DIR/$DB_FILE" ]]; then
     echo "Database already exists, skipping restore"
 else
-    echo "No database found, restoring from replica if exists"
-    litestream restore -if-replica-exists -config /etc/litestream.yml "$DB_DIR/$DB_FILE"
+    if [[ -e "$DB_DIR/no-restore" ]]; then
+        echo "No database found but no-restore file indicates no restore wanted"
+        # Clean out the litestream stuff.
+        rm -rf "$DB_DIR/.$DB_FILE-litestream"
+        # Then remove this file so in future we will restore again
+        rm "$DB_DIR/no-restore"
+    else
+        echo "No database found, restoring from replica if exists"
+        litestream restore -if-replica-exists -config /etc/litestream.yml "$DB_DIR/$DB_FILE"
+    fi
 fi
 
 # Run litestream with your app as the subprocess.
