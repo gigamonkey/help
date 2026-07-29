@@ -1,5 +1,6 @@
 *.db
 *.env
+!template.env
 *.log
 *.pem
 node_modules

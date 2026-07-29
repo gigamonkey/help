@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# Ad-hoc backup, secondary to Litestream: VACUUM INTO a timestamped copy,
+# which is safe against a live database. Usable over `fly ssh console`
+# (the image ships a sqlite3 CLI) or locally:
+#
+#   ./backup-db                       # $DB_DIR/$DB_FILE -> timestamped copy
+#   ./backup-db mydb.db               # explicit source
+#   ./backup-db mydb.db /tmp/out.db   # explicit source and destination
+
+set -euo pipefail
+
+db="${1:-${DB_DIR:-.}/${DB_FILE:-help.db}}"
+out="${2:-${db%.db}-backup-$(date +%Y%m%dT%H%M%S).db}"
+
+sqlite3 "$db" "VACUUM INTO '$out'"
+echo "Backed up $db to $out"

@@ -70,6 +70,7 @@ COPY --from=build /usr/local/bin/sqlite3 /usr/local/bin/sqlite3
 # Copy local files we need
 COPY ./litestream.yml /etc/litestream.yml
 COPY ./run.sh /app/run.sh
+RUN chmod +x /app/run.sh
 
 # Setup sqlite3 on a separate volume
 ENV DB_DIR=/data

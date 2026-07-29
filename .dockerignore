@@ -1,12 +1,13 @@
-*.db
-*.env
-*.log
-*.pem
-*~
-Makefile
-TODO.md
-data/
-db-backups
-make-secret.js
-node_modules
-set-secrets.sh
+# Whitelist style: exclude everything, then re-include only what the image
+# needs. This makes .env / fly.env / *.db leaks structurally impossible.
+*
+
+!Dockerfile
+!package.json
+!package-lock.json
+!index.ts
+!modules
+!public
+!views
+!run.sh
+!litestream.yml

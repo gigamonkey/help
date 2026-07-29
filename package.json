@@ -16,7 +16,6 @@
   "license": "MIT",
   "dependencies": {
     "@js-temporal/polyfill": "^0.5.1",
-    "better-sqlite3": "^13.0.2",
     "cookie-session": "^2.1.1",
     "dompurify": "^3.2.6",
     "express": "^5.1.0",
@@ -42,6 +41,13 @@
   "allowScripts": {
     "sqlite3@5.1.7": true,
     "better-sqlite3@13.0.2": true,
-    "better-sqlite3@12.11.1": true
+    "better-sqlite3@12.11.1": true,
+    "sqlite3@5": [
+      null,
+      []
+    ],
+    "better-sqlite3@13": [
+      []
+    ]
   }
 }
