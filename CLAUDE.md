@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 > (`update`, from `help`) is the live app: deployed on fly.io (app
 > `bhs-help`) with Litestream — not EC2/pm2 — with Express 5,
 > Google-id-keyed users (no hardcoded admins), and **no journal/prompt
-> feature at all** (it was split out; see the `journal` branch). Where this
+> feature at all** (it moved to the bhs-cs `website/` app). Where this
 > file and the tree disagree, trust the tree, and see "What the help branch
 > already has" in `plans/adopt-bhs-cs-conventions.md`. This file gets
 > regenerated in that plan's final phase.

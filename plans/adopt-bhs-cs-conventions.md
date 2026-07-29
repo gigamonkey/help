@@ -23,12 +23,13 @@ the "bring this work onto the help code" step is done. Still outstanding:
    (EC2/pm2/bounce, hardcoded admins, email-keyed users — and a journal
    feature this branch no longer has).
 
-**The journal feature no longer exists here.** The old app was split in
-two: `help`'s history removes journals entirely ("Removing journal from
-everything but the database schema", "Excise journal from schema and
-storage.js"), and the `journal` branch is the other half of the split (it
-removes the help queue instead). This app is the help queue only — no
-prompts, no journal entries, anywhere in code, schema, or views.
+**The journal feature no longer exists here.** `help`'s history removes
+journals entirely ("Removing journal from everything but the database
+schema", "Excise journal from schema and storage.js"); the journal now
+lives in the bhs-cs monorepo's `website/` app. (The `journal` branch in
+this repo — the mirror-image split that removed the help queue instead —
+is a historical artifact.) This app is the help queue only — no prompts,
+no journal entries, anywhere in code, schema, or views.
 
 ## What the help branch already has (no work needed)
 
