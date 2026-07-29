@@ -121,3 +121,4 @@ const requireLogin = (noAuthRequired: Record<string, boolean>, secret: string) =
   new RequireLogin(noAuthRequired, secret);
 
 export default requireLogin;
+export type { RequireLogin };
