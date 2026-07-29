@@ -11,8 +11,6 @@
 
 - Allow editing own help requests.
 
-- Fix DST handling in modules/dateformat.js
-
 - Use websockets to update Queue
 
 - When students submits help request pop up a menu with their name in it.

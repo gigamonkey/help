@@ -4,6 +4,7 @@ import morgan from 'morgan';
 import nunjucks from 'nunjucks';
 import classContext from './modules/class-context.ts';
 import { DEV_MODE, PORT, SESSION_SECRET } from './modules/config.ts';
+import * as datefilter from './modules/datefilter.ts';
 import * as mdfilter from './modules/mdfilter.ts';
 import requireLogin from './modules/require-login.ts';
 import adminRoutes from './modules/routes-admin.ts';
@@ -29,6 +30,7 @@ const env = nunjucks.configure('views', {
 });
 
 mdfilter.install(env);
+datefilter.install(env);
 env.addFilter('slug', (s: string) => s.toLowerCase().replaceAll(/\W+/g, '-'));
 
 app.use(express.json());
