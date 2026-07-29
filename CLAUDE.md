@@ -1,88 +1,138 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
-> **Stale-content caveat:** this file was written against the `main`/
-> `refresh` tree, ~3 years behind the code you are looking at. This branch
-> (`update`, from `help`) is the live app: deployed on fly.io (app
-> `bhs-help`) with Litestream — not EC2/pm2 — with Express 5,
-> Google-id-keyed users (no hardcoded admins), and **no journal/prompt
-> feature at all** (it moved to the bhs-cs `website/` app). Where this
-> file and the tree disagree, trust the tree, and see "What the help branch
-> already has" in `plans/adopt-bhs-cs-conventions.md`. This file gets
-> regenerated in that plan's final phase.
+This file provides guidance to Claude Code (claude.ai/code) when working with
+code in this repository.
 
 ## What this is
 
-A help-queue web app for classes: students request help and answer journal
-prompts; teachers manage the queue, prompts, and rosters. Single Express server
-(`index.js`), Nunjucks templates (`views/`), SQLite database (`help.db`, not
-checked in). ES modules throughout (`"type": "module"`).
+A help-queue web app for classes: students request help; teachers and helpers
+manage the queue; rosters sync from Google Classroom. Single Express 5 server
+(`index.ts`), Nunjucks templates (`views/`), SQLite database (not checked in).
+TypeScript throughout, run **directly** on Node 26's type stripping — there is
+no build step; `tsc` is typecheck-only. ES modules; relative imports use
+explicit `.ts` extensions.
+
+There is no journal/prompt feature here — that lives in the bhs-cs monorepo's
+`website/` app.
+
+## Branches
+
+The live app's lineage is the `help` branch; the modernization (this tree)
+was built on `update`, branched from `help`. `main` last touched the code in
+the EC2/pm2 era, roughly three years behind — **never base work on `main`**
+until it has been fast-forwarded to the current trunk.
 
 ## Commands
 
 ```bash
-make setup      # npm install
-make dev        # dev server via nodemon (watches js, json, njk, html)
-make lint       # eslint over *.js, modules/, public/
-make pretty     # prettier --write
-make ready      # pretty + lint — run before committing
-make start / restart / stop   # pm2, production only
-node make-secret.js           # generate a value for SECRET in .env
+make setup       # npm install
+make dev         # nodemon + node --env-file-if-exists=.env index.ts
+make fmt         # biome format --write
+make lint        # biome check (warning-free required: --error-on-warnings)
+make typecheck   # tsc --noEmit
+make test        # node --test test/*.test.ts
+make check       # lint + typecheck + test — the full local gate
+make deploy      # make check, then fly deploy
+make secrets     # push fly.env to fly (set-secrets.sh)
+make logs        # fly logs
+make ssh         # fly ssh console
+
+npm run dev:reset    # wipe the dev db and reseed the fixtures world
+node make-secret.ts  # generate a SESSION_SECRET value
 ```
 
-There is no test suite (`npm test` is a stub).
-
-The server needs a `.env` file with `PORT`, `SECRET` (cookie encryption key),
-and Google OAuth credentials `CLIENT_ID`, `CLIENT_SECRET`, `REDIRECT_URL`.
-
-Deployment is to an EC2 box via the shell scripts `bounce` (push, pull on
-server, npm install, restart), `connect`, `upload`, `download`, and
-`backup-db`; they source an untracked `ec2.env`. See `ec2-setup.txt` for
-provisioning notes.
+**Dev with zero secrets:** set `DEV_MODE=true` (e.g. in `.env`; see the
+tracked `template.env` for every variable). DEV_MODE replaces Google OAuth
+with a `/dev/login` page that lists the seeded users to become. Never set it
+in production.
 
 ## Architecture
 
-**Routes** all live in `index.js`. Class-scoped pages are under
-`/c/:class_id/...`; a middleware on that prefix loads the class name and the
-current user's role into `res.locals`. Admin-only Google Classroom integration
-lives under `/classes` (create a class from a Classroom course, resync its
-roster).
+**Config** (`modules/config.ts`): the only place `process.env` is read —
+typed, defaulted constants, fail-fast on missing required vars. Env var
+names: `SESSION_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`,
+`GOOGLE_REDIRECT_URL`, `DB_DIR`, `DB_FILE`, `PORT`, `DEV_MODE`.
 
-**Database layer**: all SQL is in `modules/storage.js`, a `DB` class wrapping
-`sqlite3` with node-style `(err, data)` callbacks — the whole codebase is
-callback-style, not promise-based (only the Google API calls use async/await).
-`modules/schema.sql` is the DDL and is executed at every server startup, so it
-must stay idempotent (`CREATE TABLE IF NOT EXISTS ...`). One-off data
-migrations live in `db-patches/`. `db.js` is a standalone script that just
-creates/initializes `help.db`.
+**Database** (`modules/db.ts`): one long-lived synchronous better-sqlite3
+connection via [pugsql]. All SQL lives as named queries in
+`modules/queries.sql` (`-- :name query :kind` blocks, `:param`
+placeholders); pugsql attaches each as a method on `db`, so handlers call
+`db.queue({ class_id })` etc. — no callbacks anywhere. Multi-statement
+operations (`createClass`, `resyncClass`, `ensureUser`) are plain functions
+in `db.ts` wrapped in `db.transaction()`. `modules/schema.sql` is idempotent
+and runs at every boot, so a fresh database materializes on first start.
 
-**Auth** (`modules/require-login.js`, `modules/oauth.js`): Google OAuth,
-hand-rolled. The entire session (user, Google tokens) is stored client-side in
-an AES-encrypted cookie (`modules/crypto.js`, keyed by `SECRET`); the
-`sessions` DB table is used only transiently to verify OAuth `state` during the
-sign-in dance. Every route requires login except those in the `noAuthRequired`
-map in `index.js`.
+**Routes**: one module per permission regime, mounted from `index.ts`
+(which is just middleware order + mounts + listen):
 
-**Permissions** (`modules/permissions.js`): per-class roles (`teacher`,
-`helper`, `student`) come from the `class_members` table; `is_admin` on `users`
-is global. `index.js` builds route wrappers from these — `teacherOnly`,
-`helperOnly`, `adminOnly` — that wrap handlers, plus `ifTeacher` for mid-handler
-checks. Admin emails are hardcoded in `ADMINS` in `modules/storage.js`.
+- `modules/routes-public.ts` — `/health`, `/logout`, `/auth`
+- `modules/routes-user.ts` — logged-in pages; `/users/:id` stays
+  self-or-admin in-handler
+- `modules/routes-helper.ts` — help state changes; `help/:id/done` keeps its
+  in-handler helper-or-requester check
+- `modules/routes-teacher.ts` — students/members, `guardedRouter(teacherOnly)`
+- `modules/routes-admin.ts` — `/classes` Classroom integration,
+  `guardedRouter(adminOnly)`
+- `modules/routes-dev.ts` — `/dev/login`, mounted only in DEV_MODE
 
-**Domain model**: a help request is "open" while `closed_at` is null (the
-queue) and "done" once set. Journal prompts are two-level: `prompt_texts` are
-reusable per-class texts; `prompts` are instances of a text with a lifespan
-(`created_at`/`closed_at`). Students see open prompts they haven't yet answered;
-journal entries optionally link back to the prompt they answered.
+**Permissions** (`modules/permissions.ts`): guards are plain Express
+middleware; `guardedRouter(guard)` returns a Router that injects the guard
+per-route. Per-class roles (`teacher`, `helper`, `student`) come from
+`class_members`; `users.is_admin` is global and granted on first login to
+`@berkeley.net` addresses (`ensureUser`). `modules/class-context.ts` loads
+the class name and the current user's role into `res.locals` for
+`/c/:class_id` pages and 404s unknown classes.
 
-**Dates**: timestamps are seconds-resolution unix epoch from SQLite
-(`unixepoch('now')`). `modules/dateformat.js` converts to Pacific time with
-hardcoded DST boundaries that must be updated yearly (a known kludge; see
-TODO.md).
+**Auth** (`modules/require-login.ts`, `modules/oauth.ts`): hand-rolled
+Google OAuth. The entire session — user, trimmed Google tokens, and the
+OAuth state nonce — lives in a signed `cookie-session` cookie; there is no
+session table. A cookie whose user is missing from the db (post-reset) is
+treated as logged out.
+
+**Dates** (`modules/dateformat.ts`): Temporal over `America/Los_Angeles`
+(via `@js-temporal/polyfill` until Node's native Temporal is unflagged).
+Nunjucks filters live in `modules/datefilter.ts` and `modules/mdfilter.ts`
+(marked + DOMPurify — student text is sanitized in one place).
+
+**Domain model**: a help request is "open" while `closed_at` is null and
+"done" once set. Timestamps are seconds-resolution unix epoch from SQLite
+(`unixepoch('now')`).
+
+## Tests and seeds
+
+`node:test` + `node:assert`, no framework, in `test/*.test.ts`:
+
+- `queries.test.ts` — constructing the DB against a `:memory:` schema proves
+  every named query prepares.
+- `permissions.test.ts` — spawns the real server in DEV_MODE on a throwaway
+  seeded db and asserts the URL × persona status matrix (anonymous, student,
+  helper, teacher, student-from-another-class, admin) with a cookie-jar
+  fetch helper.
+- `dates.test.ts` — Temporal formatting across DST boundaries.
+
+`seed/fixtures.ts` is the deterministic dev world (`npm run dev:reset`
+loads it); the permissions matrix depends on its exact ids, so change it
+and the tests together.
+
+## Deployment
+
+fly.io app `bhs-help` (sjc), Dockerfile-based, SQLite on the `data` volume
+at `/data`, Litestream replicating to S3/Tigris. `run.sh` restores from the
+replica when the db is missing (touch `$DB_DIR/no-restore` on the volume to
+deliberately skip that once), then runs the server under
+`litestream replicate`; without `LITESTREAM_BUCKET_NAME` it runs bare and
+says so loudly. `fly.toml` health-checks `GET /health`. Secrets go in the
+untracked `fly.env`, pushed with `make secrets`; `template.env` documents
+every variable. `backup-db` (VACUUM INTO) is an ad-hoc secondary to
+Litestream, usable over `make ssh`. `.dockerignore` is whitelist-style —
+keep it that way when adding files the image needs.
 
 ## Style
 
-ESLint is airbnb-base + prettier (config in `.eslintrc.json`); Prettier: 100
-columns, single quotes, trailing commas. `snake_case` names coming from SQL
-columns and URL params (`class_id`) are used as-is (camelcase rule is off).
+Biome for formatting and linting (config in `biome.json`): 2-space indent,
+100 columns, single quotes; `make lint` must be warning-free. `snake_case`
+names coming from SQL columns and URL params (`class_id`) are used as-is.
+The whole-tree Biome reformat commit is listed in `.git-blame-ignore-revs`
+(`git config blame.ignoreRevsFile .git-blame-ignore-revs`).
+
+[pugsql]: https://www.npmjs.com/package/pugsql

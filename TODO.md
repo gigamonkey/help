@@ -1,3 +1,7 @@
+- Fix the help table's primary key: (user_id, class_id, created_at) at
+  seconds resolution means one user filing twice in the same class within a
+  second violates the PK (surfaced while writing the seed fixtures).
+
 - Allow discarding help requests (helpers and owner)
 
 - Store the period in the class table and use it to automatically display the
