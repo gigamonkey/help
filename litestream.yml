@@ -1,7 +1,12 @@
 dbs:
   - path: ${DB_DIR}/${DB_FILE}
     replicas:
+      # retention is litestream's default, made explicit as a reminder: the
+      # replica holds ~24h of history for disaster recovery, so it is NOT a
+      # long-term archive. The yearly archive comes from the reset-year
+      # VACUUM INTO snapshot (see year-end.sh / boot-prep.sh).
       - type: s3
+        retention: 24h
         bucket: ${LITESTREAM_BUCKET_NAME}
         path: ${LITESTREAM_PATH}
         endpoint: ${LITESTREAM_ENDPOINT_URL}

@@ -119,15 +119,26 @@ and the tests together.
 ## Deployment
 
 fly.io app `bhs-help` (sjc), Dockerfile-based, SQLite on the `data` volume
-at `/data`, Litestream replicating to S3/Tigris. `run.sh` restores from the
-replica when the db is missing (touch `$DB_DIR/no-restore` on the volume to
-deliberately skip that once), then runs the server under
-`litestream replicate`; without `LITESTREAM_BUCKET_NAME` it runs bare and
-says so loudly. `fly.toml` health-checks `GET /health`. Secrets go in the
-untracked `fly.env`, pushed with `make secrets`; `template.env` documents
-every variable. `backup-db` (VACUUM INTO) is an ad-hoc secondary to
-Litestream, usable over `make ssh`. `.dockerignore` is whitelist-style —
-keep it that way when adding files the image needs.
+at `/data`, Litestream replicating to S3/Tigris. `run.sh` calls
+`boot-prep.sh` (sentinel + restore logic, kept separate so tests can run
+it), which restores from the replica when the db is missing (touch
+`$DB_DIR/no-restore` on the volume to deliberately skip that once), then
+runs the server under `litestream replicate`; without
+`LITESTREAM_BUCKET_NAME` it runs bare and says so loudly. `fly.toml`
+health-checks `GET /health`. Secrets go in the untracked `fly.env`, pushed
+with `make secrets`; `template.env` documents every variable. `backup-db`
+(VACUUM INTO) is an ad-hoc secondary to Litestream, usable over `make ssh`.
+`.dockerignore` is whitelist-style — keep it that way when adding files the
+image needs.
+
+**Year-end reset:** `make year-end` archives the school year's database
+and starts the new year empty. It arms a `$DB_DIR/reset-year` sentinel and
+restarts; at boot (when nothing holds the db open) `boot-prep.sh` VACUUMs
+an archive into `/data/archives/`, removes the db, and arms `no-restore`
+so Litestream starts a new generation instead of restoring the old year.
+The script then downloads the archive to `db-backups/` and verifies both
+the archive and the reset. The Litestream replica only retains ~24h of
+history — the yearly archive is the VACUUM snapshot, not the replica.
 
 ## Style
 
