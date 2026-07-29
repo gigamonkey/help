@@ -27,6 +27,9 @@ deploy: check
 secrets:
 	./set-secrets.sh
 
+year-end:
+	./year-end.sh
+
 logs:
 	fly logs
 
@@ -42,4 +45,4 @@ clean:
 pristine:
 	git clean -fdx
 
-.PHONY: setup dev fmt lint typecheck test check deploy secrets logs ssh fixmes clean pristine
+.PHONY: setup dev fmt lint typecheck test check deploy secrets year-end logs ssh fixmes clean pristine
