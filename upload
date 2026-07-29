@@ -1,7 +1,0 @@
-#!/bin/bash
-
-set -eou pipefail
-
-source ec2.env
-
-scp -i "$pem" "$1" "$user@$host:${2:-.}"

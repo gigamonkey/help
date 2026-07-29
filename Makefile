@@ -11,15 +11,6 @@ setup:
 dev:
 	npx nodemon --watch . -e js,mjs,json,njk,html index.js
 
-start:
-	npx pm2 start index.js --log help.log
-
-restart:
-	npx pm2 reload index.js
-
-stop:
-	npx pm2 delete index.js
-
 pretty:
 	prettier --write '*.js' '*.json' modules/**/*.js public/**/*.js public/**/*.css
 

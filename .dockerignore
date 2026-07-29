@@ -5,12 +5,8 @@
 *~
 Makefile
 TODO.md
-bounce
-connect
 data/
 db-backups
-ec2*
 make-secret.js
 node_modules
 set-secrets.sh
-upload
