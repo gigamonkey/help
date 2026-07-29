@@ -12,17 +12,23 @@ branch this plan was written on) last touched the code in the EC2/pm2 era;
 migration ("Fly setup", "Add litestream" commits), the Express 5 upgrade,
 and re-keying users on Google id instead of email.
 
-Everything below describes gaps in the **`help` branch**. Before
-implementing anything:
+**Resolved (2026-07-28):** this plan now lives on the `update` branch,
+created from `help` with the `refresh` plan commits cherry-picked onto it —
+the "bring this work onto the help code" step is done. Still outstanding:
 
-1. Bring this work onto the `help` code — merge `help` into `refresh` (or
-   recreate `refresh` from `help` and cherry-pick the plan commits).
-
-2. Fast-forward/merge `main` so it stops being a trap (or decide `help` is
+1. Fast-forward/merge `main` so it stops being a trap (or decide `help` is
    simply the trunk and say so in CLAUDE.md).
 
-3. Regenerate CLAUDE.md, which currently describes the stale tree
-   (EC2/pm2/bounce, hardcoded admins, email-keyed users).
+2. Regenerate CLAUDE.md, which still describes the stale tree
+   (EC2/pm2/bounce, hardcoded admins, email-keyed users — and a journal
+   feature this branch no longer has).
+
+**The journal feature no longer exists here.** The old app was split in
+two: `help`'s history removes journals entirely ("Removing journal from
+everything but the database schema", "Excise journal from schema and
+storage.js"), and the `journal` branch is the other half of the split (it
+removes the help queue instead). This app is the help queue only — no
+prompts, no journal entries, anywhere in code, schema, or views.
 
 ## What the help branch already has (no work needed)
 
@@ -91,7 +97,8 @@ whenever confidence warrants.
 
 ## Phase 0 — Branch reconciliation and dead-file sweep
 
-1. Rebase this work onto `help` (see "Branch situation" above).
+1. ~~Rebase this work onto `help`~~ — done; this is the `update` branch
+   (see "Branch situation" above).
 
 2. Delete the EC2-era leftovers: `bounce`, `connect`, `upload`, `download`,
    `ec2-setup.txt`, `backup-db` (superseded below), the pm2
@@ -176,9 +183,10 @@ stripping. `tsc` is typecheck-only.
    `GOOGLE_CLIENT_ID` need matching updates to `fly.env`/secrets before
    the deploy that includes them.)
 
-5. Convert leaf modules first (`permissions`, `journal`, `crypto`,
-   `oauth`, `require-login`), then `index.js` last. `storage.js` is not
-   converted — it's replaced wholesale in Phase 3.
+5. Convert leaf modules first (`permissions`, `crypto`, `oauth`,
+   `require-login`), then `index.js` last. `storage.js` is not
+   converted — it's replaced wholesale in Phase 3. (`dateformat.js` is
+   replaced in Phase 5½; there is no `journal` module on this branch.)
 
 6. Drop `dotenv`; dev runs use `node --env-file=.env` (wired into the
    `dev` script/Makefile target).
@@ -197,7 +205,7 @@ code.
 1. `modules/queries.sql`: one named query per pugsql block, kinds
    `:get`/`:all`/`:run`/`:insert`/`:exists` as appropriate, `:param`
    placeholders, doc comments, grouped with banner comments by area
-   (classes/help/journal/prompts/users). Mostly a 1:1 transcription of the
+   (classes/help/users). Mostly a 1:1 transcription of the
    SQL already in `storage.js` (which is keyed on `user_id` throughout),
    e.g.:
 
@@ -221,10 +229,9 @@ code.
    litestream pragmas and all (pugsql's constructor enables WAL — verify
    it doesn't fight the existing pragma block).
 
-3. Multi-statement operations (`createClass`, `resyncClass`, `ensureUser`,
-   `createPrompt`, `addJournalEntries`, `journalWithPrompts`) become plain
-   TS functions using `db.transaction(() => ...)` — either in `db.ts` or a
-   small `modules/logic.ts` if `db.ts` gets crowded.
+3. Multi-statement operations (`createClass`, `resyncClass`, `ensureUser`)
+   become plain TS functions using `db.transaction(() => ...)` — either in
+   `db.ts` or a small `modules/logic.ts` if `db.ts` gets crowded.
 
 4. `types/pugsql.d.ts` copied from website (the one sanctioned `any`, with
    its `biome-ignore` comment).
@@ -233,8 +240,8 @@ code.
    and `db.js` (a fresh db now materializes on first boot). The `sessions`
    table queries die in Phase 5; drop the table from `schema.sql` then.
 
-6. Convert `index.js` route handlers area by area (help, journal, prompts,
-   classes, users) from callbacks to sync calls as their queries land.
+6. Convert `index.js` route handlers area by area (help, classes, users)
+   from callbacks to sync calls as their queries land.
 
 7. Add a `test/queries.test.ts` (the lesson-planning trick): constructing
    the DB against a `:memory:` copy of the schema *is* the assertion that
@@ -249,22 +256,24 @@ Done when: no callback-style db code remains; `sqlite3` is uninstalled.
 
    - `modules/routes-public.ts` — `/health`, `/logout`, `/auth`
 
-   - `modules/routes-user.ts` — logged-in pages (class page, own journal,
-     help request/queue views)
+   - `modules/routes-user.ts` — logged-in pages (index, class page, help
+     request/queue/done views, `/users/:id` profile — which stays guarded
+     in-handler as self-or-admin, as today)
 
-   - `modules/routes-helper.ts` — help-item state changes (`helperOnly`)
+   - `modules/routes-helper.ts` — help-item state changes (`helperOnly` —
+     except `help/:id/done`, which today allows the helper *or the
+     requester themselves*; that stays an in-handler check)
 
-   - `modules/routes-teacher.ts` — prompts, students, members, others'
-     journals (`teacherOnly`)
+   - `modules/routes-teacher.ts` — students, members (`teacherOnly`)
 
-   - `modules/routes-admin.ts` — `/classes` Google Classroom integration,
-     `/users/:id` (`adminOnly`)
+   - `modules/routes-admin.ts` — `/classes` Google Classroom integration
+     (`adminOnly`)
 
 2. Rewrite `modules/permissions.ts` around website's `guardedRouter(...)`
    pattern: guards injected per-route on a router, one router per regime,
    instead of the current wrap-each-handler `teacherOnly(handler)` scheme.
-   Keep an `ifTeacher`-equivalent in-handler check for the shared journal
-   route.
+   The mixed-permission cases above stay in-handler. `ifTeacher`
+   (`index.js:60`) is defined but never used on this branch — delete it.
 
 3. The `/c/:class_id` middleware keeps loading class name + role into
    `res.locals` (now typed, and without the fire-after-`next()` race the
@@ -335,8 +344,8 @@ Phase 6.
 
 1. `seed/fixtures.ts` + `seed/seed-dev.ts` (website convention): a
    deterministic dev world — a class or two, teacher/helper/student users,
-   open + closed help requests, prompts and journal entries — loaded
-   through the real db layer. `npm run dev:reset` = wipe db + reseed.
+   open + closed help requests — loaded through the real db layer.
+   `npm run dev:reset` = wipe db + reseed.
 
 2. `test/queries.test.ts` — every named query prepares (from Phase 3).
 
@@ -345,12 +354,11 @@ Phase 6.
    (anonymous, student, helper, teacher, student-from-another-class,
    admin) via `/dev/login` with a cookie-jar `fetch` helper, and assert
    the URL × persona status matrix over the interesting routes (queue,
-   help state changes, own vs. others' journals, prompts, members,
-   /classes).
+   help state changes incl. done-by-requester vs. done-by-stranger,
+   students, members, own vs. others' `/users/:id`, /classes).
 
-4. Targeted unit tests where logic is pure: `journal.ts` grouping, the
-   Temporal date functions (across a DST boundary),
-   `openPrompts`/`oldPrompts` filtering.
+4. Targeted unit tests where logic is pure: the Temporal date functions
+   (across a DST boundary).
 
 5. Wire `npm test` into `make check`; `make deploy` runs `make check`
    first.
@@ -407,8 +415,8 @@ Done when: a `make deploy` from the modernized tree serves production.
 
 ## Out of scope (deliberately)
 
-- Feature work from TODO.md (recurring prompts, websockets queue, user
-  management pages, avatars, …) — this plan only modernizes what exists.
+- Feature work from TODO.md (websockets queue, user management pages,
+  avatars, multi-class queues, …) — this plan only modernizes what exists.
 
 - Converting `public/js/*.js` (tiny browser scripts) to a bundled
   client-TS setup — not worth an esbuild pipeline yet. Biome covers them

@@ -2,13 +2,15 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-> **Stale-branch caveat:** this file describes the tree as of the `main`/
-> `refresh` branches, which are ~3 years behind. **The live app is the
-> `help` branch**, deployed on fly.io (app `bhs-help`) with Litestream —
-> everything below about EC2, pm2, and the `bounce`/`connect` scripts is
-> obsolete there, and `help` also has Express 5, Google-id-keyed users, and
-> other changes. See `plans/adopt-bhs-cs-conventions.md` ("Branch
-> situation"). Regenerate this file once the branches are reconciled.
+> **Stale-content caveat:** this file was written against the `main`/
+> `refresh` tree, ~3 years behind the code you are looking at. This branch
+> (`update`, from `help`) is the live app: deployed on fly.io (app
+> `bhs-help`) with Litestream — not EC2/pm2 — with Express 5,
+> Google-id-keyed users (no hardcoded admins), and **no journal/prompt
+> feature at all** (it was split out; see the `journal` branch). Where this
+> file and the tree disagree, trust the tree, and see "What the help branch
+> already has" in `plans/adopt-bhs-cs-conventions.md`. This file gets
+> regenerated in that plan's final phase.
 
 ## What this is
 
