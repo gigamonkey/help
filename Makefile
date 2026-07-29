@@ -1,36 +1,34 @@
 SHELL := bash -O globstar
-
-# Tool setup
-
-eslint_opts := --format unix
-eslint_strict_opts := --rule 'no-console: 1'
+.SUFFIXES:
 
 setup:
 	npm install
 
 dev:
-	npx nodemon --watch . -e js,mjs,json,njk,html index.js
+	npx nodemon --watch . -e js,ts,mjs,json,njk,html index.js
 
-pretty:
-	prettier --write '*.js' '*.json' modules/**/*.js public/**/*.js public/**/*.css
-
-tidy:
-	tidy -config .tidyconfig public/**/*.html
+fmt:
+	npm run fmt
 
 lint:
-	npx eslint $(eslint_opts) *.js modules/**/*.js public/**/*.js
+	npm run lint
+
+check: lint
+
+deploy: check
+	fly deploy
+
+secrets:
+	./set-secrets.sh
+
+logs:
+	fly logs
+
+ssh:
+	fly ssh console
 
 fixmes:
 	ag --no-group FIXME
-
-ready: pretty lint
-
-
-strict_lint:
-	npx eslint $(eslint_opts) $(eslint_strict_opts) *.js modules/*.js
-
-quick_lint:
-	npx eslint $(eslint_opts) --fix $(shell git diff --name-only | grep '.js$$')
 
 clean:
 	find . -name '*~' -delete
@@ -38,5 +36,4 @@ clean:
 pristine:
 	git clean -fdx
 
-
-.PHONY: setup pretty tidy lint fixmes ready strict_lint quick_lint clean pristine
+.PHONY: setup dev fmt lint check deploy secrets logs ssh fixmes clean pristine

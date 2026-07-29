@@ -1,6 +1,6 @@
 # syntax = docker/dockerfile:1
 
-ARG NODE_VERSION=24.1.0
+ARG NODE_VERSION=26
 
 FROM node:${NODE_VERSION}-slim AS base
 
@@ -44,7 +44,7 @@ WORKDIR /app
 
 # Install node modules
 COPY package-lock.json package.json ./
-RUN npm ci
+RUN npm ci --omit=dev
 
 # Copy application code
 COPY . .
