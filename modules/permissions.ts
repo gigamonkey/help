@@ -1,16 +1,15 @@
-import type { NextFunction, Request, Response } from 'express';
-import type DB from './storage.js';
+import type { Request, Response } from 'express';
+import db from './db.ts';
 
 type Predicate = (user: SessionUser) => boolean;
-type Handler = (req: Request, res: Response, next?: NextFunction) => void;
+type Handler = (req: Request, res: Response) => void | Promise<void>;
 
+/*
+ * Route-handler wrappers that check the current user against a predicate
+ * before running the wrapped handler. (Interim shape: the server-structure
+ * phase replaces these wrappers with per-regime guarded routers.)
+ */
 class Permissions {
-  db: DB;
-
-  constructor(db: DB) {
-    this.db = db;
-  }
-
   isAdmin = (user: SessionUser) => user.is_admin === 1;
 
   oneOf(...roles: string[]) {
@@ -18,44 +17,31 @@ class Permissions {
   }
 
   route(predicate: Predicate) {
-    return (handler: Handler) => (req: Request, res: Response) =>
-      this.maybeDoIt(req, res, predicate, () => handler(req, res));
-  }
-
-  classRoute(predicate: Predicate) {
-    return (handler: Handler) => (req: Request, res: Response) =>
-      this.maybeDoItWithClass(req, res, predicate, () => handler(req, res));
-  }
-
-  maybeDoIt(req: Request, res: Response, predicate: Predicate, thunk: () => void) {
-    this.db.user(req.session?.user?.id, (err: Error | null, user: SessionUser | undefined) => {
-      if (err) {
-        console.log(err);
-        res.sendStatus(500);
-      } else if (!user) {
+    return (handler: Handler) => (req: Request, res: Response) => {
+      const user = db.userById({ id: req.session?.user?.id });
+      if (!user) {
         console.log('No user');
         res.sendStatus(500);
       } else if (predicate(user)) {
-        thunk();
+        handler(req, res);
       } else {
         res.sendStatus(401);
       }
-    });
+    };
   }
 
-  maybeDoItWithClass(req: Request, res: Response, predicate: Predicate, thunk: () => void) {
-    const id = req.session?.user?.id;
-    const { class_id } = req.params;
-    this.db.classMember(id, class_id, (err: Error | null, user: SessionUser) => {
-      if (err) {
-        console.log(err);
-        res.sendStatus(500);
-      } else if (predicate(user)) {
-        thunk();
+  classRoute(predicate: Predicate) {
+    return (handler: Handler) => (req: Request, res: Response) => {
+      const member = db.classMember({
+        user_id: req.session?.user?.id,
+        class_id: req.params.class_id,
+      });
+      if (predicate(member)) {
+        handler(req, res);
       } else {
         res.sendStatus(401);
       }
-    });
+    };
   }
 }
 

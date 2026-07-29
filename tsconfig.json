@@ -9,11 +9,7 @@
     "erasableSyntaxOnly": true,
     "verbatimModuleSyntax": true,
     "resolveJsonModule": true,
-    "skipLibCheck": true,
-    // Transitional until the storage layer is rewritten in TypeScript: lets
-    // index.ts import modules/storage.js without declarations.
-    "allowJs": true,
-    "checkJs": false
+    "skipLibCheck": true
   },
-  "include": ["*.ts", "modules/**/*.ts", "test/**/*.ts", "types/**/*.d.ts", "modules/storage.js"]
+  "include": ["*.ts", "modules/**/*.ts", "test/**/*.ts", "types/**/*.d.ts"]
 }

@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import { decrypt, encrypt } from './crypto.ts';
+import db, { ensureUser } from './db.ts';
 import oauth from './oauth.ts';
-import type DB from './storage.js';
 
 /*
  * Express middleware that redirects all un-logged-in requests to Google sign-in
@@ -9,12 +9,10 @@ import type DB from './storage.js';
  */
 class RequireLogin {
   noAuthRequired: Record<string, boolean>;
-  db: DB;
   secret: string;
 
-  constructor(noAuthRequired: Record<string, boolean>, db: DB, secret: string) {
+  constructor(noAuthRequired: Record<string, boolean>, secret: string) {
     this.noAuthRequired = noAuthRequired;
-    this.db = db;
     this.secret = secret;
   }
 
@@ -37,17 +35,10 @@ class RequireLogin {
     const id = oauth.newSessionID();
     const state = `${oauth.newState()}:${req.originalUrl}`;
 
-    this.db.newSession(id, state, (err: Error | null) => {
-      if (err) {
-        console.log('Error making new session');
-        console.log(err);
-        res.sendStatus(500);
-      } else {
-        req.session = { id, loggedIn: false };
-        res.cookie('session', encrypt(req.session, this.secret));
-        res.redirect(oauth.url(state));
-      }
-    });
+    db.newSession({ session_id: id, state });
+    req.session = { id, loggedIn: false };
+    res.cookie('session', encrypt(req.session, this.secret));
+    res.redirect(oauth.url(state));
   }
 
   /*
@@ -61,14 +52,12 @@ class RequireLogin {
         // If the user has an old cookie and the database has been cleared we
         // need to treat them as not logged in so they go through the flow that
         // creates the user in the database.
-        this.db.userById(req.session?.user?.id, (_err: Error | null, user: SessionUser) => {
-          if (user) {
-            next();
-          } else {
-            res.clearCookie('session');
-            this.makeNewSession(req, res);
-          }
-        });
+        if (db.userById({ id: req.session?.user?.id })) {
+          next();
+        } else {
+          res.clearCookie('session');
+          this.makeNewSession(req, res);
+        }
       } else {
         this.makeNewSession(req, res);
       }
@@ -90,52 +79,37 @@ class RequireLogin {
 
     const session = decrypt(req.cookies.session, this.secret);
 
-    this.db.getSession(
-      session.id,
-      (err: Error | null, dbSession: { state: string } | undefined) => {
-        if (err || !dbSession) {
-          console.log('Error getting session in /auth');
-          console.log(err);
-          console.log(dbSession);
-          res.sendStatus(500);
-        } else {
-          const state = String(req.query.state);
+    const dbSession = db.getSession({ session_id: session.id });
+    if (!dbSession) {
+      console.log('Error getting session in /auth');
+      res.sendStatus(500);
+      return;
+    }
 
-          if (dbSession.state !== state) {
-            console.log(`Bad session state ${dbSession.state} vs ${state}`);
-            res.sendStatus(401);
-          } else {
-            const { name, email, sub } = JSON.parse(
-              atob(authData.id_token.split('.')[1] as string),
-            );
+    const state = String(req.query.state);
+    if (dbSession.state !== state) {
+      console.log(`Bad session state ${dbSession.state} vs ${state}`);
+      res.sendStatus(401);
+      return;
+    }
 
-            // We've used the database session entry to confirm the session state.
-            // Now we can get rid of it since we store all the relevant data in a
-            // cookie.
-            this.db.deleteSession(session.id, (err: Error | null) => {
-              if (err) {
-                console.log('Error deleting session');
-                console.log(err);
-                res.sendStatus(500);
-              } else {
-                this.db.ensureUser(sub, email, name, (err: Error | null, user: SessionUser) => {
-                  if (err || !user) {
-                    console.log('Error ensuring user');
-                    console.log(err);
-                    res.clearCookie('session');
-                    res.sendStatus(500);
-                  } else {
-                    const newSession = { ...session, user, loggedIn: true, auth: authData };
-                    res.cookie('session', encrypt(newSession, this.secret));
-                    res.redirect(state.split(':')[1] as string);
-                  }
-                });
-              }
-            });
-          }
-        }
-      },
-    );
+    const { name, email, sub } = JSON.parse(atob(authData.id_token.split('.')[1] as string));
+
+    // We've used the database session entry to confirm the session state. Now
+    // we can get rid of it since we store all the relevant data in a cookie.
+    db.deleteSession({ session_id: session.id });
+
+    const user = ensureUser(sub, email, name);
+    if (!user) {
+      console.log('Error ensuring user');
+      res.clearCookie('session');
+      res.sendStatus(500);
+      return;
+    }
+
+    const newSession = { ...session, user, loggedIn: true, auth: authData };
+    res.cookie('session', encrypt(newSession, this.secret));
+    res.redirect(state.split(':')[1] as string);
   }
 
   logout(res: Response) {
@@ -143,7 +117,7 @@ class RequireLogin {
   }
 }
 
-const requireLogin = (noAuthRequired: Record<string, boolean>, db: DB, secret: string) =>
-  new RequireLogin(noAuthRequired, db, secret);
+const requireLogin = (noAuthRequired: Record<string, boolean>, secret: string) =>
+  new RequireLogin(noAuthRequired, secret);
 
 export default requireLogin;
