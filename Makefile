@@ -16,7 +16,10 @@ lint:
 typecheck:
 	npm run typecheck
 
-check: lint typecheck
+test:
+	npm test
+
+check: lint typecheck test
 
 deploy: check
 	fly deploy
@@ -39,4 +42,4 @@ clean:
 pristine:
 	git clean -fdx
 
-.PHONY: setup dev fmt lint typecheck check deploy secrets logs ssh fixmes clean pristine
+.PHONY: setup dev fmt lint typecheck test check deploy secrets logs ssh fixmes clean pristine

@@ -7,7 +7,9 @@
   "scripts": {
     "lint": "biome check . --max-diagnostics=none --error-on-warnings",
     "fmt": "biome format --write .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --test 'test/*.test.ts'",
+    "dev:reset": "node --env-file-if-exists=.env seed/seed-dev.ts"
   },
   "keywords": [],
   "author": "",
