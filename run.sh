@@ -2,9 +2,13 @@
 
 # Adapted from:
 # https://github.com/benbjohnson/litestream-docker-example/blob/main/scripts/run.sh
-# following the shape of bhs-cs website/run.sh.
+# following the shape of bhs-cs website/run.sh. The sentinel and restore
+# logic lives in boot-prep.sh so the tests can run it without starting
+# the server.
 
 set -euo pipefail
+
+"$(dirname "${BASH_SOURCE[0]}")/boot-prep.sh"
 
 # Litestream is optional so a fresh app can be brought up (and its database
 # freely reset) before replication is configured. It is opt-in via the
@@ -17,22 +21,6 @@ if [[ -z "${LITESTREAM_BUCKET_NAME:-}" ]]; then
     echo "!!! snapshots). Do not run real data this way.                 !!!"
     echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
     exec node index.ts
-fi
-
-# Restore the database if it does not already exist.
-if [[ -f "$DB_DIR/$DB_FILE" ]]; then
-    echo "Database already exists, skipping restore"
-else
-    if [[ -e "$DB_DIR/no-restore" ]]; then
-        echo "No database found but no-restore file indicates no restore wanted"
-        # Clean out the litestream stuff.
-        rm -rf "$DB_DIR/.$DB_FILE-litestream"
-        # Then remove this file so in future we will restore again
-        rm "$DB_DIR/no-restore"
-    else
-        echo "No database found, restoring from replica if exists"
-        litestream restore -if-replica-exists -config /etc/litestream.yml "$DB_DIR/$DB_FILE"
-    fi
 fi
 
 # Run litestream with your app as the subprocess.

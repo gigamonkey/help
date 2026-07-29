@@ -10,4 +10,5 @@
 !public
 !views
 !run.sh
+!boot-prep.sh
 !litestream.yml
