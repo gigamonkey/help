@@ -43,10 +43,10 @@ tree before and after the first deploy of this code.
    and sanity-check the counts. (`make ssh` gets you a console; the image
    ships a `sqlite3` CLI.)
 
-5. **Reconcile `main`.** CLAUDE.md now records the decision: `help` is the
-   live lineage and this work was built on `update` (from `help`); `main` is
-   EC2/pm2-era, ~3 years stale. Either fast-forward/reset `main` to the
-   merged result or delete it — until then, nothing should be based on it.
+5. **Branches are already reconciled:** `help` has been merged into `main`,
+   this work was branched from `main`, and it merges back to `main` — which
+   is simply the trunk from here on. The old `refresh` and `journal`
+   branches remain historical artifacts.
 
 ## Not done from the implementation container
 

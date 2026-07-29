@@ -17,10 +17,12 @@ There is no journal/prompt feature here — that lives in the bhs-cs monorepo's
 
 ## Branches
 
-The live app's lineage is the `help` branch; the modernization (this tree)
-was built on `update`, branched from `help`. `main` last touched the code in
-the EC2/pm2 era, roughly three years behind — **never base work on `main`**
-until it has been fast-forwarded to the current trunk.
+`main` is the trunk: the live app's `help` lineage has been merged into it,
+and feature branches (including the 2026 modernization) branch from and
+merge back to `main`. (Historical note: before that merge `main` was
+EC2/pm2-era stale for ~3 years while the live app deployed from `help` —
+relevant only when reading old history or the stale `refresh`/`journal`
+branches.)
 
 ## Commands
 
