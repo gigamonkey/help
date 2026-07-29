@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "noEmit": true,
+    "target": "es2024",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "allowImportingTsExtensions": true,
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    // Transitional until the storage layer is rewritten in TypeScript: lets
+    // index.ts import modules/storage.js without declarations.
+    "allowJs": true,
+    "checkJs": false
+  },
+  "include": ["*.ts", "modules/**/*.ts", "test/**/*.ts", "types/**/*.d.ts", "modules/storage.js"]
+}

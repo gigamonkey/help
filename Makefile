@@ -5,7 +5,7 @@ setup:
 	npm install
 
 dev:
-	npx nodemon --watch . -e js,ts,mjs,json,njk,html index.js
+	npx nodemon --watch . -e js,ts,mjs,json,njk,html --exec 'node --env-file-if-exists=.env index.ts'
 
 fmt:
 	npm run fmt
@@ -13,7 +13,10 @@ fmt:
 lint:
 	npm run lint
 
-check: lint
+typecheck:
+	npm run typecheck
+
+check: lint typecheck
 
 deploy: check
 	fly deploy
@@ -36,4 +39,4 @@ clean:
 pristine:
 	git clean -fdx
 
-.PHONY: setup dev fmt lint check deploy secrets logs ssh fixmes clean pristine
+.PHONY: setup dev fmt lint typecheck check deploy secrets logs ssh fixmes clean pristine
