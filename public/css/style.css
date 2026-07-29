@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Montserrat:wght@100;300;400;500&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Montserrat:wght@100;300;400;500&display=swap");
 
 * {
   padding: 0;
@@ -6,7 +6,7 @@
 }
 
 html {
-  font-family: 'Montserrat', sans-serif;
+  font-family: "Montserrat", sans-serif;
   font-weight: 300;
   font-size: 16px;
 }
@@ -34,7 +34,6 @@ body.queue a.homeicon {
   color: black;
   float: left;
 }
-
 
 a {
   text-decoration: none;
@@ -237,7 +236,7 @@ td {
   width: 2em;
 }
 
-.create-class input[type='text'] {
+.create-class input[type="text"] {
   border: 1px solid grey;
   margin: 10px 0;
   padding: 10px;

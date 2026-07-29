@@ -154,7 +154,6 @@ app.get('/c/:class_id', (req, res) => {
   });
 });
 
-
 ////////////////////////////////////////////////////////////////////////////////
 // Pages
 
@@ -225,21 +224,18 @@ app.get('/c/:class_id/done', (req, res) => {
 ////////////////////////////////////////////////////////////////////////////////
 // Help items state changes.
 
-app.get(
-  '/c/:class_id/help/:id/done',
-  (req, res) => {
-    const { id } = req.params;
+app.get('/c/:class_id/help/:id/done', (req, res) => {
+  const { id } = req.params;
 
-    db.getHelp(id, (err, help) => {
-      const pred = (user) => {
-        return isHelper(user) || user.id === help.user_id;
-      };
-      permissions.classRoute(pred)((req, res) => {
-        db.finishHelp(id, (err) => dbRedirect(res, err, req.get('Referrer')));
-      })(req, res);
-    })
-  },
-);
+  db.getHelp(id, (err, help) => {
+    const pred = (user) => {
+      return isHelper(user) || user.id === help.user_id;
+    };
+    permissions.classRoute(pred)((req, res) => {
+      db.finishHelp(id, (err) => dbRedirect(res, err, req.get('Referrer')));
+    })(req, res);
+  });
+});
 
 app.get(
   '/c/:class_id/help/:id/reopen',
@@ -269,38 +265,38 @@ app.get(
   }),
 );
 
-app.get(
-  '/users/:id',
-  (req, res) => {
-    const { id } = req.params;
-    db.userById(id, (err1, requestedUser) => {
-      db.userById(req.session.user.id, (err2, currentUser) => {
-        if (requestedUser.id == currentUser.id || permissions.isAdmin(currentUser)) {
-          res.render('user.njk', requestedUser);
-        } else {
-          res.sendStatus(401);
-        }
-      });
+app.get('/users/:id', (req, res) => {
+  const { id } = req.params;
+  db.userById(id, (err1, requestedUser) => {
+    db.userById(req.session.user.id, (err2, currentUser) => {
+      if (requestedUser.id == currentUser.id || permissions.isAdmin(currentUser)) {
+        res.render('user.njk', requestedUser);
+      } else {
+        res.sendStatus(401);
+      }
     });
   });
+});
 
-app.post(
-  '/users/:id',
-  (req, res) => {
-    const { id } = req.params;
-    db.userById(id, (err1, requestedUser) => {
-      db.userById(req.session.user.id, (err2, currentUser) => {
-        if (requestedUser.id == currentUser.id || permissions.isAdmin(currentUser)) {
-          db.updateNameAndPronouns(requestedUser.id, req.body.preferredName, req.body.pronouns, (err3, user) => {
+app.post('/users/:id', (req, res) => {
+  const { id } = req.params;
+  db.userById(id, (err1, requestedUser) => {
+    db.userById(req.session.user.id, (err2, currentUser) => {
+      if (requestedUser.id == currentUser.id || permissions.isAdmin(currentUser)) {
+        db.updateNameAndPronouns(
+          requestedUser.id,
+          req.body.preferredName,
+          req.body.pronouns,
+          (err3, user) => {
             res.render('user.njk', user);
-          });
-        } else {
-          res.sendStatus(401);
-        }
-      });
+          },
+        );
+      } else {
+        res.sendStatus(401);
+      }
     });
   });
-
+});
 
 ////////////////////////////////////////////////////////////////////////////////
 // Courses
@@ -341,7 +337,9 @@ app.get(
     db.classByGoogleId(google_id, (err, data) => {
       const classId = data.id;
       const name = fullClassName(course.data);
-      db.resyncClass(classId, name, students, (err) => dbRedirect(res, err, `/c/${classId}/students`));
+      db.resyncClass(classId, name, students, (err) =>
+        dbRedirect(res, err, `/c/${classId}/students`),
+      );
     });
   }),
 );
@@ -367,9 +365,8 @@ const allCourses = async (oauth2client, userId) => {
     pageToken = res.data.nextPageToken;
   } while (pageToken);
 
-  const owned = results.filter(c => c.ownerId === userId);
+  const owned = results.filter((c) => c.ownerId === userId);
   return owned.sort((a, b) => (fullClassName(a) < fullClassName(b) ? -1 : 1));
-
 };
 
 const allStudents = async (oauth2client, courseId) => {
@@ -399,5 +396,5 @@ db.setup(() => {
     const { address, port } = server.address();
     console.log(`App is listening on port ${server.address().port}`);
     console.log(`http://${address}:${port}/`);
-  })
+  });
 });

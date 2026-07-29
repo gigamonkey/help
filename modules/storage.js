@@ -37,7 +37,8 @@ class DB {
   createClass(classId, teacherEmail, name, googleId, students, callback) {
     const createClass = 'insert into classes (id, name, google_id) values (?, ?, ?)';
     const createMember = 'insert into class_members (user_id, class_id, role) values (?, ?, ?)';
-    const ensureUser = 'insert or ignore into users (id, email, name, google_name) VALUES (?, ?, ?, ?)';
+    const ensureUser =
+      'insert or ignore into users (id, email, name, google_name) VALUES (?, ?, ?, ?)';
 
     this.db.serialize(() => {
       this.db.run('begin transaction');
@@ -63,7 +64,7 @@ class DB {
   resyncClass(classId, name, students, callback) {
     const currentStudentIds = `select user_id from class_members where role = 'student' and class_id = ?`;
     const ensureStudent =
-          'insert or ignore into users (id, email, name, google_name, is_admin) VALUES (?, ?, ?, ?, 0)';
+      'insert or ignore into users (id, email, name, google_name, is_admin) VALUES (?, ?, ?, ?, 0)';
     const ensureMember =
       'insert or ignore into class_members (user_id, class_id, role) values (?, ?, ?)';
     const removeMember = 'delete from class_members where user_id = ?';
@@ -76,7 +77,7 @@ class DB {
       this.db.serialize(() => {
         this.db.run('begin transaction');
 
-        this.db.run(updateName, name, classId)
+        this.db.run(updateName, name, classId);
 
         /* eslint-disable no-restricted-syntax */
         for (const s of students) {
@@ -234,7 +235,6 @@ class DB {
     this.db.run('DELETE from sessions where session_id = ?', id, callback);
   }
 
-
   user(id, callback) {
     this.db.get('SELECT * from users where id = ?', id, callback);
   }
@@ -260,7 +260,6 @@ class DB {
       } else if (data) {
         callback(null, data);
       } else {
-
         console.log(`Creating user for id ${id} and email ${email}`);
 
         // admin really means teacher. Anyone with a non-student berkeley.net
@@ -287,13 +286,19 @@ class DB {
 
   updateNameAndPronouns(user_id, name, pronouns, callback) {
     console.log(`Updating name ${name} and pronouns ${pronouns}`);
-    this.db.run('update users set name = ?, pronouns = ? where id = ?', name, pronouns, user_id, (err) => {
-      if (err) {
-        callback(err, null);
-      } else {
-        this.user(user_id, callback);
-      }
-    });
+    this.db.run(
+      'update users set name = ?, pronouns = ? where id = ?',
+      name,
+      pronouns,
+      user_id,
+      (err) => {
+        if (err) {
+          callback(err, null);
+        } else {
+          this.user(user_id, callback);
+        }
+      },
+    );
   }
 
   studentStats(classId, callback) {
@@ -333,8 +338,6 @@ class DB {
     `;
     this.db.all(q, classId, callback);
   }
-
-
 }
 
 export default DB;
