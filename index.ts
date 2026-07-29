@@ -1,11 +1,12 @@
 import cookieSession from 'cookie-session';
-import express from 'express';
+import express, { type NextFunction, type Request, type Response } from 'express';
 import morgan from 'morgan';
 import nunjucks from 'nunjucks';
 import classContext from './modules/class-context.ts';
 import { DEV_MODE, PORT, SESSION_SECRET } from './modules/config.ts';
 import * as datefilter from './modules/datefilter.ts';
 import * as mdfilter from './modules/mdfilter.ts';
+import { isAuthError } from './modules/oauth.ts';
 import requireLogin from './modules/require-login.ts';
 import adminRoutes from './modules/routes-admin.ts';
 import devRoutes from './modules/routes-dev.ts';
@@ -57,10 +58,24 @@ if (DEV_MODE) {
 }
 
 app.use(publicRoutes(login));
-app.use(userRoutes(login));
+app.use(userRoutes);
 app.use(helperRoutes);
 app.use(teacherRoutes);
 app.use(adminRoutes);
+
+// Our Google access token expires after about an hour and we have no
+// refresh token, so any handler that talks to the Classroom API can get a
+// 401 back. Quietly re-run the sign-in dance and return to the requested
+// page rather than treating it as an error (or, worse, logging out): the
+// user is almost certainly still signed in to Google, so the round trip
+// through accounts.google.com is invisible.
+app.use((err: unknown, req: Request, res: Response, next: NextFunction) => {
+  if (isAuthError(err) && !res.headersSent) {
+    login.start(req, res);
+  } else {
+    next(err);
+  }
+});
 
 const server = app.listen(PORT, '0.0.0.0', () => {
   const address = server.address();

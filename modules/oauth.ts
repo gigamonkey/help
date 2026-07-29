@@ -46,6 +46,14 @@ const tokenParams = (code: string) =>
     grant_type: 'authorization_code',
   });
 
+/*
+ * Does this error mean our Google access token is no good? We never get a
+ * refresh token, so tokens expire after about an hour and a 401 from a
+ * Google API call means "run the sign-in dance again", not "server error".
+ */
+export const isAuthError = (e: unknown): boolean =>
+  typeof e === 'object' && e !== null && (e as { status?: unknown }).status === 401;
+
 const oauth = {
   newState: randomString,
 
