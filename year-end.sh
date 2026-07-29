@@ -18,6 +18,12 @@ on_app() {
     fly ssh console --app "$APP" -C "$1"
 }
 
+# sqlite3 with pinned output settings so a personal ~/.sqliterc (e.g.
+# .mode box) can't change the output this script parses.
+sq() {
+    sqlite3 -init /dev/null -batch -noheader -list "$@"
+}
+
 # --- Preflight ---------------------------------------------------------
 
 command -v fly >/dev/null || { echo "fly CLI not found"; exit 1; }
@@ -101,7 +107,7 @@ echo "Downloading $archive..."
 fly ssh sftp get "/data/archives/$archive" "$local_copy" --app "$APP"
 
 echo "Verifying the archive..."
-integrity=$(sqlite3 "$local_copy" "pragma integrity_check;")
+integrity=$(sq "$local_copy" "pragma integrity_check;")
 if [[ "$integrity" != "ok" ]]; then
     echo "INTEGRITY CHECK FAILED: $integrity"
     echo "The on-volume copy at /data/archives/$archive is untouched; retry"
@@ -109,7 +115,7 @@ if [[ "$integrity" != "ok" ]]; then
     exit 1
 fi
 echo "Archive row counts (should look like the year that just ended):"
-sqlite3 "$local_copy" \
+sq "$local_copy" \
     "select '  users:   ' || count(*) from users;
      select '  classes: ' || count(*) from classes;
      select '  help:    ' || count(*) from help;"
@@ -117,7 +123,7 @@ sqlite3 "$local_copy" \
 # --- Verify the reset --------------------------------------------------
 
 echo "Verifying production starts fresh..."
-users=$(on_app "sqlite3 /data/help.db 'select count(*) from users'" | tr -d '[:space:]')
+users=$(on_app "sqlite3 -init /dev/null -batch -noheader -list /data/help.db 'select count(*) from users'" | tr -d '[:space:]')
 if [[ "$users" != "0" ]]; then
     echo "WARNING: production database has $users users — that does not look"
     echo "like a fresh year. Investigate before assuming the reset happened"

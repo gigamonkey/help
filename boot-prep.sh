@@ -26,7 +26,9 @@ if [[ -e "$DB_DIR/reset-year" ]]; then
         if [[ -e "$archive" ]]; then
             archive="$DB_DIR/archives/help-$(date +%Y%m%dT%H%M%S).db"
         fi
-        sqlite3 "$DB_DIR/$DB_FILE" "VACUUM INTO '$archive'"
+        # -init /dev/null: don't let a ~/.sqliterc affect this (matters
+        # when running locally; the image has no rc file anyway).
+        sqlite3 -init /dev/null -batch "$DB_DIR/$DB_FILE" "VACUUM INTO '$archive'"
         rm -f "$DB_DIR/$DB_FILE" "$DB_DIR/$DB_FILE-wal" "$DB_DIR/$DB_FILE-shm"
         echo "##################################################################"
         echo "## YEAR-END RESET: database archived to"

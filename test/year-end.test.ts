@@ -38,8 +38,12 @@ const exists = (...parts: string[]) => fs.existsSync(path.join(...parts));
 
 // Query via the sqlite3 CLI (as an operator inspecting an archive would);
 // unlike an unclosed library handle it leaves no -wal/-shm files behind.
+// -init /dev/null + explicit output mode so a personal ~/.sqliterc (e.g.
+// .mode box) can't change the output we parse.
 const query = (file: string, sql: string): string =>
-  execFileSync('sqlite3', [file, sql]).toString().trim();
+  execFileSync('sqlite3', ['-init', '/dev/null', '-batch', '-noheader', '-list', file, sql])
+    .toString()
+    .trim();
 
 const archivesIn = (dir: string): string[] =>
   fs.readdirSync(path.join(dir, 'archives')).filter((f) => /^help-.*\.db$/.test(f));
