@@ -1,7 +1,7 @@
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
+import * as url from 'node:url';
 import sqlite3 from 'sqlite3';
-import * as url from 'url';
 
 const DIRNAME = url.fileURLToPath(new URL('.', import.meta.url));
 
@@ -70,7 +70,7 @@ class DB {
     const removeMember = 'delete from class_members where user_id = ?';
     const updateName = 'update classes set name = ? where id = ?';
 
-    this.db.all(currentStudentIds, classId, (err, data) => {
+    this.db.all(currentStudentIds, classId, (_err, data) => {
       const current = data.map((d) => d.user_id);
       const toKeep = new Set(students.map((s) => s.profile.id));
 

@@ -1,5 +1,5 @@
+import { decrypt, encrypt } from './crypto.js';
 import oauth from './oauth.js';
-import { encrypt, decrypt } from './crypto.js';
 
 /*
  * Express middleware that redirects all un-logged-in requests to Google sign-in
@@ -19,7 +19,7 @@ class RequireLogin {
         if (req.session.loggedIn) {
           return true;
         }
-      } catch (e) {
+      } catch (_e) {
         console.log(`Failed to decrypt session`);
         return false;
       }
@@ -55,7 +55,7 @@ class RequireLogin {
         // If the user has an old cookie and the database has been cleared we
         // need to treat them as not logged in so they go through the flow that
         // creates the user in the database.
-        this.db.userById(req.session.user.id, (err, user) => {
+        this.db.userById(req.session.user.id, (_err, user) => {
           if (user) {
             next();
           } else {

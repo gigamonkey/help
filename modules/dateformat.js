@@ -69,4 +69,5 @@ const humandate = (utc) => {
   const year = d.getUTCFullYear();
   return `${day}, ${month} ${date}, ${year}`;
 };
-export { yyyymmdd, hhmm, humandate };
+
+export { hhmm, humandate, yyyymmdd };

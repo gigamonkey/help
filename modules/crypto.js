@@ -1,6 +1,6 @@
 /* eslint-disable new-cap */
 
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 import CryptoJS from 'crypto-js';
 
 /* eslint-disable no-bitwise */
@@ -81,4 +81,4 @@ const b32 = (n) => {
   }
 };
 
-export { randomString, shortRandomString, encrypt, decrypt, totp, b32 };
+export { b32, decrypt, encrypt, randomString, shortRandomString, totp };

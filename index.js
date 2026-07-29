@@ -1,24 +1,23 @@
 import 'dotenv/config';
-import morgan from 'morgan';
-import cookieParser from 'cookie-parser';
-import dateFilter from 'nunjucks-date-filter';
-import express from 'express';
-import markdownFilter from 'nunjucks-markdown-filter';
-import nunjucks from 'nunjucks';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { google } from 'googleapis';
+import path from 'node:path';
 import process from 'node:process';
-
-import DB from './modules/storage.js';
-import requireLogin from './modules/require-login.js';
-import Permissions from './modules/permissions.js';
+import { fileURLToPath } from 'node:url';
+import cookieParser from 'cookie-parser';
+import express from 'express';
+import { google } from 'googleapis';
+import morgan from 'morgan';
+import nunjucks from 'nunjucks';
+import dateFilter from 'nunjucks-date-filter';
+import markdownFilter from 'nunjucks-markdown-filter';
 import oauth from './modules/oauth.js';
+import Permissions from './modules/permissions.js';
+import requireLogin from './modules/require-login.js';
+import DB from './modules/storage.js';
 
 const classroom = google.classroom('v1');
 
 const FILENAME = fileURLToPath(import.meta.url);
-const DIRNAME = path.dirname(FILENAME);
+const _DIRNAME = path.dirname(FILENAME);
 
 const { PORT, SECRET } = process.env;
 
@@ -57,7 +56,7 @@ const helperOnly = permissions.classRoute(isHelper);
 const adminOnly = permissions.route(permissions.isAdmin);
 
 // Thunk permission handlers.
-const ifTeacher = permissions.thunk(isTeacher);
+const _ifTeacher = permissions.thunk(isTeacher);
 
 app.use(express.json());
 app.use(morgan('dev'));
@@ -94,7 +93,7 @@ app.use('/c/:class_id', (req, res, next) => {
 app.use(express.static('public'));
 
 /* eslint-disable no-unused-vars */
-const jsonSender = (res) => (err, data) => {
+const _jsonSender = (res) => (err, data) => {
   if (err) {
     console.log('Error in jsonSender');
     console.log(err);
@@ -127,9 +126,9 @@ const dbRedirect = (res, err, path) => {
   }
 };
 
-app.get('/health', (req, res) => res.send('Ok.'));
+app.get('/health', (_req, res) => res.send('Ok.'));
 
-app.get('/logout', (req, res) => {
+app.get('/logout', (_req, res) => {
   login.logout(res);
   res.send('<html><body><p>Logged out. <a href="/">Start over</a></p></html>');
 });
@@ -159,7 +158,7 @@ app.get('/c/:class_id', (req, res) => {
 
 app.get('/', (req, res) => {
   const { id } = req.session.user;
-  db.userById(id, async (err1, user) => {
+  db.userById(id, async (_err1, user) => {
     if (permissions.isAdmin(user)) {
       res.locals.isAdmin = true;
 
@@ -170,7 +169,7 @@ app.get('/', (req, res) => {
         courses.forEach((c) => {
           c.fullName = fullClassName(c);
         });
-        db.googleClassroomIds((err, ids) => {
+        db.googleClassroomIds((_err, ids) => {
           db.classMemberships(id, (err, memberships) => {
             dbRender(res, err, 'index.njk', { memberships, courses, googleIds: extractIds(ids) });
           });
@@ -227,7 +226,7 @@ app.get('/c/:class_id/done', (req, res) => {
 app.get('/c/:class_id/help/:id/done', (req, res) => {
   const { id } = req.params;
 
-  db.getHelp(id, (err, help) => {
+  db.getHelp(id, (_err, help) => {
     const pred = (user) => {
       return isHelper(user) || user.id === help.user_id;
     };
@@ -249,7 +248,7 @@ app.get(
   '/c/:class_id/students',
   teacherOnly((req, res) => {
     const { class_id } = req.params;
-    db.studentStats(class_id, (err, students) => {
+    db.studentStats(class_id, (_err, students) => {
       res.render('students.njk', { ...req.params, students });
     });
   }),
@@ -259,7 +258,7 @@ app.get(
   '/c/:class_id/members',
   teacherOnly((req, res) => {
     const { class_id } = req.params;
-    db.memberStats(class_id, (err, members) => {
+    db.memberStats(class_id, (_err, members) => {
       res.render('members.njk', { ...req.params, members });
     });
   }),
@@ -267,9 +266,9 @@ app.get(
 
 app.get('/users/:id', (req, res) => {
   const { id } = req.params;
-  db.userById(id, (err1, requestedUser) => {
-    db.userById(req.session.user.id, (err2, currentUser) => {
-      if (requestedUser.id == currentUser.id || permissions.isAdmin(currentUser)) {
+  db.userById(id, (_err1, requestedUser) => {
+    db.userById(req.session.user.id, (_err2, currentUser) => {
+      if (requestedUser.id === currentUser.id || permissions.isAdmin(currentUser)) {
         res.render('user.njk', requestedUser);
       } else {
         res.sendStatus(401);
@@ -280,14 +279,14 @@ app.get('/users/:id', (req, res) => {
 
 app.post('/users/:id', (req, res) => {
   const { id } = req.params;
-  db.userById(id, (err1, requestedUser) => {
-    db.userById(req.session.user.id, (err2, currentUser) => {
-      if (requestedUser.id == currentUser.id || permissions.isAdmin(currentUser)) {
+  db.userById(id, (_err1, requestedUser) => {
+    db.userById(req.session.user.id, (_err2, currentUser) => {
+      if (requestedUser.id === currentUser.id || permissions.isAdmin(currentUser)) {
         db.updateNameAndPronouns(
           requestedUser.id,
           req.body.preferredName,
           req.body.pronouns,
-          (err3, user) => {
+          (_err3, user) => {
             res.render('user.njk', user);
           },
         );
@@ -334,7 +333,7 @@ app.get(
     const students = await allStudents(oauth2client, google_id);
     const course = await oneCourse(oauth2client, google_id);
 
-    db.classByGoogleId(google_id, (err, data) => {
+    db.classByGoogleId(google_id, (_err, data) => {
       const classId = data.id;
       const name = fullClassName(course.data);
       db.resyncClass(classId, name, students, (err) =>
@@ -346,7 +345,7 @@ app.get(
 
 const fullClassName = (c) => (c.section ? `${c.name} - ${c.section}` : c.name);
 
-const slugify = (s) => s.toLowerCase().replaceAll(/\W+/g, '-');
+const _slugify = (s) => s.toLowerCase().replaceAll(/\W+/g, '-');
 
 const extractIds = (googleIds) => googleIds.map((r) => r.google_id.toString(10));
 

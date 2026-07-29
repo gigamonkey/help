@@ -1,5 +1,5 @@
-import DB from './modules/storage.js';
 import process from 'node:process';
+import DB from './modules/storage.js';
 
 const { DB_DIR, DB_FILE } = process.env;
 
