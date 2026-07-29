@@ -9,6 +9,12 @@ has been written but not started.
 
 ## Remaining plans
 
+- `year-end-reset.md` — first-class once-a-year archive-and-reset of the
+  database (Litestream-aware: a boot-time `reset-year` sentinel archives
+  via VACUUM INTO and starts fresh, orchestrated by `make year-end`).
+  Builds on the modernization's run.sh sentinel pattern, so it lands
+  after `adopt-bhs-cs-conventions.md`.
+
 - `adopt-bhs-cs-conventions.md` — bring the app in line with the coding
   conventions of the bhs-cs monorepo apps (TypeScript on Node 26, Biome,
   pugsql/better-sqlite3, cookie-session auth, node:test) and polish the
