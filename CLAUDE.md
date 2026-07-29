@@ -2,6 +2,14 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+> **Stale-branch caveat:** this file describes the tree as of the `main`/
+> `refresh` branches, which are ~3 years behind. **The live app is the
+> `help` branch**, deployed on fly.io (app `bhs-help`) with Litestream —
+> everything below about EC2, pm2, and the `bounce`/`connect` scripts is
+> obsolete there, and `help` also has Express 5, Google-id-keyed users, and
+> other changes. See `plans/adopt-bhs-cs-conventions.md` ("Branch
+> situation"). Regenerate this file once the branches are reconciled.
+
 ## What this is
 
 A help-queue web app for classes: students request help and answer journal

@@ -4,16 +4,52 @@ Modernize this app to follow the coding and deployment style of the two apps
 in the bhs-cs monorepo (`website/` and `lesson-planning/`), while staying a
 standalone repo.
 
+## Branch situation (read first)
+
+**The live app is the `help` branch, not `main`.** `main` (and the `refresh`
+branch this plan was written on) last touched the code in the EC2/pm2 era;
+`help` has ~3 years of further work, including the fly.io + Litestream
+migration ("Fly setup", "Add litestream" commits), the Express 5 upgrade,
+and re-keying users on Google id instead of email.
+
+Everything below describes gaps in the **`help` branch**. Before
+implementing anything:
+
+1. Bring this work onto the `help` code — merge `help` into `refresh` (or
+   recreate `refresh` from `help` and cherry-pick the plan commits).
+
+2. Fast-forward/merge `main` so it stops being a trap (or decide `help` is
+   simply the trunk and say so in CLAUDE.md).
+
+3. Regenerate CLAUDE.md, which currently describes the stale tree
+   (EC2/pm2/bounce, hardcoded admins, email-keyed users).
+
+## What the help branch already has (no work needed)
+
+- fly.io app `bhs-help` (sjc, `data` volume at `/data`, port 3000) deployed
+  from a Dockerfile; `set-secrets.sh` pushes `fly.env` via
+  `fly secrets import`.
+
+- Litestream: `litestream.yml` (env-interpolated, S3/Tigris — essentially
+  identical to bhs-cs website's) and `run.sh` (restore-if-missing, then
+  `litestream replicate -exec "node index.js"`), plus the litestream-tips
+  pragmas at the top of `schema.sql`.
+
+- Express 5, morgan logging, `DB_DIR`/`DB_FILE` from env.
+
+- Users keyed by Google id (`users.id`), `pronouns` column, no hardcoded
+  `ADMINS`/`OTHER_NAMES` maps; stale-cookie handling when the db has been
+  reset.
+
+- `db-patches/` and `load-class.js` already deleted.
+
 ## Decisions (settled up front)
 
 - **Standalone repo.** Adopt the conventions with local copies of the shared
   config (biome.json, tsconfig, Makefile shape). Not folded into the bhs-cs
   monorepo. Consequence: the private `@peterseibel/bhs-config` secrets CLI
-  isn't available, so secrets management is a simplified copy of the pattern
-  (see Phase 8).
-
-- **Deploy to fly.io with Litestream**, replacing the EC2 box, pm2, and the
-  `bounce`/`connect`/`upload`/`download` scripts.
+  isn't available; the existing `fly.env` + `set-secrets.sh` arrangement
+  stays, documented by a tracked `template.env`.
 
 - **Auth stays hand-rolled Google OAuth** (the lesson-planning style), with
   `cookie-session` signed cookies replacing the crypto-js AES cookie. Not
@@ -25,40 +61,60 @@ standalone repo.
   pattern exists there only because of its per-editor cache dbs; this app,
   like website, has one db.
 
-## Target state at a glance
+## Target state at a glance (relative to `help`)
 
-| Now | Target |
+| Now (help branch) | Target |
 |---|---|
 | Plain JS, ES modules | TypeScript run directly on Node 26 type stripping (no build step) |
-| eslint (airbnb) + prettier | Biome (format + lint, warning-free, `--error-on-warnings`) |
+| eslint 9 installed but airbnb-era `.eslintrc.json` + prettier | Biome (format + lint, warning-free, `--error-on-warnings`) |
 | `sqlite3` with `(err, data)` callbacks | `better-sqlite3` via pugsql, fully synchronous |
 | SQL inline in `modules/storage.js` | Named queries in `modules/queries.sql` (`-- :name x :get`) |
 | AES-encrypted session cookie (crypto-js) | `cookie-session` signed cookie |
 | `sessions` table for OAuth state | Nonce in the session cookie; table dropped |
-| Hardcoded `ADMINS` map in storage.js | `ADMIN_EMAILS` env var |
-| Hardcoded DST boundaries (dateformat.js) | Temporal with `America/Los_Angeles` |
+| Hardcoded DST boundaries (dateformat.js) | Temporal with `America/Los_Angeles` (polyfill already a dep) |
 | No tests | `node:test` suite incl. a permissions matrix |
-| EC2 + pm2 + `bounce` | fly.io: Docker + volume + `run.sh` + Litestream |
+| Node 24 base image, `npm ci` of everything (pm2, nodemon ship) | Node 26, `npm ci --omit=dev`, dev tools in devDependencies |
+| EC2-era leftovers in tree (`bounce`, `connect`, `upload`, `download`, `ec2-setup.txt`, pm2 Makefile targets) | Deleted |
 | `.env` via dotenv | `node --env-file` in dev; fly secrets + `[env]` in prod |
 
 Reference files to crib from (in `/Users/peter/hacks/bhs-cs`):
 `tsconfig.base.json`, `biome.json`, `website/modules/db.ts`,
-`website/modules/permissions.ts` (`guardedRouter`), `website/run.sh`,
-`website/litestream.yml`, `website/fly.toml`, `website/Dockerfile`,
-`lesson-planning/routes_collab.ts` (OAuth flow), `lesson-planning/test/`
-and `website/test/permissions.test.ts` (test style).
+`website/modules/permissions.ts` (`guardedRouter`), `website/run.sh` (the
+optional-litestream banner + `no-restore` sentinel), `website/fly.toml`
+(the `[[http_service.checks]]` block), `lesson-planning/routes_collab.ts`
+(OAuth flow), `lesson-planning/test/` and `website/test/permissions.test.ts`
+(test style).
 
-Each phase should land as its own commit(s) with the app still working.
+Each phase should land as its own commit(s) with the app still working —
+and, since the app is live, each phase is deployable with `fly deploy`
+whenever confidence warrants.
+
+## Phase 0 — Branch reconciliation and dead-file sweep
+
+1. Rebase this work onto `help` (see "Branch situation" above).
+
+2. Delete the EC2-era leftovers: `bounce`, `connect`, `upload`, `download`,
+   `ec2-setup.txt`, `backup-db` (superseded below), the pm2
+   `start`/`restart`/`stop` Makefile targets, and the `pm2` dependency.
+   Anything worth remembering from `ec2-setup.txt` is already moot.
+
+3. Reconcile the lint-config confusion: eslint 9 is installed but the
+   config is still airbnb-era `.eslintrc.json` (eslint 9 doesn't read it).
+   Don't fix it — Phase 1 replaces the whole arrangement with Biome; just
+   note it so nobody burns time on it.
+
+Done when: `git grep -i 'ec2\|pm2'` finds nothing but history.
 
 ## Phase 1 — Tooling baseline
 
-1. Add `mise.toml` pinning `node = "26"`.
+1. Add `mise.toml` pinning `node = "26"`, and bump the Dockerfile's
+   `NODE_VERSION` to match (26-slim, from 24.1.0).
 
-2. Replace eslint + prettier with Biome: `biome.json` copied from the bhs-cs
-   root config minus the monorepo-specific `files.includes` exclusions and
-   `overrides` (start with zero overrides; add per-file ones only if needed).
-   Key settings: 2-space indent, `lineWidth: 100`, single quotes,
-   `quoteProperties: 'preserve'`, linter preset `recommended`,
+2. Replace eslint + prettier with Biome: `biome.json` copied from the
+   bhs-cs root config minus the monorepo-specific `files.includes`
+   exclusions and `overrides` (start with zero overrides; add per-file ones
+   only if needed). Key settings: 2-space indent, `lineWidth: 100`, single
+   quotes, `quoteProperties: 'preserve'`, linter preset `recommended`,
    `organizeImports: on`, `vcs.useIgnoreFile: true`.
 
 3. npm scripts using the standard names every bhs-cs workspace uses:
@@ -69,16 +125,21 @@ Each phase should land as its own commit(s) with the app still working.
 
    - `typecheck`: `tsc --noEmit` (activates in Phase 2)
 
-   - `test`: `node --test 'test/*.test.ts'` (activates in Phase 7)
+   - `test`: `node --test 'test/*.test.ts'` (activates in Phase 6)
 
 4. Rework the Makefile: keep `SHELL := bash -O globstar`, add `.SUFFIXES:`;
-   `check` = lint + typecheck + test; retire `pretty`/`ready`/`strict_lint`/
-   `quick_lint`/`tidy` in favor of `fmt`/`check`.
+   `check` = lint + typecheck + test; retire `pretty`/`ready`/
+   `strict_lint`/`quick_lint`/`tidy` in favor of `fmt`/`check`; add
+   `deploy` (runs `make check` first, then `fly deploy`), `secrets`
+   (wraps `set-secrets.sh`), `logs`, `ssh`.
 
-5. Run the reformat, commit it alone, and record the commit hash in a new
+5. Move `nodemon` (and any other dev-only packages) to devDependencies and
+   change the Dockerfile's `npm ci` to `--omit=dev`.
+
+6. Run the reformat, commit it alone, and record the commit hash in a new
    `.git-blame-ignore-revs` (with a comment), so `git blame` skips it.
 
-6. Drop eslint/prettier config files and devDependencies.
+7. Drop eslint/prettier config files and dependencies.
 
 Done when: `make check` passes warning-free with Biome only.
 
@@ -87,39 +148,40 @@ Done when: `make check` passes warning-free with Biome only.
 No build step: the server runs `.ts` directly on Node 26's native type
 stripping. `tsc` is typecheck-only.
 
-1. `tsconfig.json` copied from bhs-cs `tsconfig.base.json` (strict, `noEmit`,
-   `module`/`moduleResolution: nodenext`, `allowImportingTsExtensions`,
-   `erasableSyntaxOnly`, `verbatimModuleSyntax`, `resolveJsonModule`,
-   `target: es2024`) plus an `include` of `*.ts`, `modules/**/*.ts`,
-   `test/**/*.ts`, `types/**/*.d.ts`. Public browser JS
-   (`public/js/*.js`) stays plain JS for now (see Out of scope).
+1. `tsconfig.json` copied from bhs-cs `tsconfig.base.json` (strict,
+   `noEmit`, `module`/`moduleResolution: nodenext`,
+   `allowImportingTsExtensions`, `erasableSyntaxOnly`,
+   `verbatimModuleSyntax`, `resolveJsonModule`, `target: es2024`) plus an
+   `include` of `*.ts`, `modules/**/*.ts`, `test/**/*.ts`,
+   `types/**/*.d.ts`. Public browser JS (`public/js/*.js`) stays plain JS
+   for now (see Out of scope).
 
-2. Rename modules `.js` → `.ts` incrementally (they can coexist — Node runs
-   both). All relative imports gain explicit `.ts` extensions; type-only
-   imports use `import type` (verbatimModuleSyntax). No enums, no class
-   parameter properties (erasableSyntaxOnly).
+2. Rename modules `.js` → `.ts` incrementally (they can coexist — Node
+   runs both). All relative imports gain explicit `.ts` extensions;
+   type-only imports use `import type` (verbatimModuleSyntax). No enums,
+   no class parameter properties (erasableSyntaxOnly).
 
 3. Add `types/` for hand-written declarations, following website:
    `types/pugsql.d.ts` (Phase 3) and `types/express-augmentations.d.ts`
-   typing `Express.Locals` (`className`, `user`, role) and the session shape.
+   typing `Express.Locals` (`className`, `user`, role) and the session
+   shape.
 
-4. New `modules/config.ts` (website convention): read `process.env` exactly
-   once into typed, defaulted, fail-fast-validated constants (`PORT`,
-   `SESSION_SECRET`, `GOOGLE_CLIENT_ID/SECRET/REDIRECT_URL`, `DB_DIR ?? '.'`,
-   `DB_FILE ?? 'help.db'`, `ADMIN_EMAILS` comma-separated, `DEV_MODE`).
-   Everything imports from there; nothing else touches `process.env`. A
-   missing required var kills the boot with an actionable message.
+4. New `modules/config.ts` (website convention): read `process.env`
+   exactly once into typed, defaulted, fail-fast-validated constants
+   (`PORT`, `SESSION_SECRET`, `GOOGLE_CLIENT_ID/SECRET/REDIRECT_URL`,
+   `DB_DIR ?? '.'`, `DB_FILE ?? 'help.db'`, `DEV_MODE`). Everything
+   imports from there; nothing else touches `process.env`. A missing
+   required var kills the boot with an actionable message. (Env var
+   renames like `SECRET` → `SESSION_SECRET`, `CLIENT_ID` →
+   `GOOGLE_CLIENT_ID` need matching updates to `fly.env`/secrets before
+   the deploy that includes them.)
 
-   This is where the hardcoded `ADMINS` map leaves `storage.js`. (The
-   `OTHER_NAMES` teacher-display-names map can move to config or a small
-   JSON import — decide during implementation.)
+5. Convert leaf modules first (`permissions`, `journal`, `crypto`,
+   `oauth`, `require-login`), then `index.js` last. `storage.js` is not
+   converted — it's replaced wholesale in Phase 3.
 
-5. Convert leaf modules first (`permissions`, `journal`, `crypto`, `oauth`,
-   `require-login`), then `index.js` last. `storage.js` is not converted —
-   it's replaced wholesale in Phase 3.
-
-6. Drop `dotenv`; dev runs use `node --env-file=.env` (wired into the `dev`
-   script/Makefile target).
+6. Drop `dotenv`; dev runs use `node --env-file=.env` (wired into the
+   `dev` script/Makefile target).
 
 Done when: `npm run typecheck` is clean and the app runs via
 `node index.ts`.
@@ -136,13 +198,14 @@ code.
    `:get`/`:all`/`:run`/`:insert`/`:exists` as appropriate, `:param`
    placeholders, doc comments, grouped with banner comments by area
    (classes/help/journal/prompts/users). Mostly a 1:1 transcription of the
-   SQL already in `storage.js`, e.g.:
+   SQL already in `storage.js` (which is keyed on `user_id` throughout),
+   e.g.:
 
    ```sql
    -- :name queue :all
    -- All open help requests for a class, oldest first.
    select help.rowid as id, help.*, users.name
-   from help join users using (email)
+   from help join users on help.user_id = users.id
    where class_id = :class_id and closed_at is null
    order by created_at asc;
    ```
@@ -154,10 +217,9 @@ code.
    export default db;
    ```
 
-   `schema.sql` stays idempotent and runs at every boot, exactly as now.
-   Add the litestream-recommended pragmas at the top of `schema.sql`
-   (`busy_timeout`, `synchronous = NORMAL`; pugsql's constructor already
-   enables WAL — verify).
+   `schema.sql` stays idempotent and runs at every boot, exactly as now,
+   litestream pragmas and all (pugsql's constructor enables WAL — verify
+   it doesn't fight the existing pragma block).
 
 3. Multi-statement operations (`createClass`, `resyncClass`, `ensureUser`,
    `createPrompt`, `addJournalEntries`, `journalWithPrompts`) become plain
@@ -168,11 +230,8 @@ code.
    its `biome-ignore` comment).
 
 5. Retire: `modules/storage.js`, the `sqlite3` + `sqlite` dependencies,
-   `db.js` (a fresh db now materializes on first boot; keep or simplify),
-   `load-class.js` (rewrite on the new layer only if still used),
-   `db-patches/` (already-applied one-offs — delete or leave as history).
-   The `sessions` table queries die in Phase 5; drop the table from
-   `schema.sql` then.
+   and `db.js` (a fresh db now materializes on first boot). The `sessions`
+   table queries die in Phase 5; drop the table from `schema.sql` then.
 
 6. Convert `index.js` route handlers area by area (help, journal, prompts,
    classes, users) from callbacks to sync calls as their queries land.
@@ -211,15 +270,12 @@ Done when: no callback-style db code remains; `sqlite3` is uninstalled.
    `res.locals` (now typed, and without the fire-after-`next()` race the
    current version has — the role lookup is sync now).
 
-4. Add `morgan('dev')` request logging; sweep the ad-hoc `console.log`
-   debugging.
-
-5. Nunjucks filters: replace `nunjucks-date-filter` and
+4. Nunjucks filters: replace `nunjucks-date-filter` and
    `nunjucks-markdown-filter` with local filter modules exposing
    `install(env)` (website convention) — a `datefilter` on Temporal
-   (Phase 6) and an `mdfilter` on `marked`. Resolves the existing FIXME
-   about DOMPurify by sanitizing (or deliberately trusting and documenting)
-   markdown output in one place.
+   (Phase 5½) and an `mdfilter` on `marked`. Resolves the standing FIXME
+   about DOMPurify (the dep is already installed) by sanitizing markdown
+   output in one place.
 
 Done when: every route lives in a regime router; `index.ts` is just
 middleware order + mounts + listen.
@@ -231,52 +287,49 @@ Keep the hand-rolled Google OAuth dance, restructured along
 
 1. `cookie-session` (signed, `sameSite: 'lax'`, `httpOnly`) replaces the
    crypto-js AES cookie and `cookie-parser`. `SESSION_SECRET` from config,
-   fail-fast (no silent default in prod; DEV_MODE may supply one).
+   fail-fast (no silent default in prod; DEV_MODE may supply one). Note:
+   rolling this out logs everyone in production out once — harmless, same
+   as the existing "force re-login if session secret changes" behavior.
 
-2. Login flow: unauthenticated request → store `{ nonce, returnTo }` in the
-   session → redirect to Google (`modules/oauth.ts` largely survives).
+2. Login flow: unauthenticated request → store `{ nonce, returnTo }` in
+   the session → redirect to Google (`modules/oauth.ts` largely survives).
    `/auth` callback validates `state === nonce` from the cookie session —
    no db round-trip — then exchanges the code, `ensureUser`s, and writes
    `{ user, tokens }` into the session. Drop the `sessions` table, its
    queries, and `newSession`/`getSession`/`deleteSession`.
 
-3. Google Classroom tokens stay in the session (as today) for the
-   admin-only course-create/resync flows. Watch the ~4KB cookie limit;
-   if tokens push past it, store only the access token + expiry.
+3. Preserve the help branch's stale-cookie behavior: a valid session whose
+   user no longer exists in the db (post-reset) is treated as logged out
+   and re-created via the OAuth flow.
 
-4. `modules/crypto.ts` shrinks to `randomString` (or disappears in favor of
-   `crypto.randomBytes(...).toString('base64url')`); crypto-js is
+4. Google Classroom tokens stay in the session (as today) for the
+   admin-only course-create/resync flows. Watch the ~4KB cookie limit; if
+   tokens push past it, store only the access token + expiry.
+
+5. `modules/crypto.ts` shrinks to `randomString` (or disappears in favor
+   of `crypto.randomBytes(...).toString('base64url')`); crypto-js is
    uninstalled. The unused TOTP code goes.
 
-5. DEV_MODE (website convention, explicit env var, never derived from
-   NODE_ENV): registers no real OAuth, mounts a `/dev/login` router listing
-   seeded users to become. Loud startup banner. This is what makes the
-   Phase 7 tests runnable without secrets.
+6. DEV_MODE (website convention, explicit env var, never derived from
+   NODE_ENV): registers no real OAuth, mounts a `/dev/login` router
+   listing seeded users to become. Loud startup banner; never set in
+   `fly.env`. This is what makes the Phase 6 tests runnable without
+   secrets.
 
 Done when: login works against real Google; `crypto-js`, `cookie-parser`,
 and the `sessions` table are gone; DEV_MODE login works with no `.env`
 secrets.
 
-## Phase 6 — Dates
+### Phase 5½ — Dates (small, independent)
 
 Replace `modules/dateformat.js` (hardcoded DST boundaries needing yearly
-updates — a standing TODO) with real timezone handling:
+updates — a standing TODO) with Temporal over `America/Los_Angeles` for
+`yyyymmdd`, `hhmm`, and `humandate`. `@js-temporal/polyfill` is already a
+dependency; keep the polyfill until Node's native Temporal is unflagged.
+Delete the DST item from TODO.md. Add a test across a DST boundary in
+Phase 6.
 
-1. Use Temporal (`@js-temporal/polyfill` is already a dependency; keep the
-   polyfill until Node's native Temporal is unflagged) with
-   `America/Los_Angeles` for `yyyymmdd`, `hhmm`, and `humandate` over the
-   seconds-epoch timestamps.
-
-2. `modules/journal.ts`'s day-grouping keys off the new functions
-   unchanged. The "journal_days counts UTC days" caveat in the stats
-   queries can be fixed here too if cheap, or left with its comment.
-
-3. Delete the DST TODO from TODO.md.
-
-Done when: dateformat tests (add a few in Phase 7) pass across a DST
-boundary without hardcoded epochs.
-
-## Phase 7 — Seed data and tests
+## Phase 6 — Seed data and tests
 
 `node:test` + `node:assert`, no framework, tests in `test/*.test.ts`.
 
@@ -289,113 +342,76 @@ boundary without hardcoded epochs.
 
 3. `test/permissions.test.ts` — the website-style matrix: spawn the real
    server in DEV_MODE on a throwaway seeded db, log in as each persona
-   (anonymous, student, helper, teacher, student-from-another-class, admin)
-   via `/dev/login` with a cookie-jar `fetch` helper, and assert the
-   URL × persona status matrix over the interesting routes (queue, help
-   state changes, own vs. others' journals, prompts, members, /classes).
+   (anonymous, student, helper, teacher, student-from-another-class,
+   admin) via `/dev/login` with a cookie-jar `fetch` helper, and assert
+   the URL × persona status matrix over the interesting routes (queue,
+   help state changes, own vs. others' journals, prompts, members,
+   /classes).
 
-4. Targeted unit tests where logic is pure: `journal.ts` grouping,
-   dateformat, `openPrompts`/`oldPrompts` filtering.
+4. Targeted unit tests where logic is pure: `journal.ts` grouping, the
+   Temporal date functions (across a DST boundary),
+   `openPrompts`/`oldPrompts` filtering.
 
-5. Wire `npm test` into `make check`.
+5. Wire `npm test` into `make check`; `make deploy` runs `make check`
+   first.
 
 Done when: `make check` (lint + typecheck + test) is the full local gate
 and passes.
 
-## Phase 8 — Deployment: Docker + fly.io + Litestream
+## Phase 7 — Deployment polish (already on fly + Litestream)
 
-Copy the website deployment shape, minus the monorepo staging machinery
-(no workspaces — the build context is just this repo).
+The deployment is live and healthy; this phase just closes the gaps
+against the bhs-cs conventions:
 
-1. **Dockerfile** (`node:26-slim`): build stage downloads the static
-   litestream release (pin the version by ARG) and installs the toolchain
-   better-sqlite3 needs if no prebuilt binary matches (`python3 make g++`);
-   manifests-first `npm ci --omit=dev` for layer caching; final stage
-   copies the app, `litestream.yml` → `/etc/litestream.yml`, `run.sh`;
-   `ENV DB_DIR=/data`, `EXPOSE`, `CMD ["/app/run.sh"]`.
+1. Dockerfile: Node 26 base (done in Phase 1 with the mise pin),
+   `npm ci --omit=dev`, `CMD` runs `node index.ts`. Check whether the
+   sqlite3-CLI-from-source build stage is still wanted (bhs-cs website
+   kept it; it's for ad-hoc volume surgery over `fly ssh console`).
 
-2. **`run.sh`** (adapt website's verbatim): if `LITESTREAM_BUCKET_NAME`
-   unset → loud banner, `exec node index.ts` bare; else restore the db
-   only if missing (`litestream restore -if-replica-exists`), honoring a
-   `$DB_DIR/no-restore` sentinel for deliberate resets; then
-   `exec litestream replicate -exec "node index.ts"`.
+2. `run.sh`: adopt website's two refinements — the loud banner +
+   bare-`node` fallback when `LITESTREAM_BUCKET_NAME` is unset, and the
+   `$DB_DIR/no-restore` sentinel for a deliberate fresh start.
 
-3. **`litestream.yml`**: env-var interpolated, single db
-   (`${DB_DIR}/${DB_FILE}`), S3-compatible replica (Tigris, like website)
-   via the five `LITESTREAM_*` vars. Create a **new** bucket/path for this
-   app — never reuse an old replica path.
+3. `fly.toml`: add the `[[http_service.checks]]` block hitting the
+   existing `GET /health` (website's: 30s interval, 5s timeout, 10s
+   grace). Consider `auto_stop_machines = 'suspend'` +
+   `min_machines_running = 0` (the lesson-planning posture — this app has
+   no background work; current setting is `'stop'`/1).
 
-4. **`fly.toml`**: pick an app name (e.g. `gigamonkeys-help`), region
-   `sjc`, `[[mounts]]` data volume at `/data`, `[http_service]` with
-   `force_https`, an HTTP check on the existing `GET /health`, and — since
-   this app has no background work — `auto_stop_machines = 'suspend'`,
-   `min_machines_running = 0` (the lesson-planning posture, not website's
-   always-on). Single machine; SQLite requires it anyway.
-
-5. **`.dockerignore`** as a whitelist (`*` then re-include what ships),
-   the bhs-cs convention that makes `.env`/`*.db` leaks structurally
+4. `.dockerignore`: convert to the whitelist style (`*` then re-include
+   what ships) so `.env`/`fly.env`/`*.db` leaks are structurally
    impossible.
 
-6. **Config/secrets** (simplified, no bhs-config): a tracked
-   `template.env` documenting every variable; non-secret prod values in
-   `fly.toml [env]`; secrets pushed with `fly secrets import` from a local
-   gitignored env file, wrapped in a `make secrets` target. If bhs-config
-   is ever published or this repo joins the monorepo, adopt a
-   `config-manifest.ts` instead.
+5. Add a tracked `template.env` documenting every variable (the bhs-cs
+   convention `fly.env` currently lacks); keep `set-secrets.sh` (wrapped
+   by `make secrets`).
 
-7. **Makefile targets**: `deploy` (runs `make check` first, then
-   `fly deploy`), `secrets`, `logs`, `ssh`, `restart`. Retire
-   `start`/`restart`/`stop` (pm2) and drop the pm2 dependency; `dev` stays
-   nodemon (`--watch . -e ts,json,njk,html,sql --exec 'node
-   --env-file=.env index.ts'`).
+6. Replace the old `backup-db` (a local `cp`) with a `VACUUM INTO`-style
+   script usable over `fly ssh console`, as a secondary to litestream.
 
-8. Keep `backup-db` but reimplement as website's `VACUUM INTO` script run
-   over `fly ssh console` (secondary to litestream, not the primary
-   backup).
+7. If it's never been done: a litestream **restore drill** (restore to a
+   scratch path, open, check a table). "Replication never restored from
+   is a hope, not a backup."
 
-Done when: the app runs on fly.dev with litestream replicating and a
-restore drill has been performed (restore to a scratch path, open, check a
-table — "replication never restored from is a hope, not a backup").
+Done when: a `make deploy` from the modernized tree serves production.
 
-## Phase 9 — Cutover and decommission
+## Phase 8 — Docs
 
-Ordered checklist, once Phase 8 works against a scratch db:
+1. Regenerate CLAUDE.md against the modernized tree (commands,
+   architecture, deploy — no EC2, no pm2, no callbacks).
 
-1. Announce/schedule a brief outage (or do it outside class hours).
+2. Prune TODO.md items this plan resolves (DST fix; anything else that
+   fell out).
 
-2. `backup-db` on EC2; stop the pm2 process; copy `help.db` off the box.
-
-3. Put the prod db on the fly volume (sftp via `fly ssh`, or restore it
-   into place), boot, verify against real data.
-
-4. Add the fly hostname callback to the Google OAuth client's authorized
-   redirect URIs (do this ahead of time — propagation is slow), set
-   `REDIRECT_URL`/config accordingly.
-
-5. Point `help.gigamonkeys.com` at the fly app (`fly certs add`), verify
-   sign-in end-to-end on the real hostname.
-
-6. Watch litestream generations appear in the bucket; do the restore
-   drill against the real replica.
-
-7. Decommission: remove the EC2 instance (snapshot the volume first),
-   delete `bounce`/`connect`/`upload`/`download` and `ec2.env` references,
-   archive `ec2-setup.txt`.
-
-8. Rewrite CLAUDE.md for the new world (commands, architecture, deploy);
-   prune TODO.md items this plan resolved.
+3. Note the trunk-branch decision from Phase 0 wherever it landed.
 
 ## Out of scope (deliberately)
 
-- Feature work from TODO.md (recurring prompts, websockets queue, profile
-  pages, …) — this plan only modernizes what exists.
+- Feature work from TODO.md (recurring prompts, websockets queue, user
+  management pages, avatars, …) — this plan only modernizes what exists.
 
-- Converting `public/js/*.js` (two tiny browser scripts) to a bundled
+- Converting `public/js/*.js` (tiny browser scripts) to a bundled
   client-TS setup — not worth an esbuild pipeline yet. Biome covers them
   as plain JS.
-
-- Switching user identity from email to Google id (a TODO.md item and the
-  website's model). Worth doing someday; it's a data migration, not a
-  style alignment, and would bloat this plan.
 
 - Nunjucks template rework beyond what the filter changes force.
