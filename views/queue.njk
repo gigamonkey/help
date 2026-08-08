@@ -6,9 +6,9 @@
   <title>{{ title }}</title>
   <link href="/css/style.css" media="all" rel="stylesheet" type="text/css">
   <script src="/js/update-times.js" type="module"></script>
-  <script src="/js/auto-update.js" type="module"></script>
+  <script src="/js/live.js" type="module"></script>
 </head>
-<body class="queue">
+<body class="queue" data-events="/c/{{class_id}}/events">
 
   <a class="homeicon" href="/">
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-house-fill" viewBox="0 0 16 16">
@@ -22,6 +22,10 @@
   {% if className %}
   <h1 class="classname"><a href="./help">{{ className }}</a></h1>
   {% endif %}
+
+  {# live.js swaps this element whenever the queue changes, so it has to
+     exist in both the empty and non-empty states. #}
+  <div id="queue">
 
   {% if queue.length > 0 %}
     <div id="items" class="cards">
@@ -37,6 +41,8 @@
       🎉 Nobody waiting! 🎉
     </h2>
   {% endif %}
+
+  </div>
 
   </div>
 </body>

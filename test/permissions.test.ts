@@ -1,58 +1,14 @@
 import assert from 'node:assert';
-import { type ChildProcess, execFileSync, spawn } from 'node:child_process';
-import fs from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
-import process from 'node:process';
 import { after, before, test } from 'node:test';
-import { fileURLToPath } from 'node:url';
+import { Client, startServer, type TestServer } from './harness.ts';
 
 /*
- * The permissions matrix: spawn the real server in DEV_MODE on a throwaway
- * seeded db, log in as each persona via /dev/login with a cookie-jar fetch
- * helper, and assert the URL x persona status matrix.
+ * The permissions matrix: spawn the real server (see harness.ts), log in
+ * as each persona, and assert the URL x persona status matrix.
  */
 
-const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-
-const DB_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'help-test-'));
-const ENV = {
-  ...process.env,
-  DEV_MODE: 'true',
-  DB_DIR,
-  DB_FILE: 'test.db',
-  PORT: '0',
-};
-
-let server: ChildProcess;
+let srv: TestServer;
 let base: string;
-
-/*
- * A minimal cookie-jar HTTP client (fetch never follows redirects so we can
- * assert on them, and cookie-session needs both session and session.sig
- * cookies round-tripped).
- */
-class Client {
-  cookies = new Map<string, string>();
-
-  async get(url: string): Promise<Response> {
-    const headers: Record<string, string> = {};
-    if (this.cookies.size > 0) {
-      headers.cookie = [...this.cookies.entries()].map(([k, v]) => `${k}=${v}`).join('; ');
-    }
-    const res = await fetch(`${base}${url}`, { redirect: 'manual', headers });
-    for (const line of res.headers.getSetCookie()) {
-      const [pair] = line.split(';');
-      const eq = (pair as string).indexOf('=');
-      this.cookies.set((pair as string).slice(0, eq), (pair as string).slice(eq + 1));
-    }
-    return res;
-  }
-
-  async status(url: string): Promise<number> {
-    return (await this.get(url)).status;
-  }
-}
 
 const personas = ['anon', 'student', 'helper', 'teacher', 'outsider', 'admin', 'owner'] as const;
 type Persona = (typeof personas)[number];
@@ -70,38 +26,19 @@ const loginIds: Record<Persona, string | null> = {
 const clients = {} as Record<Persona, Client>;
 
 before(async () => {
-  execFileSync('node', ['seed/seed-dev.ts'], { cwd: ROOT, env: ENV });
-
-  server = spawn('node', ['index.ts'], { cwd: ROOT, env: ENV });
-
-  // PORT=0 makes the OS pick; the server logs the port it got.
-  base = await new Promise<string>((resolve, reject) => {
-    let out = '';
-    server.stdout?.on('data', (data: Buffer) => {
-      out += data.toString();
-      const m = out.match(/listening on port (\d+)/);
-      if (m) {
-        resolve(`http://localhost:${m[1]}`);
-      }
-    });
-    server.on('exit', (code) => reject(new Error(`server exited early (${code}): ${out}`)));
-    setTimeout(() => reject(new Error(`server never came up: ${out}`)), 15000);
-  });
+  srv = await startServer();
+  base = srv.base;
 
   for (const p of personas) {
-    clients[p] = new Client();
+    clients[p] = new Client(base);
     const id = loginIds[p];
     if (id) {
-      const res = await clients[p].get(`/dev/login/${id}`);
-      assert.equal(res.status, 302, `login as ${id}`);
+      await clients[p].login(id);
     }
   }
 });
 
-after(() => {
-  server?.kill();
-  fs.rmSync(DB_DIR, { recursive: true, force: true });
-});
+after(() => srv?.stop());
 
 /*
  * 302 for anon is the redirect to /dev/login (to Google sign-in in real
@@ -123,6 +60,11 @@ const matrix: [string, Record<Persona, number>][] = [
   ],
   [
     '/c/apcs/done',
+    { anon: 302, student: 200, helper: 200, teacher: 200, outsider: 200, admin: 200, owner: 200 },
+  ],
+  // The SSE stream is in the same regime as the queue pages it refreshes.
+  [
+    '/c/apcs/events',
     { anon: 302, student: 200, helper: 200, teacher: 200, outsider: 200, admin: 200, owner: 200 },
   ],
   [
@@ -220,7 +162,7 @@ test('profile update: student edits own name, denied on others', async () => {
     redirect: 'manual',
     headers: {
       'content-type': 'application/x-www-form-urlencoded',
-      cookie: [...clients.student.cookies.entries()].map(([k, v]) => `${k}=${v}`).join('; '),
+      cookie: clients.student.cookieHeader(),
     },
     body: 'preferredName=Sammy&pronouns=they%2Fthem',
   });
@@ -232,7 +174,7 @@ test('profile update: student edits own name, denied on others', async () => {
     redirect: 'manual',
     headers: {
       'content-type': 'application/x-www-form-urlencoded',
-      cookie: [...clients.student.cookies.entries()].map(([k, v]) => `${k}=${v}`).join('; '),
+      cookie: clients.student.cookieHeader(),
     },
     body: 'preferredName=Hacked',
   });

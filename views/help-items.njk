@@ -2,9 +2,14 @@
 
 {% block scripts %}
 <script src="/js/update-times.js" type="module"></script>
+<script src="/js/live.js" type="module"></script>
 {% endblock %}
 
 {% block content %}
+
+  {# live.js swaps this element whenever the queue changes, so it has to
+     exist in both the empty and non-empty states. #}
+  <div id="queue">
 
   {% if queue.length > 0 %}
     <div id="items" class="cards">
@@ -21,5 +26,7 @@
     {% endblock %}
     </h2>
   {% endif %}
+
+  </div>
 
 {% endblock %}

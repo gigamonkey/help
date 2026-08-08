@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { allCourses, byPeriod, fullClassName } from './classroom.ts';
 import { DEV_MODE } from './config.ts';
 import db from './db.ts';
+import { broadcast, subscribe } from './live.ts';
 import oauth from './oauth.ts';
 import { isAdmin, isOwner } from './permissions.ts';
 
@@ -62,7 +63,14 @@ router.post('/c/:class_id/help', (req, res) => {
   const { class_id } = req.params;
   const { problem } = req.body;
   db.requestHelp({ user_id: req.session?.user?.id, class_id, problem });
+  broadcast(class_id);
   res.redirect('help');
+});
+
+// The class's live-update stream (see live.ts). Held open until the
+// client disconnects.
+router.get('/c/:class_id/events', (req, res) => {
+  subscribe(req.params.class_id, res);
 });
 
 router.get('/c/:class_id/queue', (req, res) => {

@@ -8,7 +8,7 @@
   {% block scripts %}
   {% endblock %}
 </head>
-<body {% if class %}class="{{class}}"{% endif %}>
+<body {% if class %}class="{{class}}"{% endif %}{% if class_id %} data-events="/c/{{class_id}}/events"{% endif %}>
 
   {% if className %}
   <h1 class="classname">{{ className }}</h1>
