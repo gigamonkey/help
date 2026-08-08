@@ -129,6 +129,27 @@ p.get-help a {
   color: #333;
 }
 
+/* Links that act as buttons (Create/Resync, Create all/Sync all). */
+a.button {
+  display: inline-block;
+  margin: 2px;
+  border: 1px solid grey;
+  border-radius: 4px;
+  padding: 4px 12px;
+  color: black;
+  background: rgba(100, 128, 255, 0.3);
+  font-size: 80%;
+  white-space: nowrap;
+}
+
+a.button:hover {
+  background: rgba(100, 128, 255, 0.5);
+}
+
+a.button:active {
+  background: rgba(100, 128, 255, 0.7);
+}
+
 .section h1 {
   font-size: 1.1em;
   color: grey;
