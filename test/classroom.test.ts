@@ -17,3 +17,17 @@ test('byPeriod: section first, name fallback, numeric order, no-period last', ()
     ['Robotics - Period 1', 'Data Structures', 'AP CS', 'Advisory', 'Beekeeping', 'Zebra Studies'],
   );
 });
+
+test('byPeriod: any number in the section counts as the period', () => {
+  const classes = [
+    { name: 'AP CS', section: 'P6' },
+    { name: 'Intro CS', section: '2' },
+    { name: 'Data Structures', section: 'Per. 4' },
+    // In the name, only a "Period N" shape counts — CS 101 is not period 101.
+    { name: 'CS 101', section: null },
+  ];
+  assert.deepEqual(
+    classes.sort(byPeriod).map((c) => c.name),
+    ['Intro CS', 'Data Structures', 'AP CS', 'CS 101'],
+  );
+});

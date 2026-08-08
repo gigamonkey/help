@@ -15,14 +15,20 @@ export const fullClassName = (c: Course) =>
   c.section ? `${c.name} - ${c.section}` : (c.name ?? '');
 
 /*
- * Sort classes by period number, parsed from the Classroom section
- * ("Period 3", "3rd period") — or, for classes stored before sections were
- * kept, from the name, where the section is baked in by fullClassName.
- * Classes with no discernible period sort last, alphabetically.
+ * Sort classes by period number. The section is dedicated free text
+ * ("Period 3", "P3", plain "3"), so the first number in it is the period.
+ * For classes stored before sections were kept, fall back to a
+ * "Period N"-shaped phrase in the name — only that shape, since course
+ * names have numbers of their own ("CS 101"). No discernible period sorts
+ * last, alphabetically.
  */
 const period = (c: SortableClass): number => {
-  const source = c.section ?? c.name ?? '';
-  const m = /period\s*(\d+)/i.exec(source) ?? /(\d+)(?:st|nd|rd|th)?\s+period/i.exec(source);
+  const fromSection = c.section && /\d+/.exec(c.section);
+  if (fromSection) {
+    return Number(fromSection[0]);
+  }
+  const name = c.name ?? '';
+  const m = /period\s*(\d+)/i.exec(name) ?? /(\d+)(?:st|nd|rd|th)?\s+period/i.exec(name);
   return m ? Number(m[1]) : Infinity;
 };
 
