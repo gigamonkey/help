@@ -205,9 +205,13 @@ test('homepage "For admin" block: owner only, lists every class', async () => {
 test('/classes routes are admin-gated', async () => {
   assert.equal(await clients.student.status('/classes/g-apcs/resync'), 401);
   assert.equal(await clients.teacher.status('/classes/g-apcs/resync'), 401);
+  assert.equal(await clients.teacher.status('/classes/create-all'), 401);
+  assert.equal(await clients.teacher.status('/classes/resync-all'), 401);
   // The admin passes the guard; the handler then fails on the (absent)
   // Google API, so all we assert is that it wasn't a permission denial.
   assert.notEqual(await clients.admin.status('/classes/g-apcs/resync'), 401);
+  assert.notEqual(await clients.admin.status('/classes/create-all'), 401);
+  assert.notEqual(await clients.admin.status('/classes/resync-all'), 401);
 });
 
 test('profile update: student edits own name, denied on others', async () => {

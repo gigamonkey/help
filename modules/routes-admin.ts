@@ -1,4 +1,4 @@
-import { allStudents, oneCourse } from './classroom.ts';
+import { allCourses, allStudents, oneCourse } from './classroom.ts';
 import db, { createClass, resyncClass } from './db.ts';
 import oauth from './oauth.ts';
 import { adminOnly, guardedRouter } from './permissions.ts';
@@ -24,6 +24,49 @@ router.get('/classes/:google_id/create', async (req, res) => {
 
   createClass(c.id as string, teacherId, c.name ?? '', c.section ?? null, c.id as string, students);
   res.redirect(`/c/${c.id}/students`);
+});
+
+/*
+ * Bulk versions of create and resync over the current teacher's Classroom
+ * courses: create-all creates every course not yet set up, resync-all
+ * resyncs every one that is.
+ */
+router.get('/classes/create-all', async (req, res) => {
+  const teacherId = req.session?.user?.id as string;
+  const oauth2client = oauth.oauth2client();
+  oauth2client.setCredentials(req.session?.auth ?? {});
+
+  const existing = new Set(db.googleClassroomIds().map(String));
+  for (const c of await allCourses(oauth2client, teacherId)) {
+    if (!existing.has(String(c.id))) {
+      const students = await allStudents(oauth2client, c.id as string);
+      createClass(
+        c.id as string,
+        teacherId,
+        c.name ?? '',
+        c.section ?? null,
+        c.id as string,
+        students,
+      );
+    }
+  }
+  res.redirect('/');
+});
+
+router.get('/classes/resync-all', async (req, res) => {
+  const userId = req.session?.user?.id as string;
+  const oauth2client = oauth.oauth2client();
+  oauth2client.setCredentials(req.session?.auth ?? {});
+
+  const existing = new Set(db.googleClassroomIds().map(String));
+  for (const c of await allCourses(oauth2client, userId)) {
+    if (existing.has(String(c.id))) {
+      const students = await allStudents(oauth2client, c.id as string);
+      const clazz = db.classByGoogleId({ google_id: c.id });
+      resyncClass(clazz.id, c.name ?? '', c.section ?? null, students);
+    }
+  }
+  res.redirect('/');
 });
 
 router.get('/classes/:google_id/resync', async (req, res) => {
