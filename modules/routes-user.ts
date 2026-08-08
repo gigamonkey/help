@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { allCourses, fullClassName } from './classroom.ts';
+import { allCourses, byPeriod, fullClassName } from './classroom.ts';
 import { DEV_MODE } from './config.ts';
 import db from './db.ts';
 import oauth from './oauth.ts';
@@ -14,7 +14,7 @@ const router = Router();
 router.get('/', async (req, res) => {
   const id = req.session?.user?.id as string;
   const user = db.userById({ id });
-  const memberships = db.classMemberships({ user_id: id });
+  const memberships = db.classMemberships({ user_id: id }).sort(byPeriod);
 
   if (isAdmin(user)) {
     res.locals.isAdmin = true;

@@ -14,6 +14,19 @@ export type Student = classroom_v1.Schema$Student;
 export const fullClassName = (c: Course) =>
   c.section ? `${c.name} - ${c.section}` : (c.name ?? '');
 
+/*
+ * Sort classes by the period number in their name ("AP CS - Period 3",
+ * "Intro CS - 3rd period"); classes with no discernible period sort last,
+ * alphabetically.
+ */
+const period = (name: string): number => {
+  const m = /period\s*(\d+)/i.exec(name) ?? /(\d+)(?:st|nd|rd|th)?\s+period/i.exec(name);
+  return m ? Number(m[1]) : Infinity;
+};
+
+export const byPeriod = (a: { name: string }, b: { name: string }): number =>
+  period(a.name) - period(b.name) || a.name.localeCompare(b.name);
+
 export const oneCourse = (auth: OAuth2Client, id: string) => classroom.courses.get({ id, auth });
 
 export const allCourses = async (oauth2client: OAuth2Client, userId: string): Promise<Course[]> => {
