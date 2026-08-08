@@ -129,7 +129,7 @@ p.get-help a {
   color: #333;
 }
 
-/* Links that act as buttons (Create/Resync, Create all/Sync all). */
+/* Links that act as buttons (Create/Resync, Create all/Resync all). */
 a.button {
   display: inline-block;
   margin: 2px;
