@@ -18,8 +18,17 @@ where user_id = :user_id
 order by classes.name;
 
 -- :name allClasses :all
--- Every class that has been set up, for the owner's admin view.
-select id, name from classes order by name;
+-- Every class that has been set up, with its teacher(s) and how many help
+-- requests it has seen, for the owner's admin view.
+select
+  classes.id,
+  classes.name,
+  (select group_concat(users.name, ', ')
+     from class_members join users on users.id = class_members.user_id
+     where class_members.class_id = classes.id and class_members.role = 'teacher') as teachers,
+  (select count(*) from help where help.class_id = classes.id) as posts
+from classes
+order by classes.name;
 
 -- :name googleClassroomIds :list
 -- Google Classroom ids of every class created from Classroom.

@@ -184,8 +184,9 @@ test('closed items show up on the done page', async () => {
 test('homepage "For admin" block: owner only, lists every class', async () => {
   const ownerPage = await (await clients.owner.get('/')).text();
   assert.match(ownerPage, /For admin/);
-  assert.match(ownerPage, /AP CS/);
-  assert.match(ownerPage, /Intro CS/);
+  // Class, teacher, and post count (from seed/fixtures.ts) per row.
+  assert.match(ownerPage, /AP CS<\/a><\/td>\s*<td>Pat Teacher<\/td>\s*<td>3<\/td>/);
+  assert.match(ownerPage, /Intro CS<\/a><\/td>\s*<td>Pat Teacher<\/td>\s*<td>1<\/td>/);
 
   // A garden-variety admin gets the teacher block but not the admin one.
   const adminPage = await (await clients.admin.get('/')).text();

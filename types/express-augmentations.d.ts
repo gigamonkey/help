@@ -45,6 +45,6 @@ declare namespace Express {
     user?: SessionUser;
     isAdmin?: boolean;
     isOwner?: boolean;
-    allClasses?: { id: string; name: string }[];
+    allClasses?: { id: string; name: string; teachers: string | null; posts: number }[];
   }
 }

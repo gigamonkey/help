@@ -61,10 +61,19 @@
             All the classes that have been set up, whoever the teacher.
           </p>
           <table>
+            <thead>
+              <tr>
+                <th>Class</th>
+                <th>Teacher</th>
+                <th>Posts</th>
+              </tr>
+            </thead>
             <tbody>
               {% for c in allClasses %}
                 <tr>
                   <td><a href="/c/{{c.id}}/help">{{c.name}}</a></td>
+                  <td>{{c.teachers}}</td>
+                  <td>{{c.posts}}</td>
                 </tr>
               {% endfor %}
             </tbody>
