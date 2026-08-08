@@ -2,8 +2,10 @@
 -- Classes
 
 -- :name className :get(name)
--- The display name of a class.
-select name from classes where id = :class_id;
+-- The display name of a class: the raw Classroom name plus the section
+-- when there is one.
+select name || coalesce(' - ' || section, '') as name
+from classes where id = :class_id;
 
 -- :name getClass :get
 -- A class along with the given user's role in it.
@@ -12,17 +14,19 @@ from classes join class_members on classes.id = class_members.class_id
 where classes.id = :class_id and user_id = :user_id;
 
 -- :name classMemberships :all
--- All the classes a user belongs to, with their membership row.
-select * from class_members join classes on class_members.class_id = classes.id
-where user_id = :user_id
-order by classes.name;
+-- All the classes a user belongs to, with their membership row and the
+-- class's display name and section (the caller sorts by period).
+select class_members.*, section,
+  classes.name || coalesce(' - ' || section, '') as name
+from class_members join classes on class_members.class_id = classes.id
+where user_id = :user_id;
 
 -- :name allClasses :all
 -- Every class that has been set up, with its teacher(s) and how many help
 -- requests it has seen, for the owner's admin view.
 select
   classes.id,
-  classes.name,
+  classes.name || coalesce(' - ' || classes.section, '') as name,
   (select group_concat(users.name, ', ')
      from class_members join users on users.id = class_members.user_id
      where class_members.class_id = classes.id and class_members.role = 'teacher') as teachers,

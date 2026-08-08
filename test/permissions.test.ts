@@ -191,9 +191,10 @@ test('homepage class list is sorted by period', async () => {
 test('homepage "For admin" block: owner only, lists every class', async () => {
   const ownerPage = await (await clients.owner.get('/')).text();
   assert.match(ownerPage, /For admin/);
-  // Class, teacher, and post count (from seed/fixtures.ts) per row.
-  assert.match(ownerPage, /AP CS<\/a><\/td>\s*<td>Pat Teacher<\/td>\s*<td>3<\/td>/);
-  assert.match(ownerPage, /Intro CS<\/a><\/td>\s*<td>Pat Teacher<\/td>\s*<td>1<\/td>/);
+  // Class (display name: name - section), teacher, and post count (from
+  // seed/fixtures.ts) per row.
+  assert.match(ownerPage, /AP CS - Period 4<\/a><\/td>\s*<td>Pat Teacher<\/td>\s*<td>3<\/td>/);
+  assert.match(ownerPage, /Intro CS - Period 2<\/a><\/td>\s*<td>Pat Teacher<\/td>\s*<td>1<\/td>/);
 
   // A garden-variety admin gets the teacher block but not the admin one.
   const adminPage = await (await clients.admin.get('/')).text();

@@ -1,4 +1,4 @@
-import { allStudents, fullClassName, oneCourse } from './classroom.ts';
+import { allStudents, oneCourse } from './classroom.ts';
 import db, { createClass, resyncClass } from './db.ts';
 import oauth from './oauth.ts';
 import { adminOnly, guardedRouter } from './permissions.ts';
@@ -22,14 +22,7 @@ router.get('/classes/:google_id/create', async (req, res) => {
   const c = course.data;
   const students = await allStudents(oauth2client, c.id as string);
 
-  createClass(
-    c.id as string,
-    teacherId,
-    fullClassName(c),
-    c.section ?? null,
-    c.id as string,
-    students,
-  );
+  createClass(c.id as string, teacherId, c.name ?? '', c.section ?? null, c.id as string, students);
   res.redirect(`/c/${c.id}/students`);
 });
 
@@ -42,7 +35,7 @@ router.get('/classes/:google_id/resync', async (req, res) => {
   const course = await oneCourse(oauth2client, google_id);
 
   const clazz = db.classByGoogleId({ google_id });
-  resyncClass(clazz.id, fullClassName(course.data), course.data.section ?? null, students);
+  resyncClass(clazz.id, course.data.name ?? '', course.data.section ?? null, students);
   res.redirect(`/c/${clazz.id}/students`);
 });
 
