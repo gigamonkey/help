@@ -262,7 +262,8 @@ body.welcome .fine-print {
   font-size: 80%;
 }
 
-body.welcome .teachers {
+body.welcome .teachers,
+body.welcome .admin {
   background: #eee;
   margin-top: 20px;
   padding: 20px;

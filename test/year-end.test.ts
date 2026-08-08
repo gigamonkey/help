@@ -62,7 +62,7 @@ test('reset-year archives the db, removes it, and arms no-restore', () => {
     assert.match(archives[0] as string, /^help-\d{8}(T\d{6})?\.db$/);
     const archive = path.join(dir, 'archives', archives[0] as string);
     assert.equal(query(archive, 'pragma integrity_check;'), 'ok');
-    assert.equal(query(archive, 'select count(*) from users;'), '6');
+    assert.equal(query(archive, 'select count(*) from users;'), '7');
     assert.equal(query(archive, 'select count(*) from help;'), '4');
 
     // The db is gone, the sentinel is consumed, and no-restore is armed

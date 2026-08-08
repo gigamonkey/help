@@ -2,14 +2,16 @@ import db, { ensureUser } from '../modules/db.ts';
 
 /*
  * A deterministic dev world, loaded through the real db layer: one user per
- * persona (admin, teacher, helper, student, student-in-another-class), two
- * classes, and a mix of open and closed help requests. The permissions test
- * matrix depends on these exact ids.
+ * persona (admin, owner, teacher, helper, student,
+ * student-in-another-class), two classes, and a mix of open and closed help
+ * requests. The permissions test matrix depends on these exact ids.
  */
 
 export const users = [
   // berkeley.net address => is_admin (see ensureUser)
   { id: 'admin1', email: 'admin@berkeley.net', name: 'Alex Admin' },
+  // The OWNER_EMAIL from permissions.ts, for the homepage admin block.
+  { id: 'owner1', email: 'peterseibel@berkeley.net', name: 'Peter Seibel' },
   { id: 'teacher1', email: 'teacher@example.com', name: 'Pat Teacher' },
   { id: 'helper1', email: 'helper@example.com', name: 'Harper Helper' },
   { id: 'student1', email: 'student1@example.com', name: 'Sam Student' },

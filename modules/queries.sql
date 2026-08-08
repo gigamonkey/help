@@ -17,6 +17,10 @@ select * from class_members join classes on class_members.class_id = classes.id
 where user_id = :user_id
 order by classes.name;
 
+-- :name allClasses :all
+-- Every class that has been set up, for the owner's admin view.
+select id, name from classes order by name;
+
 -- :name googleClassroomIds :list
 -- Google Classroom ids of every class created from Classroom.
 select google_id from classes where google_id is not null;

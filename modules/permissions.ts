@@ -10,6 +10,14 @@ import db from './db.ts';
 
 export const isAdmin = (user?: SessionUser) => user?.is_admin === 1;
 
+/*
+ * The site owner. is_admin is granted to every @berkeley.net login, so this
+ * is the narrower "actually runs the site" check for owner-only views.
+ */
+export const OWNER_EMAIL = 'peterseibel@berkeley.net';
+
+export const isOwner = (user?: SessionUser) => user?.email === OWNER_EMAIL;
+
 export const isHelperRole = (member?: SessionUser) =>
   member !== undefined && ['teacher', 'helper'].includes(member.role ?? '');
 

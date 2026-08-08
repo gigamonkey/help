@@ -54,7 +54,7 @@ class Client {
   }
 }
 
-const personas = ['anon', 'student', 'helper', 'teacher', 'outsider', 'admin'] as const;
+const personas = ['anon', 'student', 'helper', 'teacher', 'outsider', 'admin', 'owner'] as const;
 type Persona = (typeof personas)[number];
 
 const loginIds: Record<Persona, string | null> = {
@@ -64,6 +64,7 @@ const loginIds: Record<Persona, string | null> = {
   teacher: 'teacher1',
   outsider: 'outsider1',
   admin: 'admin1',
+  owner: 'owner1',
 };
 
 const clients = {} as Record<Persona, Client>;
@@ -108,35 +109,38 @@ after(() => {
  * including that any logged-in user can view any class's queue pages.
  */
 const matrix: [string, Record<Persona, number>][] = [
-  ['/', { anon: 302, student: 200, helper: 200, teacher: 200, outsider: 200, admin: 200 }],
+  [
+    '/',
+    { anon: 302, student: 200, helper: 200, teacher: 200, outsider: 200, admin: 200, owner: 200 },
+  ],
   [
     '/c/apcs/help',
-    { anon: 302, student: 200, helper: 200, teacher: 200, outsider: 200, admin: 200 },
+    { anon: 302, student: 200, helper: 200, teacher: 200, outsider: 200, admin: 200, owner: 200 },
   ],
   [
     '/c/apcs/queue',
-    { anon: 302, student: 200, helper: 200, teacher: 200, outsider: 200, admin: 200 },
+    { anon: 302, student: 200, helper: 200, teacher: 200, outsider: 200, admin: 200, owner: 200 },
   ],
   [
     '/c/apcs/done',
-    { anon: 302, student: 200, helper: 200, teacher: 200, outsider: 200, admin: 200 },
+    { anon: 302, student: 200, helper: 200, teacher: 200, outsider: 200, admin: 200, owner: 200 },
   ],
   [
     '/c/apcs/students',
-    { anon: 302, student: 401, helper: 401, teacher: 200, outsider: 401, admin: 401 },
+    { anon: 302, student: 401, helper: 401, teacher: 200, outsider: 401, admin: 401, owner: 401 },
   ],
   [
     '/c/apcs/members',
-    { anon: 302, student: 401, helper: 401, teacher: 200, outsider: 401, admin: 401 },
+    { anon: 302, student: 401, helper: 401, teacher: 200, outsider: 401, admin: 401, owner: 401 },
   ],
   // student1's own profile: self or admin only.
   [
     '/users/student1',
-    { anon: 302, student: 200, helper: 401, teacher: 401, outsider: 401, admin: 200 },
+    { anon: 302, student: 200, helper: 401, teacher: 401, outsider: 401, admin: 200, owner: 200 },
   ],
   [
     '/c/nosuchclass',
-    { anon: 302, student: 404, helper: 404, teacher: 404, outsider: 404, admin: 404 },
+    { anon: 302, student: 404, helper: 404, teacher: 404, outsider: 404, admin: 404, owner: 404 },
   ],
 ];
 
@@ -175,6 +179,18 @@ test('closed items show up on the done page', async () => {
   assert.match(body, /Open request from student1/);
   assert.match(body, /Open request from student2/);
   assert.doesNotMatch(body, /Closed request from helper1/);
+});
+
+test('homepage "For admin" block: owner only, lists every class', async () => {
+  const ownerPage = await (await clients.owner.get('/')).text();
+  assert.match(ownerPage, /For admin/);
+  assert.match(ownerPage, /AP CS/);
+  assert.match(ownerPage, /Intro CS/);
+
+  // A garden-variety admin gets the teacher block but not the admin one.
+  const adminPage = await (await clients.admin.get('/')).text();
+  assert.match(adminPage, /For teachers/);
+  assert.doesNotMatch(adminPage, /For admin/);
 });
 
 test('/classes routes are admin-gated', async () => {

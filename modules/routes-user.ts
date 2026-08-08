@@ -3,7 +3,7 @@ import { allCourses, fullClassName } from './classroom.ts';
 import { DEV_MODE } from './config.ts';
 import db from './db.ts';
 import oauth from './oauth.ts';
-import { isAdmin } from './permissions.ts';
+import { isAdmin, isOwner } from './permissions.ts';
 
 /*
  * Pages available to any logged-in user. (The profile pages stay guarded
@@ -18,6 +18,11 @@ router.get('/', async (req, res) => {
 
   if (isAdmin(user)) {
     res.locals.isAdmin = true;
+
+    if (isOwner(user)) {
+      res.locals.isOwner = true;
+      res.locals.allClasses = db.allClasses();
+    }
 
     // No real OAuth in DEV_MODE, so no Classroom course list either.
     if (DEV_MODE) {

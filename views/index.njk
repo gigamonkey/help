@@ -53,6 +53,24 @@
           </tbody>
         </table>
       </div>
+
+      {% if isOwner %}
+        <div class="admin">
+          <h2>For admin</h2>
+          <p class='fine-print'>
+            All the classes that have been set up, whoever the teacher.
+          </p>
+          <table>
+            <tbody>
+              {% for c in allClasses %}
+                <tr>
+                  <td><a href="/c/{{c.id}}/help">{{c.name}}</a></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
     {% else %}
       <p>
         Don’t see your class here? Ask your teacher if the class has been set up.
