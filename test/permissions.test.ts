@@ -181,6 +181,13 @@ test('closed items show up on the done page', async () => {
   assert.doesNotMatch(body, /Closed request from helper1/);
 });
 
+test('homepage class list is sorted by period', async () => {
+  // Intro CS is Period 2, AP CS is Period 4 (see seed/fixtures.ts), so
+  // period order is the reverse of alphabetical.
+  const page = await (await clients.teacher.get('/')).text();
+  assert.ok(page.indexOf('Intro CS') < page.indexOf('AP CS'), 'Intro CS before AP CS');
+});
+
 test('homepage "For admin" block: owner only, lists every class', async () => {
   const ownerPage = await (await clients.owner.get('/')).text();
   assert.match(ownerPage, /For admin/);

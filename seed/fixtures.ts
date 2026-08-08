@@ -23,6 +23,9 @@ export const classes = [
   {
     id: 'apcs',
     name: 'AP CS',
+    // Sections chosen so period order (intro first) differs from
+    // alphabetical order, which the homepage-sorting test depends on.
+    section: 'Period 4',
     google_id: 'g-apcs',
     members: [
       { user_id: 'teacher1', role: 'teacher' },
@@ -34,6 +37,7 @@ export const classes = [
   {
     id: 'intro',
     name: 'Intro CS',
+    section: 'Period 2',
     google_id: 'g-intro',
     members: [
       { user_id: 'teacher1', role: 'teacher' },
@@ -64,7 +68,7 @@ export const seed = (): void => {
     ensureUser(u.id, u.email, u.name);
   }
   for (const c of classes) {
-    db.insertClass({ id: c.id, name: c.name, google_id: c.google_id });
+    db.insertClass({ id: c.id, name: c.name, section: c.section, google_id: c.google_id });
     for (const m of c.members) {
       db.insertMember({ user_id: m.user_id, class_id: c.id, role: m.role });
     }

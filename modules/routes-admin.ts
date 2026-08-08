@@ -22,7 +22,14 @@ router.get('/classes/:google_id/create', async (req, res) => {
   const c = course.data;
   const students = await allStudents(oauth2client, c.id as string);
 
-  createClass(c.id as string, teacherId, fullClassName(c), c.id as string, students);
+  createClass(
+    c.id as string,
+    teacherId,
+    fullClassName(c),
+    c.section ?? null,
+    c.id as string,
+    students,
+  );
   res.redirect(`/c/${c.id}/students`);
 });
 
@@ -35,7 +42,7 @@ router.get('/classes/:google_id/resync', async (req, res) => {
   const course = await oneCourse(oauth2client, google_id);
 
   const clazz = db.classByGoogleId({ google_id });
-  resyncClass(clazz.id, fullClassName(course.data), students);
+  resyncClass(clazz.id, fullClassName(course.data), course.data.section ?? null, students);
   res.redirect(`/c/${clazz.id}/students`);
 });
 

@@ -47,11 +47,12 @@ export const createClass = (
   id: string,
   teacherId: string,
   name: string,
+  section: string | null,
   googleId: string,
   students: RosterStudent[],
 ): void => {
   db.transaction(() => {
-    db.insertClass({ id, name, google_id: googleId });
+    db.insertClass({ id, name, section, google_id: googleId });
     db.insertMember({ user_id: teacherId, class_id: id, role: 'teacher' });
     for (const s of students) {
       ensureRosterUser(s);
@@ -61,12 +62,18 @@ export const createClass = (
 };
 
 /*
- * Resync a class with its Google Classroom roster: update the name, add
- * missing students, and remove students no longer on the roster.
+ * Resync a class with its Google Classroom roster: update the name and
+ * section, add missing students, and remove students no longer on the
+ * roster.
  */
-export const resyncClass = (classId: string, name: string, students: RosterStudent[]): void => {
+export const resyncClass = (
+  classId: string,
+  name: string,
+  section: string | null,
+  students: RosterStudent[],
+): void => {
   db.transaction(() => {
-    db.updateClassName({ name, id: classId });
+    db.updateClass({ name, section, id: classId });
     const current: string[] = db.studentIds({ class_id: classId });
     const toKeep = new Set(students.map((s) => s.profile?.id));
     for (const s of students) {

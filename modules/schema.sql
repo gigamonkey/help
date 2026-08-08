@@ -15,6 +15,7 @@ DROP TABLE IF EXISTS sessions;
 CREATE TABLE IF NOT EXISTS classes (
       id TEXT NOT NULL PRIMARY KEY,
       name TEXT NOT NULL,
+      section TEXT,
       google_id TEXT
   );
 

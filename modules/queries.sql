@@ -38,10 +38,12 @@ select google_id from classes where google_id is not null;
 select * from classes where google_id = :google_id;
 
 -- :name insertClass :run
-insert into classes (id, name, google_id) values (:id, :name, :google_id);
+insert into classes (id, name, section, google_id)
+values (:id, :name, :section, :google_id);
 
--- :name updateClassName :run
-update classes set name = :name where id = :id;
+-- :name updateClass :run
+-- Refresh the fields that come from Google Classroom on resync.
+update classes set name = :name, section = :section where id = :id;
 
 -- :name insertMember :run
 insert or ignore into class_members (user_id, class_id, role)

@@ -2,25 +2,18 @@ import assert from 'node:assert';
 import { test } from 'node:test';
 import { byPeriod } from '../modules/classroom.ts';
 
-test('byPeriod: numeric period order, then alphabetical, no-period last', () => {
-  const names = [
-    'AP CS - Period 3',
-    'Zebra Studies',
-    'Intro CS - 3rd period',
-    'AP CS - Period 10',
-    'Intro CS - 1st Period',
-    'Beekeeping',
+test('byPeriod: section first, name fallback, numeric order, no-period last', () => {
+  const classes = [
+    { name: 'AP CS', section: 'Period 4' },
+    { name: 'Zebra Studies', section: null },
+    // No stored section: the period comes out of the name.
+    { name: 'Robotics - Period 1', section: null },
+    { name: 'Data Structures', section: '3rd period' },
+    { name: 'Advisory', section: 'Period 10' },
+    { name: 'Beekeeping' },
   ];
-  const sorted = names
-    .map((name) => ({ name }))
-    .sort(byPeriod)
-    .map((c) => c.name);
-  assert.deepEqual(sorted, [
-    'Intro CS - 1st Period',
-    'AP CS - Period 3',
-    'Intro CS - 3rd period',
-    'AP CS - Period 10',
-    'Beekeeping',
-    'Zebra Studies',
-  ]);
+  assert.deepEqual(
+    classes.sort(byPeriod).map((c) => c.name),
+    ['Robotics - Period 1', 'Data Structures', 'AP CS', 'Advisory', 'Beekeeping', 'Zebra Studies'],
+  );
 });
