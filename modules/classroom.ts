@@ -21,15 +21,16 @@ export const fullClassName = (c: Course) =>
  * Classes with no discernible period sort last, alphabetically.
  */
 const period = (c: SortableClass): number => {
-  const source = c.section ?? c.name;
+  const source = c.section ?? c.name ?? '';
   const m = /period\s*(\d+)/i.exec(source) ?? /(\d+)(?:st|nd|rd|th)?\s+period/i.exec(source);
   return m ? Number(m[1]) : Infinity;
 };
 
-type SortableClass = { name: string; section?: string | null };
+// The optional/nullable fields let a Schema$Course sort directly.
+type SortableClass = { name?: string | null; section?: string | null };
 
 export const byPeriod = (a: SortableClass, b: SortableClass): number =>
-  period(a) - period(b) || a.name.localeCompare(b.name);
+  period(a) - period(b) || (a.name ?? '').localeCompare(b.name ?? '');
 
 export const oneCourse = (auth: OAuth2Client, id: string) => classroom.courses.get({ id, auth });
 

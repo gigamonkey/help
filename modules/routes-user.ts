@@ -32,7 +32,7 @@ router.get('/', async (req, res) => {
 
     const oauth2client = oauth.oauth2client();
     oauth2client.setCredentials(req.session?.auth ?? {});
-    const courses = await allCourses(oauth2client, id);
+    const courses = (await allCourses(oauth2client, id)).sort(byPeriod);
     for (const c of courses) {
       c.fullName = fullClassName(c);
     }
