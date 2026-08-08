@@ -12,8 +12,8 @@ ENV NODE_ENV="production"
 FROM base AS build
 
 ARG LITESTREAM_VERSION=v0.3.13
-ARG SQLITE_YEAR=2025
-ARG SQLITE_VERSION=3500400
+ARG SQLITE_YEAR=2026
+ARG SQLITE_VERSION=3530400
 
 # Install packages needed to download and build stuff
 RUN apt-get update -qq && \
