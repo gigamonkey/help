@@ -22,6 +22,12 @@ has been written but not started.
   Phase 0 is done (this branch); the EC2-leftover sweep is next, then the
   rest lands in order, each phase deployable.
 
+- `sse-live-updates.md` — push queue changes to open pages over
+  Server-Sent Events (notify-only events, fragment-swap refresh),
+  replacing the queue page's 15-second reload. Assumes the modernized
+  TypeScript/pugsql codebase, so it lands after
+  `adopt-bhs-cs-conventions.md`.
+
 ## Residue / loose ends
 
 - CLAUDE.md in this branch describes the stale tree; it carries a caveat
