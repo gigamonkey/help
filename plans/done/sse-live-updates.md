@@ -161,3 +161,12 @@ Replaces auto-update.js (delete it):
 - The HTTP/1.1 six-connections-per-origin limit only affects local dev
   with many tabs open; production is HTTP/2 via the fly proxy. Not worth
   engineering around.
+
+## Changes to the plan
+
+- **Dead connections are reaped by the response's `close` event, not by
+  write failures** — `res.write` on a closed response doesn't throw
+  synchronously, so the planned "a throwing write drops that subscriber"
+  handling was unnecessary; `subscribe` removes the response from the set
+  on `close`, and heartbeats/broadcasts to already-closed responses are
+  harmless no-ops in the meantime.

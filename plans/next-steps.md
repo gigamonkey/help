@@ -1,34 +1,30 @@
 # Next steps
 
-Where things stand (2026-07-28): the live app runs on fly.io (`bhs-help`)
-with Litestream, deployed from the **`help` branch** — `main` and `refresh`
-are stale (EC2-era). The **`update` branch** (created from `help`, with the
-`refresh` plan commits cherry-picked onto it) is where the modernization
-happens. The code is still plain JS with callback-style sqlite3; the plan
-has been written but not started.
+Where things stand (2026-08-19): the modernization is done and merged —
+`main` is the trunk, the app is TypeScript on Node 26 with
+pugsql/better-sqlite3, tested with node:test, and deployed to fly.io
+(`bhs-help`) with Litestream. Live queue updates over SSE and the
+`make year-end` archive-and-reset machinery have both landed. One
+feature plan is queued up and not started.
 
 ## Remaining plans
 
-- `year-end-reset.md` — first-class once-a-year archive-and-reset of the
-  database (Litestream-aware: a boot-time `reset-year` sentinel archives
-  via VACUUM INTO and starts fresh, orchestrated by `make year-end`).
-  Builds on the modernization's run.sh sentinel pattern, so it lands
-  after `adopt-bhs-cs-conventions.md`.
-
-- `adopt-bhs-cs-conventions.md` — bring the app in line with the coding
-  conventions of the bhs-cs monorepo apps (TypeScript on Node 26, Biome,
-  pugsql/better-sqlite3, cookie-session auth, node:test) and polish the
-  existing fly.io/Litestream deployment. The rebase-onto-`help` part of
-  Phase 0 is done (this branch); the EC2-leftover sweep is next, then the
-  rest lands in order, each phase deployable.
-
-- `sse-live-updates.md` — push queue changes to open pages over
-  Server-Sent Events (notify-only events, fragment-swap refresh),
-  replacing the queue page's 15-second reload. Assumes the modernized
-  TypeScript/pugsql codebase, so it lands after
-  `adopt-bhs-cs-conventions.md`.
+- `room-queue-switching.md` — teachers set each class's room and period
+  on a new settings page; a per-room projector page (`/r/:room`) uses
+  `@peterseibel/bells` + `@peterseibel/bhs-calendars` to show whichever
+  class is in session and switch automatically at period boundaries.
+  Builds on the landed SSE machinery; ready to start.
 
 ## Residue / loose ends
 
-- CLAUDE.md in this branch describes the stale tree; it carries a caveat
-  note and gets regenerated in the plan's final phase.
+- First real `make year-end` run happens at actual year end: verify the
+  old Litestream generation's lifetime in the bucket after the reset, do
+  the restore drill against the new generation (the annual drill the
+  modernization left outstanding), move the downloaded archive to
+  durable storage, and prune the volume copy. Checklist in
+  `done/year-end-reset.md` Phase 4.
+
+- SSE deployed-app verification (see `done/sse-live-updates.md` §7):
+  confirm heartbeats survive the fly proxy's idle timeout, hidden tabs
+  release their connections so the machine can suspend, and open pages
+  recover invisibly across a deploy.
