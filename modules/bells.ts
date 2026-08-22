@@ -29,6 +29,16 @@ const years = allCalendars
  */
 export const EXT_PERIOD = 8;
 
+// Our period-name convention, shared with bells (via SCHEDULE_OPTIONS)
+// and applied directly to the intervals bells hands back.
+const periodNumber = (p: { name: string }): number | null => {
+  const m = /^Period (\d+)\b/.exec(p.name);
+  if (m) {
+    return Number(m[1]);
+  }
+  return p.name === 'Period Ext' ? EXT_PERIOD : null;
+};
+
 /*
  * includeTags makes the optional periods visible so classes assigned to
  * period 0, 7, or Ext participate in room switching. Period 7 and Ext
@@ -39,13 +49,7 @@ export const EXT_PERIOD = 8;
 export const SCHEDULE_OPTIONS: BellScheduleOptions = {
   role: 'student',
   includeTags: ['zero', 'seventh', 'ext'],
-  periodNumber: (p) => {
-    const m = /^Period (\d+)\b/.exec(p.name);
-    if (m) {
-      return Number(m[1]);
-    }
-    return p.name === 'Period Ext' ? EXT_PERIOD : null;
-  },
+  periodNumber,
 };
 
 export const schedule = new BellSchedule(years, SCHEDULE_OPTIONS);
@@ -89,18 +93,30 @@ if (DEBUG_TIME) {
 }
 
 /*
- * The period whose class a room should show right now: the period
- * containing the moment or, during passing (and before school), the next
- * one later the same day — so the incoming class's queue is up before the
- * students are. Null when no period is coming (after school, weekends,
- * holidays, summer).
+ * The period whose class a room should show right now: the numbered
+ * period actually in session at the moment. Null any other time — before
+ * school, passing, lunch, after school, weekends, holidays, summer — so a
+ * room's queue is up only while its class meets. (Notably, late-start
+ * Mondays have no period until 10:00; looking ahead to the next period
+ * would put a queue up hours early.)
  */
 export const currentPeriodNumber = (
   instant?: Temporal.Instant,
   bells: BellSchedule = schedule,
 ): number | null => {
   try {
-    return bells.currentOrNextPeriodNumber(instant);
+    const period = bells.periodAt(instant);
+    if (!period) {
+      return null;
+    }
+    // bells' interval machinery pretends plain weekends run the weekday
+    // schedule (periodAt reports Period 1 on a Saturday morning), so
+    // confirm the period falls on an actual school day.
+    const date = period.start.toZonedDateTimeISO(bells.timezone).toPlainDate();
+    if (!bells.isSchoolDay(date)) {
+      return null;
+    }
+    return periodNumber(period);
   } catch {
     return null;
   }

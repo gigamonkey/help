@@ -92,8 +92,9 @@ router.get('/c/:class_id/done', (req, res) => {
 
 /*
  * The per-room queue page: shows whichever class is in session in the
- * room right now (or is up next, during passing) and switches classes on
- * its own as the periods change — leave it on the projector all day. The
+ * room right now and switches classes on its own as the periods change —
+ * leave it on the projector all day (between periods it shows no class,
+ * flipping to the next one at the bell). The
  * page re-fetches itself at the next bell (data-refresh-in, see live.js)
  * and on queue changes via the room's live-update stream.
  */

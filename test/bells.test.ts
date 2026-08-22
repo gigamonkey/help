@@ -58,12 +58,14 @@ test('mid-period: the period in progress', () => {
   assert.equal(currentPeriodNumber(at('11:00'), bells), 3);
 });
 
-test('passing: the incoming period', () => {
-  assert.equal(currentPeriodNumber(at('09:30'), bells), 2);
+test('passing: no class until the bell', () => {
+  assert.equal(currentPeriodNumber(at('09:30'), bells), null);
 });
 
-test('before school: the first period of the day, including optional period 0', () => {
-  assert.equal(currentPeriodNumber(at('06:00'), bells), 0);
+test('before school: no class, even with an optional period 0 later', () => {
+  assert.equal(currentPeriodNumber(at('06:00'), bells), null);
+  // ...but period 0 itself counts while in session.
+  assert.equal(currentPeriodNumber(at('08:00'), bells), 0);
 });
 
 test('Period Ext maps to the EXT_PERIOD number once period 7 is over', () => {
@@ -73,8 +75,8 @@ test('Period Ext maps to the EXT_PERIOD number once period 7 is over', () => {
 
 test('candidate periods: Ext is the fallback whenever 7 is current', () => {
   assert.deepEqual(currentPeriodNumbers(at('08:45'), bells), [1]);
-  // Passing into the 7/Ext slot, and the overlap itself.
-  assert.deepEqual(currentPeriodNumbers(at('11:43'), bells), [7, EXT_PERIOD]);
+  // Passing into the 7/Ext slot shows nothing; the overlap shows both.
+  assert.deepEqual(currentPeriodNumbers(at('11:43'), bells), []);
   assert.deepEqual(currentPeriodNumbers(at('12:15'), bells), [7, EXT_PERIOD]);
   // Ext's tail, after school, and the weekend.
   assert.deepEqual(currentPeriodNumbers(at('12:45'), bells), [EXT_PERIOD]);
