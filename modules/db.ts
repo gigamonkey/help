@@ -60,8 +60,8 @@ const ensureRosterUser = (s: RosterStudent) => {
  * Create a class from a Google Classroom course: the class row, the teacher
  * membership, and a student membership (creating the user if needed) for
  * everyone on the roster. room and period are Classroom's starting guess;
- * the teacher's later edits on the settings page win (resync never touches
- * them).
+ * the teacher's later edits on the settings page win (resync only fills
+ * blanks, never overwrites).
  */
 export const createClass = (
   id: string,
@@ -85,17 +85,20 @@ export const createClass = (
 
 /*
  * Resync a class with its Google Classroom roster: update the name and
- * section, add missing students, and remove students no longer on the
- * roster.
+ * section, fill in a room or period the teacher hasn't set (never
+ * overwriting one they have), add missing students, and remove students
+ * no longer on the roster.
  */
 export const resyncClass = (
   classId: string,
   name: string,
   section: string | null,
+  room: string | null,
+  period: number | null,
   students: RosterStudent[],
 ): void => {
   db.transaction(() => {
-    db.updateClass({ name, section, id: classId });
+    db.updateClass({ name, section, room, period, id: classId });
     const current: string[] = db.studentIds({ class_id: classId });
     const toKeep = new Set(students.map((s) => s.profile?.id));
     for (const s of students) {

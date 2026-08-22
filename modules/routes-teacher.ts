@@ -20,7 +20,7 @@ router.get('/c/:class_id/members', (req, res) => {
  * Room and period settings: where and when the class meets, which is what
  * lets the per-room queue page (/r/:room) pick it up. Prefilled from
  * Google Classroom at create; the teacher's edits are authoritative after
- * that (resync never touches them).
+ * that (resync fills in blank settings but never overwrites them).
  */
 router.get('/c/:class_id/settings', (req, res) => {
   const { class_id } = req.params;

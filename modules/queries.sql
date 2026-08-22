@@ -46,10 +46,15 @@ insert into classes (id, name, section, google_id, room, period)
 values (:id, :name, :section, :google_id, :room, :period);
 
 -- :name updateClass :run
--- Refresh the fields that come from Google Classroom on resync. (room and
--- period are deliberately not touched: they are teacher-owned settings and
--- Classroom's values were only the starting guess at create time.)
-update classes set name = :name, section = :section where id = :id;
+-- Refresh the fields that come from Google Classroom on resync. room and
+-- period are teacher-owned settings, so Classroom's values only fill in
+-- blanks (coalesce): a resync never overwrites what a teacher has set.
+update classes set
+  name = :name,
+  section = :section,
+  room = coalesce(room, :room),
+  period = coalesce(period, :period)
+where id = :id;
 
 -- :name classSettings :get
 -- The teacher-editable settings for the class settings form.

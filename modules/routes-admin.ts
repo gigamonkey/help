@@ -95,7 +95,14 @@ router.get('/classes/resync-all', async (req, res) => {
     if (existing.has(String(c.id))) {
       const students = await allStudents(oauth2client, c.id as string);
       const clazz = db.classByGoogleId({ google_id: c.id });
-      resyncClass(clazz.id, c.name ?? '', c.section ?? null, students);
+      resyncClass(
+        clazz.id,
+        c.name ?? '',
+        c.section ?? null,
+        c.room ?? null,
+        sectionPeriod(c.section),
+        students,
+      );
     }
   }
   res.redirect('/');
@@ -110,7 +117,14 @@ router.get('/classes/:google_id/resync', async (req, res) => {
   const course = await oneCourse(oauth2client, google_id);
 
   const clazz = db.classByGoogleId({ google_id });
-  resyncClass(clazz.id, course.data.name ?? '', course.data.section ?? null, students);
+  resyncClass(
+    clazz.id,
+    course.data.name ?? '',
+    course.data.section ?? null,
+    course.data.room ?? null,
+    sectionPeriod(course.data.section),
+    students,
+  );
   res.redirect(`/c/${clazz.id}/students`);
 });
 
