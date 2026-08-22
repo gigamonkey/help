@@ -106,17 +106,7 @@ export const currentPeriodNumber = (
 ): number | null => {
   try {
     const period = bells.periodAt(instant);
-    if (!period) {
-      return null;
-    }
-    // bells' interval machinery pretends plain weekends run the weekday
-    // schedule (periodAt reports Period 1 on a Saturday morning), so
-    // confirm the period falls on an actual school day.
-    const date = period.start.toZonedDateTimeISO(bells.timezone).toPlainDate();
-    if (!bells.isSchoolDay(date)) {
-      return null;
-    }
-    return periodNumber(period);
+    return period ? periodNumber(period) : null;
   } catch {
     return null;
   }
