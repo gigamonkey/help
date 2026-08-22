@@ -9,9 +9,27 @@ const DIRNAME = path.dirname(fileURLToPath(import.meta.url));
  * The one place a database connection is opened. schema.sql is idempotent
  * and runs at every boot, so a fresh database materializes on first start.
  */
-const db = new DB(DB_PATH, path.join(DIRNAME, 'schema.sql')).addQueries(
-  path.join(DIRNAME, 'queries.sql'),
-);
+const db = new DB(DB_PATH, path.join(DIRNAME, 'schema.sql'));
+
+/*
+ * Columns added to a table after it first shipped: CREATE TABLE IF NOT
+ * EXISTS covers only fresh databases, so existing ones get them here.
+ * Must run before addQueries so queries referencing the columns prepare.
+ */
+const migrate = (table: string, columns: Record<string, string>): void => {
+  const existing = new Set(
+    (db.db.pragma(`table_info(${table})`) as { name: string }[]).map((c) => c.name),
+  );
+  for (const [name, type] of Object.entries(columns)) {
+    if (!existing.has(name)) {
+      db.db.exec(`ALTER TABLE ${table} ADD COLUMN ${name} ${type}`);
+    }
+  }
+};
+
+migrate('classes', { room: 'TEXT', period: 'INTEGER' });
+
+db.addQueries(path.join(DIRNAME, 'queries.sql'));
 
 export default db;
 
@@ -41,18 +59,22 @@ const ensureRosterUser = (s: RosterStudent) => {
 /*
  * Create a class from a Google Classroom course: the class row, the teacher
  * membership, and a student membership (creating the user if needed) for
- * everyone on the roster.
+ * everyone on the roster. room and period are Classroom's starting guess;
+ * the teacher's later edits on the settings page win (resync never touches
+ * them).
  */
 export const createClass = (
   id: string,
   teacherId: string,
   name: string,
   section: string | null,
+  room: string | null,
+  period: number | null,
   googleId: string,
   students: RosterStudent[],
 ): void => {
   db.transaction(() => {
-    db.insertClass({ id, name, section, google_id: googleId });
+    db.insertClass({ id, name, section, room, period, google_id: googleId });
     db.insertMember({ user_id: teacherId, class_id: id, role: 'teacher' });
     for (const s of students) {
       ensureRosterUser(s);

@@ -15,7 +15,8 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@js-temporal/polyfill": "^0.5.1",
+    "@peterseibel/bells": "^0.10.0",
+    "@peterseibel/bhs-calendars": "^2.13.0",
     "cookie-session": "^2.1.1",
     "dompurify": "^3.4.13",
     "express": "^5.2.1",
@@ -36,6 +37,7 @@
     "@types/node": "^26.2.0",
     "@types/nunjucks": "^3.2.6",
     "nodemon": "^3.1.14",
+    "temporal-polyfill": "^1.0.4",
     "typescript": "^7.0.2"
   },
   "allowScripts": {

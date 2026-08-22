@@ -12,11 +12,17 @@ DROP TABLE IF EXISTS sessions;
 -- the main way to create a class is from a Google classroom so in practice they
 -- always will be. The id can be anything but will be used in URLs so should be
 -- a human readable slug derived from the name of the course.
+-- room and period place the class in the building and the bell schedule,
+-- for the per-room queue page; both are teacher-editable and nullable
+-- (classes without them just don't participate in room switching).
+-- Existing databases get them via the ALTER TABLE migration in db.ts.
 CREATE TABLE IF NOT EXISTS classes (
       id TEXT NOT NULL PRIMARY KEY,
       name TEXT NOT NULL,
       section TEXT,
-      google_id TEXT
+      google_id TEXT,
+      room TEXT,
+      period INTEGER
   );
 
 -- Logged in users. Basically the information we get when they authenticate with

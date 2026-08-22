@@ -8,6 +8,10 @@
  * Hidden tabs disconnect (an open stream holds the fly machine awake);
  * any (re)connection after a gap refreshes once, so missed events —
  * hidden tab, deploy, suspend/resume — can't leave a stale page.
+ *
+ * The room page (/r/:room) additionally refreshes itself at the next bell:
+ * the server puts the seconds until the schedule could change on #queue as
+ * data-refresh-in, and every swap delivers the next deadline.
  */
 
 const url = document.body.dataset.events;
@@ -15,6 +19,23 @@ const url = document.body.dataset.events;
 let source = null;
 let refreshing = false;
 let refreshAgain = false;
+let switchTimer = null;
+
+/*
+ * Re-fetch at the next bell, a little after the deadline so the server is
+ * sure to be into the next interval. Clamped: never sooner than a few
+ * seconds (no tight loops if the deadline is somehow in the past), never
+ * later than six hours (weekend-long "next bell"s just re-check cheaply,
+ * and stay well under setTimeout's 32-bit ceiling).
+ */
+const armSwitchTimer = () => {
+  clearTimeout(switchTimer);
+  const seconds = Number(document.querySelector('#queue')?.dataset.refreshIn);
+  if (Number.isFinite(seconds) && seconds > 0) {
+    const delay = Math.min(Math.max(seconds + 2, 5), 6 * 60 * 60);
+    switchTimer = setTimeout(refresh, delay * 1000);
+  }
+};
 
 const refresh = async () => {
   if (refreshing) {
@@ -30,6 +51,7 @@ const refresh = async () => {
       const current = document.querySelector('#queue');
       if (fresh && current) {
         current.replaceWith(fresh);
+        armSwitchTimer();
       }
     }
   } finally {
@@ -59,6 +81,7 @@ const connect = (stale) => {
 
 if (url) {
   connect(false);
+  armSwitchTimer();
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
       source?.close();

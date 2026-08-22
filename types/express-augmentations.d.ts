@@ -46,5 +46,6 @@ declare namespace Express {
     isAdmin?: boolean;
     isOwner?: boolean;
     allClasses?: { id: string; name: string; teachers: string | null; posts: number }[];
+    simulatedTime?: string | null;
   }
 }

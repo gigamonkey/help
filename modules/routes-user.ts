@@ -1,8 +1,9 @@
 import { Router } from 'express';
+import { currentPeriodNumber, secondsToNextSwitch, simulatedNow } from './bells.ts';
 import { allCourses, byPeriod, fullClassName } from './classroom.ts';
 import { DEV_MODE } from './config.ts';
 import db from './db.ts';
-import { broadcast, subscribe } from './live.ts';
+import { broadcastQueueChange, roomChannel, subscribe } from './live.ts';
 import oauth from './oauth.ts';
 import { isAdmin, isOwner } from './permissions.ts';
 
@@ -23,6 +24,7 @@ router.get('/', async (req, res) => {
     if (isOwner(user)) {
       res.locals.isOwner = true;
       res.locals.allClasses = db.allClasses();
+      res.locals.simulatedTime = simulatedNow();
     }
 
     // No real OAuth in DEV_MODE, so no Classroom course list either.
@@ -63,7 +65,7 @@ router.post('/c/:class_id/help', (req, res) => {
   const { class_id } = req.params;
   const { problem } = req.body;
   db.requestHelp({ user_id: req.session?.user?.id, class_id, problem });
-  broadcast(class_id);
+  broadcastQueueChange(class_id);
   res.redirect('help');
 });
 
@@ -81,6 +83,30 @@ router.get('/c/:class_id/queue', (req, res) => {
 router.get('/c/:class_id/done', (req, res) => {
   const { class_id } = req.params;
   res.render('done.njk', { class_id, queue: db.done({ class_id }) });
+});
+
+/*
+ * The per-room queue page: shows whichever class is in session in the
+ * room right now (or is up next, during passing) and switches classes on
+ * its own as the periods change — leave it on the projector all day. The
+ * page re-fetches itself at the next bell (data-refresh-in, see live.js)
+ * and on queue changes via the room's live-update stream.
+ */
+router.get('/r/:room', (req, res) => {
+  const room = req.params.room.trim();
+  const period = currentPeriodNumber();
+  const clazz = period === null ? undefined : db.classForRoomPeriod({ room, period });
+  res.render('room.njk', {
+    room,
+    clazz,
+    className: clazz ? db.className({ class_id: clazz.id }) : undefined,
+    queue: clazz ? db.queue({ class_id: clazz.id }) : [],
+    refresh_in: secondsToNextSwitch(),
+  });
+});
+
+router.get('/r/:room/events', (req, res) => {
+  subscribe(roomChannel(req.params.room), res);
 });
 
 // Profile pages: yourself, or any user if you're an admin.

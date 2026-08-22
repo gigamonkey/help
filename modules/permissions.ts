@@ -46,6 +46,18 @@ export const teacherOnly = requireRole('teacher');
 export const helperOnly = requireRole('teacher', 'helper');
 
 /*
+ * Guard for owner-only routes (the process-wide knobs on the homepage's
+ * "For admin" block).
+ */
+export const ownerOnly: RequestHandler = (req, res, next) => {
+  if (isOwner(db.userById({ id: req.session?.user?.id }))) {
+    next();
+  } else {
+    res.sendStatus(401);
+  }
+};
+
+/*
  * Guard for admin-only routes (is_admin is global, not class-scoped).
  */
 export const adminOnly: RequestHandler = (req, res, next) => {

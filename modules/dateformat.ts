@@ -1,10 +1,9 @@
-import { Temporal } from '@js-temporal/polyfill';
-
 /*
  * California-time formatting of the seconds-resolution unix timestamps we
  * get from SQLite. Temporal handles the DST boundaries that used to be
- * hardcoded here. (Keep the polyfill until Node's native Temporal is
- * unflagged.)
+ * hardcoded here. Uses Node's native Temporal global (unflagged since
+ * Node 26); the types for the global come from @peterseibel/bells, which
+ * expects the same global.
  */
 
 const TIMEZONE = 'America/Los_Angeles';

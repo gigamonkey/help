@@ -1,6 +1,6 @@
 import { type Request, Router } from 'express';
 import db from './db.ts';
-import { broadcast } from './live.ts';
+import { broadcastQueueChange } from './live.ts';
 import { classMember, helperOnly, isHelperRole } from './permissions.ts';
 
 /*
@@ -17,7 +17,7 @@ router.get('/c/:class_id/help/:id/done', (req, res) => {
   const member = classMember(req);
   if (isHelperRole(member) || (member !== undefined && member.id === help?.user_id)) {
     db.finishHelp({ id });
-    broadcast(req.params.class_id);
+    broadcastQueueChange(req.params.class_id);
     res.redirect(req.get('Referrer') ?? '/');
   } else {
     res.sendStatus(401);
@@ -28,7 +28,7 @@ router.get('/c/:class_id/help/:id/done', (req, res) => {
 // inference (string | string[] otherwise).
 router.get('/c/:class_id/help/:id/reopen', helperOnly, (req: Request<ClassItemParams>, res) => {
   db.reopenHelp({ id: req.params.id });
-  broadcast(req.params.class_id);
+  broadcastQueueChange(req.params.class_id);
   res.redirect(req.get('Referrer') ?? '/');
 });
 

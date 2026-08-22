@@ -1,13 +1,34 @@
-import { allCourses, allStudents, oneCourse } from './classroom.ts';
+import { setSimulatedTime } from './bells.ts';
+import { allCourses, allStudents, oneCourse, sectionPeriod } from './classroom.ts';
 import db, { createClass, resyncClass } from './db.ts';
+import { broadcastAll } from './live.ts';
 import oauth from './oauth.ts';
-import { adminOnly, guardedRouter } from './permissions.ts';
+import { adminOnly, guardedRouter, ownerOnly } from './permissions.ts';
 
 /*
  * Google Classroom integration: create a class from a Classroom course and
- * resync its roster. Admin only.
+ * resync its roster. Admin only. (Plus the owner-only simulated-clock
+ * control from the homepage's "For admin" block.)
  */
 const router = guardedRouter(adminOnly);
+
+/*
+ * Move the bell schedule's clock to a simulated moment (or back to real
+ * time), for testing the room queue pages. Process-global, so owner only,
+ * on top of the router's admin guard. Every open page is told to refresh
+ * so projectors flip immediately.
+ */
+router.post('/debug-time', ownerOnly, (req, res) => {
+  const time = typeof req.body.time === 'string' ? req.body.time.trim() : '';
+  try {
+    setSimulatedTime(req.body.clear ? null : time || null);
+  } catch {
+    res.sendStatus(400);
+    return;
+  }
+  broadcastAll();
+  res.redirect('/');
+});
 
 router.get('/classes/:google_id/create', async (req, res) => {
   const google_id = req.params.google_id as string;
@@ -22,7 +43,16 @@ router.get('/classes/:google_id/create', async (req, res) => {
   const c = course.data;
   const students = await allStudents(oauth2client, c.id as string);
 
-  createClass(c.id as string, teacherId, c.name ?? '', c.section ?? null, c.id as string, students);
+  createClass(
+    c.id as string,
+    teacherId,
+    c.name ?? '',
+    c.section ?? null,
+    c.room ?? null,
+    sectionPeriod(c.section),
+    c.id as string,
+    students,
+  );
   res.redirect(`/c/${c.id}/students`);
 });
 
@@ -45,6 +75,8 @@ router.get('/classes/create-all', async (req, res) => {
         teacherId,
         c.name ?? '',
         c.section ?? null,
+        c.room ?? null,
+        sectionPeriod(c.section),
         c.id as string,
         students,
       );

@@ -42,12 +42,34 @@ select google_id from classes where google_id is not null;
 select * from classes where google_id = :google_id;
 
 -- :name insertClass :run
-insert into classes (id, name, section, google_id)
-values (:id, :name, :section, :google_id);
+insert into classes (id, name, section, google_id, room, period)
+values (:id, :name, :section, :google_id, :room, :period);
 
 -- :name updateClass :run
--- Refresh the fields that come from Google Classroom on resync.
+-- Refresh the fields that come from Google Classroom on resync. (room and
+-- period are deliberately not touched: they are teacher-owned settings and
+-- Classroom's values were only the starting guess at create time.)
 update classes set name = :name, section = :section where id = :id;
+
+-- :name classSettings :get
+-- The teacher-editable settings for the class settings form.
+select room, period from classes where id = :class_id;
+
+-- :name updateClassSettings :run
+update classes set room = :room, period = :period where id = :id;
+
+-- :name classRoom :get(room)
+-- The room a class meets in, for fanning queue-change notifications out
+-- to the room's live-update channel.
+select room from classes where id = :class_id;
+
+-- :name classForRoomPeriod :get
+-- The class meeting in a room during a period, for the per-room queue
+-- page. Ordered so a double-booked room+period is deterministic rather
+-- than random.
+select * from classes
+where room = :room collate nocase and period = :period
+order by id limit 1;
 
 -- :name insertMember :run
 insert or ignore into class_members (user_id, class_id, role)
@@ -66,6 +88,14 @@ select user_id from class_members where role = 'student' and class_id = :class_i
 -- :name requestHelp :insert
 insert into help (user_id, class_id, problem, created_at)
 values (:user_id, :class_id, :problem, unixepoch('now'));
+
+-- :name requestHelpAt :insert
+-- Seeding only: a help request backdated :ago seconds. Distinct, in-the-past
+-- timestamps keep seeded requests from colliding with a live request filed
+-- in the seconds-resolution second seeding ran (the primary key is
+-- (user_id, class_id, created_at)) and make their queue order deterministic.
+insert into help (user_id, class_id, problem, created_at)
+values (:user_id, :class_id, :problem, unixepoch('now') - :ago);
 
 -- :name getHelp :get
 select help.rowid as id, help.*, users.name

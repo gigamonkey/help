@@ -26,6 +26,13 @@ export const DEV_MODE = process.env.DEV_MODE === 'true';
 
 export const PORT = Number(process.env.PORT ?? 3000);
 
+/*
+ * Dev-only: pretend it is this wall-clock moment in the school's timezone
+ * (e.g. 2026-08-19T09:55) for the bell schedule, so room-page period
+ * switching can be exercised on demand. Ignored outside DEV_MODE.
+ */
+export const DEBUG_TIME = DEV_MODE ? (process.env.DEBUG_TIME ?? '') : '';
+
 export const DB_DIR = process.env.DB_DIR ?? '.';
 export const DB_FILE = process.env.DB_FILE ?? 'help.db';
 export const DB_PATH = `${DB_DIR}/${DB_FILE}`;

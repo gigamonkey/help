@@ -82,6 +82,23 @@
               {% endfor %}
             </tbody>
           </table>
+
+          <h3>Bell-schedule clock</h3>
+          <p class='fine-print'>
+            For testing the room queue pages: make the bell schedule pretend
+            it is another moment (school time). This affects every page for
+            everyone until you go back to real time or the server restarts.
+          </p>
+          {% if simulatedTime %}
+            <p>⏰ Currently pretending it is <strong>{{ simulatedTime | replace('T', ' ') }}</strong>.</p>
+          {% endif %}
+          <form action="/debug-time" method="post">
+            <input name="time" type="datetime-local" value="{{ simulatedTime }}">
+            <button type="submit">Pretend</button>
+            {% if simulatedTime %}
+              <button name="clear" value="1" type="submit">Back to real time</button>
+            {% endif %}
+          </form>
         </div>
       {% endif %}
     {% else %}

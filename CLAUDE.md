@@ -91,8 +91,9 @@ OAuth state nonce — lives in a signed `cookie-session` cookie; there is no
 session table. A cookie whose user is missing from the db (post-reset) is
 treated as logged out.
 
-**Dates** (`modules/dateformat.ts`): Temporal over `America/Los_Angeles`
-(via `@js-temporal/polyfill` until Node's native Temporal is unflagged).
+**Dates** (`modules/dateformat.ts`): Temporal over `America/Los_Angeles`,
+on Node's native `Temporal` global (types for the global come from
+`@peterseibel/bells`, which expects the same global).
 Nunjucks filters live in `modules/datefilter.ts` and `modules/mdfilter.ts`
 (marked + DOMPurify — student text is sanitized in one place).
 

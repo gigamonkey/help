@@ -67,12 +67,27 @@ const matrix: [string, Record<Persona, number>][] = [
     '/c/apcs/events',
     { anon: 302, student: 200, helper: 200, teacher: 200, outsider: 200, admin: 200, owner: 200 },
   ],
+  // The room queue page (and its stream) are in the same any-logged-in-user
+  // regime as the class queue pages; a 200 is time-independent because the
+  // no-class-in-session state is still a 200.
+  [
+    '/r/303',
+    { anon: 302, student: 200, helper: 200, teacher: 200, outsider: 200, admin: 200, owner: 200 },
+  ],
+  [
+    '/r/303/events',
+    { anon: 302, student: 200, helper: 200, teacher: 200, outsider: 200, admin: 200, owner: 200 },
+  ],
   [
     '/c/apcs/students',
     { anon: 302, student: 401, helper: 401, teacher: 200, outsider: 401, admin: 401, owner: 401 },
   ],
   [
     '/c/apcs/members',
+    { anon: 302, student: 401, helper: 401, teacher: 200, outsider: 401, admin: 401, owner: 401 },
+  ],
+  [
+    '/c/apcs/settings',
     { anon: 302, student: 401, helper: 401, teacher: 200, outsider: 401, admin: 401, owner: 401 },
   ],
   // student1's own profile: self or admin only.
@@ -154,6 +169,62 @@ test('/classes routes are admin-gated', async () => {
   assert.notEqual(await clients.admin.status('/classes/g-apcs/resync'), 401);
   assert.notEqual(await clients.admin.status('/classes/create-all'), 401);
   assert.notEqual(await clients.admin.status('/classes/resync-all'), 401);
+});
+
+test('class settings update: teacher only', async () => {
+  const post = async (client: Client, body: string) =>
+    (
+      await fetch(`${base}/c/apcs/settings`, {
+        method: 'POST',
+        redirect: 'manual',
+        headers: {
+          'content-type': 'application/x-www-form-urlencoded',
+          cookie: client.cookieHeader(),
+        },
+        body,
+      })
+    ).status;
+
+  // Same values as the fixtures so later tests see an unchanged world.
+  assert.equal(await post(clients.teacher, 'room=303&period=4'), 302);
+  assert.equal(await post(clients.student, 'room=666&period=1'), 401);
+  assert.equal(await post(clients.helper, 'room=666&period=1'), 401);
+  // Bad period values are rejected before touching the db.
+  assert.equal(await post(clients.teacher, 'room=303&period=12'), 400);
+  assert.equal(await post(clients.teacher, 'room=303&period=x'), 400);
+
+  const page = await (await clients.teacher.get('/c/apcs/settings')).text();
+  assert.match(page, /value="303"/);
+  assert.match(page, /value="4"/);
+});
+
+test('simulated bell-schedule clock: owner only, shown on the homepage', async () => {
+  const post = async (client: Client, body: string) =>
+    (
+      await fetch(`${base}/debug-time`, {
+        method: 'POST',
+        redirect: 'manual',
+        headers: {
+          'content-type': 'application/x-www-form-urlencoded',
+          cookie: client.cookieHeader(),
+        },
+        body,
+      })
+    ).status;
+
+  assert.equal(await post(clients.teacher, 'clear=1'), 401);
+  assert.equal(await post(clients.admin, 'clear=1'), 401, 'admin but not owner');
+
+  assert.equal(await post(clients.owner, 'time=2030-09-11T09:00'), 302);
+  const page = await (await clients.owner.get('/')).text();
+  assert.match(page, /pretending it is <strong>2030-09-11 09:00<\/strong>/);
+
+  assert.equal(await post(clients.owner, 'time=not-a-time'), 400);
+
+  // Leave the server on the real clock for whatever runs after us.
+  assert.equal(await post(clients.owner, 'clear=1'), 302);
+  const cleared = await (await clients.owner.get('/')).text();
+  assert.doesNotMatch(cleared, /pretending it is/);
 });
 
 test('profile update: student edits own name, denied on others', async () => {

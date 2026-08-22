@@ -15,14 +15,20 @@ export const fullClassName = (c: Course) =>
   c.section ? `${c.name} - ${c.section}` : (c.name ?? '');
 
 /*
- * Sort classes by period number: the section is dedicated free text
- * ("Period 3", "P3", plain "3"), so the first number in it is the period.
- * Classes with no section (or no number in it) sort last, alphabetically.
+ * The section is dedicated free text ("Period 3", "P3", plain "3"), so
+ * the first number in it is the period; null when there isn't one. Used
+ * to prefill a new class's period setting from its Classroom section.
  */
-const period = (c: SortableClass): number => {
-  const m = c.section ? /\d+/.exec(c.section) : null;
-  return m ? Number(m[0]) : Infinity;
+export const sectionPeriod = (section: string | null | undefined): number | null => {
+  const m = section ? /\d+/.exec(section) : null;
+  return m ? Number(m[0]) : null;
 };
+
+/*
+ * Sort classes by period number; classes with no section (or no number in
+ * it) sort last, alphabetically.
+ */
+const period = (c: SortableClass): number => sectionPeriod(c.section) ?? Infinity;
 
 // The optional/nullable fields let a Schema$Course sort directly.
 type SortableClass = { name?: string | null; section?: string | null };

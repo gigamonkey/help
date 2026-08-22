@@ -1,0 +1,32 @@
+{% extends 'layout.njk' %}
+
+{% set title %}Settings{% endset %}
+
+{% block content %}
+
+<form action="/c/{{class_id}}/settings" method="post">
+
+  <p>
+    <label for="room">Room</label>
+    <input id="room" name="room" type="text" value="{{ room }}">
+  </p>
+
+  <p>
+    <label for="period">Period</label>
+    <input id="period" name="period" type="number" min="0" max="7" step="1" value="{{ period }}">
+  </p>
+
+  <p><button type="submit">Save</button></p>
+
+</form>
+
+{% if room and period != null %}
+<p>
+  With a room and period set, this class appears on the room’s queue page
+  when it is in session: <a href="/r/{{ room | urlencode }}">Room {{ room }}</a>.
+  Leave that page up on the projector and it switches from class to class
+  as the periods change.
+</p>
+{% endif %}
+
+{% endblock %}
