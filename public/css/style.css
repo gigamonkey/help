@@ -129,8 +129,10 @@ p.get-help a {
   color: #333;
 }
 
-/* Links that act as buttons (Create/Resync, Create all/Resync all). */
-a.button {
+/* Links that act as buttons (Create/Resync, Create all/Resync all) and
+   real buttons styled to match them (Save). */
+a.button,
+button.button {
   display: inline-block;
   margin: 2px;
   border: 1px solid grey;
@@ -138,15 +140,19 @@ a.button {
   padding: 4px 12px;
   color: black;
   background: rgba(100, 128, 255, 0.3);
+  font-family: inherit;
   font-size: 80%;
   white-space: nowrap;
+  cursor: pointer;
 }
 
-a.button:hover {
+a.button:hover,
+button.button:hover {
   background: rgba(100, 128, 255, 0.5);
 }
 
-a.button:active {
+a.button:active,
+button.button:active {
   background: rgba(100, 128, 255, 0.7);
 }
 

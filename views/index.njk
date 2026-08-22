@@ -47,12 +47,17 @@
                 </td>
                 <td>
                   {% if googleIds.indexOf(course.id) > -1 %}
-                    <form action="/c/{{course.id}}/settings" method="post">
+                    <form action="/c/{{course.id}}/settings" method="post"
+                          id="settings-{{course.id}}">
                       <input name="room" type="text" size="6" placeholder="Room"
                              value="{{ settings[course.id].room }}">
                       {{ periodSelect(settings[course.id].period) }}
-                      <button type="submit">Save</button>
                     </form>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if googleIds.indexOf(course.id) > -1 %}
+                    <button class="button" form="settings-{{course.id}}" type="submit">Save</button>
                   {% endif %}
                 </td>
                 <td>
