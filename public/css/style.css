@@ -289,6 +289,27 @@ body.welcome .fine-print {
   font-size: 80%;
 }
 
+/* The row of room-page links: one pill per room the teacher has
+   sections in. Same palette as a.button, but fully rounded. */
+body.welcome .rooms a {
+  display: inline-block;
+  margin: 2px 4px;
+  border: 1px solid grey;
+  border-radius: 999px;
+  padding: 4px 14px;
+  color: black;
+  background: rgba(100, 128, 255, 0.3);
+  white-space: nowrap;
+}
+
+body.welcome .rooms a:hover {
+  background: rgba(100, 128, 255, 0.5);
+}
+
+body.welcome .rooms a:active {
+  background: rgba(100, 128, 255, 0.7);
+}
+
 body.welcome .teachers,
 body.welcome .admin {
   background: #eee;

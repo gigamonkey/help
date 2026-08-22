@@ -19,6 +19,9 @@ router.get('/', async (req, res) => {
   const id = req.session?.user?.id as string;
   const user = db.userById({ id });
   const memberships = db.classMemberships({ user_id: id }).sort(byPeriod);
+  // Room-page links for every room the user's own sections meet in
+  // (empty for non-teachers, so the row simply doesn't render).
+  res.locals.rooms = db.teacherRooms({ user_id: id });
 
   if (isAdmin(user)) {
     res.locals.isAdmin = true;

@@ -67,6 +67,15 @@ select id, room, period from classes;
 -- :name updateClassSettings :run
 update classes set room = :room, period = :period where id = :id;
 
+-- :name teacherRooms :list
+-- The distinct rooms a user's own sections meet in (teacher role), for
+-- the homepage's row of room-page links.
+select distinct room
+from classes join class_members on classes.id = class_members.class_id
+where user_id = :user_id and role = 'teacher'
+  and room is not null and room <> ''
+order by room;
+
 -- :name classRoom :get(room)
 -- The room a class meets in, for fanning queue-change notifications out
 -- to the room's live-update channel.

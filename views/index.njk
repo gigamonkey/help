@@ -10,6 +10,14 @@
   <body class="welcome">
     <h1>Welcome to BHS CS Classroom Help!</h1>
 
+    {% if rooms.length %}
+      <div class="rooms">
+        {% for room in rooms %}
+          <a href="/r/{{ room | urlencode }}">{{ room }}</a>
+        {% endfor %}
+      </div>
+    {% endif %}
+
     {% if isAdmin %}
       <p>Here are the classes you’ve already set up.</p>
     {% else %}
