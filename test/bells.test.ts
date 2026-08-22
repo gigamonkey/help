@@ -13,7 +13,13 @@ import { BellSchedule, type YearData } from '@peterseibel/bells';
  */
 
 process.env.DEV_MODE ??= 'true';
-const { currentPeriodNumber, secondsToNextSwitch } = await import('../modules/bells.ts');
+const {
+  currentPeriodNumber,
+  currentPeriodNumbers,
+  secondsToNextSwitch,
+  EXT_PERIOD,
+  SCHEDULE_OPTIONS,
+} = await import('../modules/bells.ts');
 
 const TIMEZONE = 'America/Los_Angeles';
 
@@ -32,12 +38,16 @@ const CALENDAR: YearData[] = [
         { name: 'Period 1', start: '8:30', end: '9:28' },
         { name: 'Period 2', start: '9:34', end: '10:37' },
         { name: 'Period 3', start: '10:43', end: '11:41' },
+        // 7 and Ext overlap, as in the real calendars: 7 wins the overlap,
+        // Ext gets its remaining tail.
+        { name: 'Period 7', start: '11:47', end: '12:30', tags: ['optional', 'seventh'] },
+        { name: 'Period Ext', start: '11:47', end: '13:00', tags: ['optional', 'ext'] },
       ],
     },
   },
 ];
 
-const bells = new BellSchedule(CALENDAR, { role: 'student', includeTags: ['zero', 'seventh'] });
+const bells = new BellSchedule(CALENDAR, SCHEDULE_OPTIONS);
 
 // A moment on a plain school day (Wednesday 2030-09-11), school time.
 const at = (time: string, date = '2030-09-11'): Temporal.Instant =>
@@ -54,6 +64,22 @@ test('passing: the incoming period', () => {
 
 test('before school: the first period of the day, including optional period 0', () => {
   assert.equal(currentPeriodNumber(at('06:00'), bells), 0);
+});
+
+test('Period Ext maps to the EXT_PERIOD number once period 7 is over', () => {
+  assert.equal(currentPeriodNumber(at('12:15'), bells), 7);
+  assert.equal(currentPeriodNumber(at('12:45'), bells), EXT_PERIOD);
+});
+
+test('candidate periods: Ext is the fallback whenever 7 is current', () => {
+  assert.deepEqual(currentPeriodNumbers(at('08:45'), bells), [1]);
+  // Passing into the 7/Ext slot, and the overlap itself.
+  assert.deepEqual(currentPeriodNumbers(at('11:43'), bells), [7, EXT_PERIOD]);
+  assert.deepEqual(currentPeriodNumbers(at('12:15'), bells), [7, EXT_PERIOD]);
+  // Ext's tail, after school, and the weekend.
+  assert.deepEqual(currentPeriodNumbers(at('12:45'), bells), [EXT_PERIOD]);
+  assert.deepEqual(currentPeriodNumbers(at('15:00'), bells), []);
+  assert.deepEqual(currentPeriodNumbers(at('12:00', '2030-09-14'), bells), []);
 });
 
 test('after school, weekend, holiday: no class', () => {

@@ -1,3 +1,4 @@
+{% from "period-select.njk" import periodSelect %}
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -29,6 +30,7 @@
           class from Classroom and create a help queue or Resync to synchronize
           our database with Classroom. Resync will add missing students and remove
           students no longer in your class but will not touch current students.
+          The room and period place a created class on its room queue page.
         </p>
         <table>
           <tbody>
@@ -39,6 +41,16 @@
                     <a href="/c/{{course.id}}/students">{{ course.fullName }}</a>
                   {% else %}
                     {{ course.fullName }}
+                  {% endif %}
+                </td>
+                <td>
+                  {% if googleIds.indexOf(course.id) > -1 %}
+                    <form action="/c/{{course.id}}/settings" method="post">
+                      <input name="room" type="text" size="6" placeholder="Room"
+                             value="{{ settings[course.id].room }}">
+                      {{ periodSelect(settings[course.id].period) }}
+                      <button type="submit">Save</button>
+                    </form>
                   {% endif %}
                 </td>
                 <td>

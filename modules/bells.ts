@@ -1,4 +1,10 @@
-import { BellSchedule, clearDebugTime, getDebugOffset, setDebugTime } from '@peterseibel/bells';
+import {
+  BellSchedule,
+  type BellScheduleOptions,
+  clearDebugTime,
+  getDebugOffset,
+  setDebugTime,
+} from '@peterseibel/bells';
 import allCalendars from '@peterseibel/bhs-calendars';
 import { DEBUG_TIME } from './config.ts';
 
@@ -17,13 +23,32 @@ const years = allCalendars
   .sort((a, b) => (a.firstDay < b.firstDay ? -1 : 1));
 
 /*
- * includeTags makes the optional periods visible so classes assigned to
- * period 0 or 7 participate in room switching.
+ * "Period Ext" carries no number in the calendar; we store an Ext class's
+ * period as 8 (the UI shows "Ext"), so the mapping lives here and in the
+ * period dropdown (views/period-select.njk).
  */
-export const schedule = new BellSchedule(years, {
+export const EXT_PERIOD = 8;
+
+/*
+ * includeTags makes the optional periods visible so classes assigned to
+ * period 0, 7, or Ext participate in room switching. Period 7 and Ext
+ * overlap in the calendar (3:39 on); bells reports Period 7 during the
+ * overlap and Ext for its remaining tail, so an Ext class's room shows it
+ * only once period 7 is over.
+ */
+export const SCHEDULE_OPTIONS: BellScheduleOptions = {
   role: 'student',
-  includeTags: ['zero', 'seventh'],
-});
+  includeTags: ['zero', 'seventh', 'ext'],
+  periodNumber: (p) => {
+    const m = /^Period (\d+)\b/.exec(p.name);
+    if (m) {
+      return Number(m[1]);
+    }
+    return p.name === 'Period Ext' ? EXT_PERIOD : null;
+  },
+};
+
+export const schedule = new BellSchedule(years, SCHEDULE_OPTIONS);
 
 /*
  * Point bells' clock at a simulated wall-clock moment in the school's
@@ -79,6 +104,24 @@ export const currentPeriodNumber = (
   } catch {
     return null;
   }
+};
+
+/*
+ * The period numbers a room's class could be meeting under right now, in
+ * priority order. Usually just the current period, but Period Ext runs
+ * alongside and past period 7, and bells reports 7 during the overlap —
+ * so while 7 is current, Ext is a fallback: a room with an Ext class and
+ * no 7th-period class shows the Ext queue for Ext's whole duration.
+ */
+export const currentPeriodNumbers = (
+  instant?: Temporal.Instant,
+  bells: BellSchedule = schedule,
+): number[] => {
+  const period = currentPeriodNumber(instant, bells);
+  if (period === null) {
+    return [];
+  }
+  return period === 7 ? [7, EXT_PERIOD] : [period];
 };
 
 /*

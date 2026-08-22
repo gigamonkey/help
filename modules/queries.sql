@@ -55,6 +55,10 @@ update classes set name = :name, section = :section where id = :id;
 -- The teacher-editable settings for the class settings form.
 select room, period from classes where id = :class_id;
 
+-- :name allClassSettings :all
+-- Every class's room and period, for the homepage's inline settings forms.
+select id, room, period from classes;
+
 -- :name updateClassSettings :run
 update classes set room = :room, period = :period where id = :id;
 

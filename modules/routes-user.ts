@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { currentPeriodNumber, secondsToNextSwitch, simulatedNow } from './bells.ts';
+import { currentPeriodNumbers, secondsToNextSwitch, simulatedNow } from './bells.ts';
 import { allCourses, byPeriod, fullClassName } from './classroom.ts';
 import { DEV_MODE } from './config.ts';
 import db from './db.ts';
@@ -12,6 +12,8 @@ import { isAdmin, isOwner } from './permissions.ts';
  * in-handler as self-or-admin.)
  */
 const router = Router();
+
+type RoomPeriod = { id: string; room: string | null; period: number | null };
 
 router.get('/', async (req, res) => {
   const id = req.session?.user?.id as string;
@@ -40,7 +42,10 @@ router.get('/', async (req, res) => {
       c.fullName = fullClassName(c);
     }
     const googleIds = db.googleClassroomIds().map(String);
-    res.render('index.njk', { memberships, courses, googleIds });
+    // Stored room/period by class id (= Classroom course id), for the
+    // inline settings forms on the created courses' rows.
+    const settings = Object.fromEntries(db.allClassSettings().map((c: RoomPeriod) => [c.id, c]));
+    res.render('index.njk', { memberships, courses, googleIds, settings });
   } else {
     res.render('index.njk', { memberships });
   }
@@ -94,8 +99,9 @@ router.get('/c/:class_id/done', (req, res) => {
  */
 router.get('/r/:room', (req, res) => {
   const room = req.params.room.trim();
-  const period = currentPeriodNumber();
-  const clazz = period === null ? undefined : db.classForRoomPeriod({ room, period });
+  const clazz = currentPeriodNumbers()
+    .map((period) => db.classForRoomPeriod({ room, period }))
+    .find(Boolean);
   res.render('room.njk', {
     room,
     clazz,

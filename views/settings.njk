@@ -1,5 +1,7 @@
 {% extends 'layout.njk' %}
 
+{% from "period-select.njk" import periodSelect %}
+
 {% set title %}Settings{% endset %}
 
 {% block content %}
@@ -12,8 +14,7 @@
   </p>
 
   <p>
-    <label for="period">Period</label>
-    <input id="period" name="period" type="number" min="0" max="7" step="1" value="{{ period }}">
+    <label>Period {{ periodSelect(period) }}</label>
   </p>
 
   <p><button type="submit">Save</button></p>

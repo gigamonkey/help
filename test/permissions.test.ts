@@ -185,17 +185,18 @@ test('class settings update: teacher only', async () => {
       })
     ).status;
 
-  // Same values as the fixtures so later tests see an unchanged world.
-  assert.equal(await post(clients.teacher, 'room=303&period=4'), 302);
   assert.equal(await post(clients.student, 'room=666&period=1'), 401);
   assert.equal(await post(clients.helper, 'room=666&period=1'), 401);
-  // Bad period values are rejected before touching the db.
+  // Bad period values are rejected before touching the db; 8 is Ext.
   assert.equal(await post(clients.teacher, 'room=303&period=12'), 400);
   assert.equal(await post(clients.teacher, 'room=303&period=x'), 400);
+  assert.equal(await post(clients.teacher, 'room=303&period=8'), 302);
 
+  // Back to the fixture values so later tests see an unchanged world.
+  assert.equal(await post(clients.teacher, 'room=303&period=4'), 302);
   const page = await (await clients.teacher.get('/c/apcs/settings')).text();
   assert.match(page, /value="303"/);
-  assert.match(page, /value="4"/);
+  assert.match(page, /value="4" selected/);
 });
 
 test('simulated bell-schedule clock: owner only, shown on the homepage', async () => {

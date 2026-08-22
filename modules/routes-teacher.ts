@@ -32,12 +32,15 @@ router.post('/c/:class_id/settings', (req, res) => {
   const room = (typeof req.body.room === 'string' ? req.body.room : '').trim() || null;
   const rawPeriod = (typeof req.body.period === 'string' ? req.body.period : '').trim();
   const period = rawPeriod === '' ? null : Number(rawPeriod);
-  if (period !== null && !(Number.isInteger(period) && period >= 0 && period <= 7)) {
+  // 0-7 plus 8 = Period Ext (EXT_PERIOD in bells.ts).
+  if (period !== null && !(Number.isInteger(period) && period >= 0 && period <= 8)) {
     res.sendStatus(400);
     return;
   }
   db.updateClassSettings({ id: class_id, room, period });
-  res.redirect(`/c/${class_id}/settings`);
+  // Back to wherever the form was: the settings page or the homepage's
+  // inline per-class forms.
+  res.redirect(req.get('Referrer') ?? `/c/${class_id}/settings`);
 });
 
 export default router;

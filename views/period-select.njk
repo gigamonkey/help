@@ -1,0 +1,12 @@
+{# The period dropdown shared by the class settings form and the homepage
+   "For teachers" rows: blank (no period), 0-7, and Ext, which is stored
+   as period 8 (see EXT_PERIOD in modules/bells.ts). #}
+{% macro periodSelect(current) %}
+<select name="period">
+  <option value=""></option>
+  {% for p in [0, 1, 2, 3, 4, 5, 6, 7] %}
+  <option value="{{ p }}"{% if current === p %} selected{% endif %}>{{ p }}</option>
+  {% endfor %}
+  <option value="8"{% if current === 8 %} selected{% endif %}>Ext</option>
+</select>
+{% endmacro %}
