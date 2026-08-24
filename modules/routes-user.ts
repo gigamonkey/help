@@ -106,9 +106,22 @@ router.get('/r/:room', (req, res) => {
   const clazz = currentPeriodNumbers()
     .map((period) => db.classForRoomPeriod({ room, period }))
     .find(Boolean);
+  // The help cards want the same context the per-class queue gets from
+  // classContext — the viewer with their role in this class, and the
+  // class id — so the Close links show up here too.
+  const sessionUser = req.session?.user;
+  const user =
+    clazz && sessionUser
+      ? {
+          ...sessionUser,
+          role: db.classMember({ user_id: sessionUser.id, class_id: clazz.id })?.role,
+        }
+      : undefined;
   res.render('room.njk', {
     room,
     clazz,
+    class_id: clazz?.id,
+    user,
     className: clazz ? db.className({ class_id: clazz.id }) : undefined,
     queue: clazz ? db.queue({ class_id: clazz.id }) : [],
     refresh_in: secondsToNextSwitch(),
