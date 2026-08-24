@@ -1,0 +1,90 @@
+# check=skip=InvalidDefaultArgInFrom
+# ^ Keep on line 1. Silences a harmless BuildKit lint warning: YOLO_BASE has no
+#   default because yolo always injects the base-image tag as a build arg, but the
+#   linter evaluates `FROM ${YOLO_BASE}` with the empty default and flags it.
+#
+# Custom yolo image for the help app: bakes in the sqlite3 CLI (boot-prep.sh and
+# the year-end test shell out to it) and a prebuilt node_modules, so a fresh
+# session can run `make check` without any setup.
+#
+# Wire it up once on the host, then restart the session to build it:
+#
+#   yolo config --dockerfile ./Dockerfile.yolo
+#
+# How node_modules gets baked in: yolo builds with an EMPTY context (so no COPY
+# from the project), so this file embeds a mirror of package.json and installs it
+# to /opt/help. Node resolves bare imports by walking UP from the importing file
+# looking for node_modules, and `npm run` puts every ancestor node_modules/.bin
+# on PATH — so symlinking /opt/help/node_modules into the ancestor directories of
+# both mount points (worktree sessions and cwd sessions) makes the baked install
+# resolvable with no per-session step. A local `npm install` in a session always
+# shadows it (nearest node_modules wins), so dependency drift degrades gracefully:
+# if the baked copy is stale, install locally as before, and update the embedded
+# package.json below when convenient (the image rebuilds on the next launch).
+
+ARG YOLO_BASE
+FROM ${YOLO_BASE}
+
+# sqlite3: required by boot-prep.sh / test/year-end.test.ts.
+# lsof: for killing the dev server by port when driving the app.
+RUN sudo apt-get update \
+    && sudo apt-get install -y --no-install-recommends sqlite3 lsof \
+    && sudo rm -rf /var/lib/apt/lists/*
+
+# Mirror of the project's package.json (the build context is empty by design, so
+# it can't be COPYed in). Keep the dependency blocks in sync with the real one.
+COPY <<'EOF' /opt/help/package.json
+{
+  "name": "help",
+  "version": "1.0.0",
+  "description": "Help queue for classes",
+  "main": "index.ts",
+  "type": "module",
+  "license": "MIT",
+  "dependencies": {
+    "@peterseibel/bells": "^0.11.0",
+    "@peterseibel/bhs-calendars": "^2.14.0",
+    "cookie-session": "^2.1.1",
+    "dompurify": "^3.4.14",
+    "express": "^5.2.1",
+    "googleapis": "^176.0.0",
+    "jsdom": "^30.0.1",
+    "marked": "^18.0.10",
+    "morgan": "^1.11.0",
+    "nunjucks": "^3.2.4",
+    "pugsql": "^0.0.26"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.10",
+    "@flydotio/dockerfile": "^0.7.10",
+    "@types/cookie-session": "^2.0.49",
+    "@types/express": "^5.0.6",
+    "@types/jsdom": "^30.0.0",
+    "@types/morgan": "^1.9.10",
+    "@types/node": "^26.2.0",
+    "@types/nunjucks": "^3.2.6",
+    "nodemon": "^3.1.14",
+    "temporal-polyfill": "^1.0.4",
+    "typescript": "^7.0.2"
+  },
+  "allowScripts": {
+    "better-sqlite3": false
+  }
+}
+EOF
+
+RUN sudo chown -R claude /opt/help \
+    && cd /opt/help \
+    && npm install --no-audit --no-fund \
+    && npm cache clean --force
+
+# Ancestors of both session mount points:
+#   worktree sessions mount at /Users/peter/.claude-yolo/worktrees/-Users-peter-hacks-help/<branch>
+#   cwd sessions mount at /Users/peter/hacks/help
+RUN sudo mkdir -p '/Users/peter/.claude-yolo/worktrees/-Users-peter-hacks-help' /Users/peter/hacks \
+    && sudo ln -s /opt/help/node_modules '/Users/peter/.claude-yolo/worktrees/-Users-peter-hacks-help/node_modules' \
+    && sudo ln -s /opt/help/node_modules /Users/peter/hacks/node_modules
+
+# --- keep this last ---------------------------------------------------------
+# yolo refuses to launch an image whose runtime user isn't `claude`.
+USER claude
