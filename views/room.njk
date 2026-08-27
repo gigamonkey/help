@@ -24,6 +24,10 @@
      the period does: the class name, the cards, and the next deadline. #}
   <div id="queue" data-refresh-in="{{ refresh_in }}">
 
+  {% if period_left %}
+  <div class="countdown" data-seconds-left="{{ period_left }}"></div>
+  {% endif %}
+
   {% if clazz %}
 
     <h1 class="classname"><a href="/c/{{clazz.id}}/help">{{ className }}</a></h1>

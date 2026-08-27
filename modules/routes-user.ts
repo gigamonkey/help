@@ -85,7 +85,17 @@ router.get('/c/:class_id/events', (req, res) => {
 
 router.get('/c/:class_id/queue', (req, res) => {
   const { class_id } = req.params;
-  res.render('queue.njk', { class_id, queue: db.queue({ class_id }) });
+  // The countdown (period_left, seconds) runs only while this class's
+  // own period is in session; refresh_in makes live.js re-fetch at the
+  // bell, so the countdown appears and disappears without a reload.
+  const refresh_in = secondsToNextSwitch();
+  const inSession = currentPeriodNumbers().includes(db.classSettings({ class_id })?.period);
+  res.render('queue.njk', {
+    class_id,
+    queue: db.queue({ class_id }),
+    refresh_in,
+    period_left: inSession ? refresh_in : null,
+  });
 });
 
 router.get('/c/:class_id/done', (req, res) => {
@@ -117,6 +127,9 @@ router.get('/r/:room', (req, res) => {
           role: db.classMember({ user_id: sessionUser.id, class_id: clazz.id })?.role,
         }
       : undefined;
+  // When a class is up, refresh_in is the seconds left in its period,
+  // so it doubles as the countdown.
+  const refresh_in = secondsToNextSwitch();
   res.render('room.njk', {
     room,
     clazz,
@@ -124,7 +137,8 @@ router.get('/r/:room', (req, res) => {
     user,
     className: clazz ? db.className({ class_id: clazz.id }) : undefined,
     queue: clazz ? db.queue({ class_id: clazz.id }) : [],
-    refresh_in: secondsToNextSwitch(),
+    refresh_in,
+    period_left: clazz ? refresh_in : null,
   });
 });
 

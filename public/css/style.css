@@ -214,6 +214,17 @@ td.actions {
   font-size: 80%;
 }
 
+/* Time left in the period, pinned to the top-right corner of the queue
+   and room pages, opposite the home icon. */
+body.queue .countdown {
+  position: fixed;
+  top: 20px;
+  right: 2.5%;
+  font-size: 32px;
+  color: grey;
+  font-variant-numeric: tabular-nums;
+}
+
 table {
   width: 100%;
 }
