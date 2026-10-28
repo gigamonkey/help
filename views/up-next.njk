@@ -4,7 +4,7 @@
 
 {% block scripts %}
 {{ super() }}
-<script src="/js/check-required.js" type="module"></script>
+<script src="/js/help-form.js" type="module"></script>
 {% endblock %}
 
 {% block beforeTitle %}
@@ -13,9 +13,14 @@
     What do you need help with?
   </label>
 
-  <textarea name="problem" class="required"></textarea>
+  <textarea id="problem" name="problem" class="required" data-maxlength="{{ HELP_MAX_CHARS }}">{{ problem }}</textarea>
 
-  <button id="submit">Submit</button>
+  <div class="form-row">
+    <button id="submit">Submit</button>
+    <span id="char-count" class="char-count"></span>
+  </div>
+
+  {% include 'too-long.njk' %}
 </form>
 {% endblock %}
 

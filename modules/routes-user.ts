@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { currentPeriodNumbers, secondsToNextSwitch, simulatedNow } from './bells.ts';
 import { allCourses, byPeriod, fullClassName } from './classroom.ts';
-import { DEV_MODE } from './config.ts';
+import { DEV_MODE, HELP_MAX_CHARS } from './config.ts';
 import db from './db.ts';
 import { broadcastQueueChange, roomChannel, subscribe } from './live.ts';
 import oauth from './oauth.ts';
@@ -71,7 +71,18 @@ router.get('/c/:class_id/help', (req, res) => {
 
 router.post('/c/:class_id/help', (req, res) => {
   const { class_id } = req.params;
-  const { problem } = req.body;
+  const problem = String(req.body.problem ?? '');
+  // The form enforces the same limit, so only someone working around it
+  // gets here; show the form again with their text and the message.
+  if (problem.length > HELP_MAX_CHARS) {
+    res.status(400).render('up-next.njk', {
+      class_id,
+      queue: db.queue({ class_id }),
+      problem,
+      tooLong: true,
+    });
+    return;
+  }
   db.requestHelp({ user_id: req.session?.user?.id, class_id, problem });
   broadcastQueueChange(class_id);
   res.redirect('help');

@@ -33,6 +33,16 @@ export const PORT = Number(process.env.PORT ?? 3000);
  */
 export const DEBUG_TIME = DEV_MODE ? (process.env.DEBUG_TIME ?? '') : '';
 
+/*
+ * Longest help request (in characters) the server will accept; the form
+ * enforces the same limit client-side. Must be a positive integer.
+ */
+export const HELP_MAX_CHARS = Number(process.env.HELP_MAX_CHARS ?? 1000);
+if (!Number.isInteger(HELP_MAX_CHARS) || HELP_MAX_CHARS <= 0) {
+  console.error(`HELP_MAX_CHARS must be a positive integer, got ${process.env.HELP_MAX_CHARS}`);
+  process.exit(1);
+}
+
 export const DB_DIR = process.env.DB_DIR ?? '.';
 export const DB_FILE = process.env.DB_FILE ?? 'help.db';
 export const DB_PATH = `${DB_DIR}/${DB_FILE}`;

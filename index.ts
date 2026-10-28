@@ -3,7 +3,7 @@ import express, { type NextFunction, type Request, type Response } from 'express
 import morgan from 'morgan';
 import nunjucks from 'nunjucks';
 import classContext from './modules/class-context.ts';
-import { DEV_MODE, PORT, SESSION_SECRET } from './modules/config.ts';
+import { DEV_MODE, HELP_MAX_CHARS, PORT, SESSION_SECRET } from './modules/config.ts';
 import * as datefilter from './modules/datefilter.ts';
 import * as mdfilter from './modules/mdfilter.ts';
 import { isAuthError } from './modules/oauth.ts';
@@ -33,6 +33,7 @@ const env = nunjucks.configure('views', {
 mdfilter.install(env);
 datefilter.install(env);
 env.addFilter('slug', (s: string) => s.toLowerCase().replaceAll(/\W+/g, '-'));
+env.addGlobal('HELP_MAX_CHARS', HELP_MAX_CHARS);
 
 app.use(express.json());
 app.use(morgan('dev'));

@@ -329,3 +329,27 @@ body.welcome .admin {
   padding-bottom: 40px;
   border-radius: 12px;
 }
+
+.form-row {
+  display: flex;
+  align-items: baseline;
+  gap: 1em;
+}
+
+.char-count {
+  color: grey;
+  font-size: 80%;
+}
+
+.char-count.over {
+  color: #c00;
+  font-weight: bold;
+}
+
+.too-long {
+  margin: 1em 0;
+  padding: 10px;
+  border: 2px solid #c00;
+  border-radius: 6px;
+  background: #fff4f4;
+}

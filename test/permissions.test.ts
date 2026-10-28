@@ -171,6 +171,45 @@ test('/classes routes are admin-gated', async () => {
   assert.notEqual(await clients.admin.status('/classes/resync-all'), 401);
 });
 
+test('help requests over HELP_MAX_CHARS are rejected with the message', async () => {
+  const post = async (problem: string) =>
+    fetch(`${base}/c/apcs/help`, {
+      method: 'POST',
+      redirect: 'manual',
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded',
+        cookie: clients.student.cookieHeader(),
+      },
+      body: new URLSearchParams({ problem }),
+    });
+
+  // The form carries the server's limit, so the client-side check and
+  // this test both learn it from the page rather than hardcoding it.
+  const form = await (await clients.student.get('/c/apcs/help')).text();
+  const m = form.match(/data-maxlength="(\d+)"/);
+  assert.ok(m, 'form advertises the limit');
+  const max = Number(m[1]);
+
+  const tooLong = await post('x'.repeat(max + 1));
+  assert.equal(tooLong.status, 400);
+  const page = await tooLong.text();
+  assert.match(page, /antisocial/);
+  assert.match(page, new RegExp(`${max}-character limit`));
+  // The student's text comes back in the textarea so they can trim it.
+  assert.match(page, new RegExp(`<textarea[^>]*>${'x'.repeat(max + 1)}</textarea>`));
+  // The plain form carries the message too (help-form.js unhides it live),
+  // but hidden; the rejection renders it visible.
+  assert.match(form, /id="too-long"[^>]*\bhidden>/);
+  assert.doesNotMatch(page, /id="too-long"[^>]*\bhidden>/);
+
+  // Nothing was queued.
+  const queue = await (await clients.student.get('/c/apcs/queue')).text();
+  assert.doesNotMatch(queue, /xxxxxxxxxx/);
+
+  // Exactly at the limit is fine.
+  assert.equal((await post('y'.repeat(max))).status, 302);
+});
+
 test('class settings update: teacher only', async () => {
   const post = async (client: Client, body: string) =>
     (
