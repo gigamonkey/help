@@ -37,7 +37,7 @@ export const DEBUG_TIME = DEV_MODE ? (process.env.DEBUG_TIME ?? '') : '';
  * Longest help request (in characters) the server will accept; the form
  * enforces the same limit client-side. Must be a positive integer.
  */
-export const HELP_MAX_CHARS = Number(process.env.HELP_MAX_CHARS ?? 1000);
+export const HELP_MAX_CHARS = Number(process.env.HELP_MAX_CHARS ?? 1024);
 if (!Number.isInteger(HELP_MAX_CHARS) || HELP_MAX_CHARS <= 0) {
   console.error(`HELP_MAX_CHARS must be a positive integer, got ${process.env.HELP_MAX_CHARS}`);
   process.exit(1);
